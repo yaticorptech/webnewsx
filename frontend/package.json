@@ -1,0 +1,55 @@
+{
+  "name": "webnews-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.103.2",
+    "@tiptap/extensions": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
+    "better-auth": "^1.7.5",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.48.0",
+    "modern-screenshot": "^4.7.0",
+    "motion": "^13.4.2",
+    "next": "16.3.6",
+    "pdfjs-dist": "^5.7.284",
+    "qrcode": "^1.5.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-easy-crop": "^6.2.3",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.7.0",
+    "three": "^0.180.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^24.13.6",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.180.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.6",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
+  },
+  "description": "WebNEWS web app (Next.js 16). Talks to the WebNEWS API only through BACKEND_URL.",
+  "engines": {
+    "node": ">=24"
+  }
+}

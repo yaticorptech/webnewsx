@@ -1,0 +1,32 @@
+{
+  "name": "webnews-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "WebNEWS for Android and iOS: a native shell (Capacitor) around the website.",
+  "scripts": {
+    "sync": "cap sync",
+    "android": "cap sync android && cap open android",
+    "ios": "cap sync ios && cap open ios",
+    "run:android": "cap run android",
+    "run:ios": "cap run ios",
+    "phone": "node scripts/phone.mjs"
+  },
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/filesystem": "^8.1.3",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/push-notifications": "^8.1.2",
+    "@capacitor/share": "^8.0.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capgo/capacitor-social-login": "^8.5.11"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "typescript": "^7.0.2"
+  }
+}

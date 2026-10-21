@@ -1,0 +1,2 @@
+ALTER TABLE "article" DROP CONSTRAINT "article_template_valid";--> statement-breakpoint
+ALTER TABLE "article" ADD CONSTRAINT "article_template_valid" CHECK (template in ('classic', 'full-bleed', 'red-band', 'newspaper', 'split', 'slant', 'breaking', 'magazine', 'broadcast', 'bold-type', 'duotone', 'polaroid', 'top-line', 'card', 'story', 'red-frame', 'ticker', 'quote'));

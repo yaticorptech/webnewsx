@@ -1,0 +1,6 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    // The Android project (mobile/android) needs Gradle 9.6 + JDK 21 and builds with ./gradlew; VS Code's Java
+    // extension imports it with its own older Gradle (8.9) and fails on every build.gradle. Don't import it here.
+    "java.import.gradle.enabled": false
+}

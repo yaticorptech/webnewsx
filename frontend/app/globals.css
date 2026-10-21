@@ -1,0 +1,1434 @@
+@import "tailwindcss";
+
+/* Dark mode (owner 2026-09-30: the moon button in the masthead): `dark:` utilities apply under <html data-theme="dark">. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * WebNEWS design tokens — docs/SPEC.md §2.2 (retheme 2026-09-24).
+ * The light theme: white + crimson, modelled on the owner's previous platform (near-black is used for TEXT only).
+ * Dark mode (owner 2026-09-30, the masthead's moon button → <html data-theme="dark">) swaps these tokens below; the
+ * brand red stays the logo red, and story posters keep their light look.
+ * Two older names stay as aliases because feature code uses them: --faint (small muted text, AA)
+ * and --brand-strong (= --brand).
+ */
+
+/* ─────────────────────────── Theme variables ─────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f6f7f9;
+  --surface-3: #eef0f3;
+  /* Pink tints (old platform's PeopleHub banner / breaking bar) */
+  --tint: #fcf5f5;
+  --tint-2: #fcf2f2;
+  --tint-3: #f7e2e2;
+  --tint-border: #ecbcbc;
+  /* Rules */
+  --border: #e5e6ea;
+  --border-strong: #cfd2d8;
+  /* Text (ink is text only — never a background) */
+  --ink: #16181d;
+  --ink-2: #3a3f47;
+  --muted: #6b7079;
+  --muted-2: #91969e;
+  /* Legacy "faint": still used for small text, so kept at AA (4.5:1) on white. */
+  --faint: #72777f;
+  /* Brand red = the logo/icon red #E30613 (owner: no dark reds) */
+  --brand: #e30613;
+  --brand-hover: #eb1522;
+  --brand-strong: #e30613;
+  --brand-bright: #e30613;
+  --brand-contrast: #ffffff;
+  --brand-soft: rgb(227 6 19 / 0.08);
+  --brand-glow: rgb(227 6 19 / 0.3);
+  --success: #1f8a4c;
+  /* Small green text on --success-soft chips (5.4:1; --success there is only 3.9:1). */
+  --success-strong: #17703d;
+  --success-soft: rgb(31 138 76 / 0.1);
+  /* Modal scrim: a light veil, not a black background. */
+  --overlay: rgb(22 24 29 / 0.38);
+  --nav-bg: rgb(255 255 255 / 0.94);
+  --skeleton: #f0f1f4;
+  --shimmer: rgb(255 255 255 / 0.75);
+  --elev-card: 0 1px 2px rgb(16 24 40 / 0.04);
+  --elev-pop: 0 16px 40px -12px rgb(16 24 40 / 0.18), 0 2px 6px -2px rgb(16 24 40 / 0.06);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--brand);
+  /*
+   * Shell metrics (redesign 2026-10-07). --nav-h = height of the STICKY part of the masthead (sticky elements below
+   * it are offset by it): the top bar + its 1px bottom rule, plus the category chips row (+ its 1px rule) on the pages
+   * that show it (the feeds and Trending — see the `:root:has([data-category-nav])` rule below), so snapped reels and
+   * sticky offsets meet its real edge. --side-w = the side menu's width ≥1024px (side-nav.tsx; 0 below).
+   */
+  /* Phones: 4rem (owner 2026-10-09: "top nav bar a little bigger"); 3.5rem from 640px, 4rem again from 768px. */
+  --bar-h: 4rem;
+  /* The chips row: taller than its chips (owner 2026-10-08: "leave some space" between the bar and the categories —
+     the row's top padding in category-nav.tsx lives inside this height). Phones: the round section icons with their
+     names (category-circles.tsx, owner 2026-10-09: made a little bigger). Over the reels phones keep the chips. */
+  --tabnav-h: 5.25rem;
+  --nav-h: calc(var(--bar-h) + 1px + var(--safe-top));
+  --ticker-h: 2.5rem;
+  --side-w: 0px;
+  /* The phones' bottom bar (bottom-tab-bar.tsx): 3.25rem (owner 2026-10-05: a little smaller) + its 1px top border
+     (the safe area is added where used). */
+  --tabbar-h: calc(3.25rem + 1px);
+  /* Status bar / notch height in the WebNEWS app (edge to edge); 0 in browsers. Counted in --nav-h. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  color-scheme: light;
+}
+
+/* Dark mode: the same tokens on dark surfaces. */
+html[data-theme="dark"] {
+  --bg: #0e1014;
+  --surface: #16191f;
+  --surface-2: #1c2027;
+  --surface-3: #252a32;
+  --tint: #221416;
+  --tint-2: #2a1618;
+  --tint-3: #3a1b1e;
+  --tint-border: #5a2226;
+  --border: #272c34;
+  --border-strong: #3a404a;
+  --ink: #f2f3f5;
+  --ink-2: #cdd0d6;
+  --muted: #9ba1aa;
+  --muted-2: #7d838d;
+  --faint: #9ba1aa;
+  --brand-hover: #ff2a36;
+  --brand-soft: rgb(227 6 19 / 0.18);
+  --success: #35c46e;
+  --success-strong: #62d892;
+  --success-soft: rgb(53 196 110 / 0.16);
+  --overlay: rgb(0 0 0 / 0.62);
+  --nav-bg: rgb(22 25 31 / 0.94);
+  --skeleton: #20242b;
+  --shimmer: rgb(255 255 255 / 0.06);
+  --elev-card: 0 1px 2px rgb(0 0 0 / 0.45);
+  --elev-pop: 0 16px 40px -12px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+/* Story posters are designed artwork (and become the Instagram / Facebook picture): always their light look. */
+html[data-theme="dark"] [data-poster] {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f7f9;
+  --color-surface-3: #eef0f3;
+  --color-tint-2: #fcf2f2;
+  --color-ink: #16181d;
+  --color-ink-2: #3a3f47;
+  --color-muted: #6b7079;
+  --color-border: #e5e6ea;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --bar-h: 3.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --bar-h: 4rem;
+  }
+}
+
+/* The category chips row shows (feeds, Trending): --nav-h counts it. */
+:root:has([data-category-nav]) {
+  --nav-h: calc(var(--bar-h) + var(--tabnav-h) + 2px + var(--safe-top));
+}
+/* Phones over the photo cards: the sections row scrolls with the page (nav-frame.tsx), so only the bar sticks. */
+:root:has([data-chips-flow] [data-category-nav]) {
+  --nav-h: calc(var(--bar-h) + 1px + var(--safe-top));
+}
+/* Desktop, scrolled down (nav-frame.tsx data-compact): the masthead has slid away — only the section menu (if any)
+   stays, so sticky things sit right under it. */
+@media (min-width: 1024px) {
+  :root:has([data-masthead-bar][data-compact]) {
+    --nav-h: var(--safe-top);
+  }
+  :root:has([data-masthead-bar][data-compact]):has([data-category-nav]) {
+    --nav-h: calc(var(--tabnav-h) + 1px + var(--safe-top));
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --ticker-h: 2.75rem;
+    /* The side menu is a 4rem icon rail (owner 2026-10-15); the big menu opens over the page. */
+    --side-w: 4rem;
+    /* Desktop masthead (owner 2026-10-15): the utility row (2.75rem) + the centred logo, then the sections as a slim text
+       menu. */
+    --bar-h: 8.5rem;
+    --tabnav-h: 2.75rem;
+  }
+}
+/* Desktop pages other than the front page (masthead-utility.tsx MastheadRow): one compact row, logo left, icons right. */
+@media (min-width: 1024px) {
+  :root:has([data-masthead="compact"]) {
+    --bar-h: 4.5rem;
+  }
+}
+/* The side menu expanded (side-nav.tsx): 15rem beside the page. */
+@media (min-width: 1024px) {
+  :root:has([data-side-nav="full"]) {
+    --side-w: 15rem;
+  }
+}
+
+/* ─────────────────────────── Tailwind theme ─────────────────────────── */
+
+@theme {
+  /* Brand-only palette: drop Tailwind's default hues so off-brand colours can't creep in. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* 32px → 56px article titles, 22px → 28px feed headlines (SPEC §2.3). */
+  --text-display: clamp(2rem, 1.35rem + 2.8vw, 3.5rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.02em;
+  --text-headline: clamp(1.375rem, 1.2rem + 0.75vw, 1.75rem);
+  --text-headline--line-height: 1.12;
+  --text-headline--letter-spacing: -0.012em;
+  --text-kicker: 0.6875rem;
+  --text-kicker--line-height: 1rem;
+
+  /* Heartbeat ("lub-dub", SPEC §2.1): the dot beats, a soft ring ripples out on each beat. */
+  --animate-heartbeat: heartbeat 1.4s ease-in-out infinite;
+  --animate-heartbeat-ring: heartbeat-ring 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+  --animate-pulse-dot: heartbeat-ring 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-flash-highlight: flash-highlight 2.2s var(--ease-snap) both;
+  /* `backwards`, not `both`: holding the end frame of a transform animation makes the element a containing block, and
+     every page sits in one (app/(main)/template.tsx) — fixed bars inside pages (a chat's message box) would scroll away
+     with the page. The end frame is the element's normal look anyway. */
+  --animate-fade-up: fade-up 0.4s var(--ease-snap) backwards;
+  /* A story arriving live (owner 2026-10-15): fades in small, zooms a touch past full size, settles. Runs even with
+     Reduce Motion — the owner wants these key animations. */
+  --animate-pop-in: pop-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --animate-speed-lines: speed-lines 1.2s var(--ease-in-out-quart) infinite both;
+  /* News radio on air (owner 2026-10-01): sound bars rising and falling, each bar at its own pace. */
+  --animate-sound-bar: sound-bar 0.9s ease-in-out infinite;
+
+  @keyframes heartbeat {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    12% {
+      transform: scale(1.38);
+    }
+    24% {
+      transform: scale(0.96);
+    }
+    36% {
+      transform: scale(1.26);
+    }
+    52% {
+      transform: scale(1);
+    }
+  }
+  /* Ripple that leaves the dot on a beat (the second ring is delayed to the "dub"). */
+  @keyframes heartbeat-ring {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    60%,
+    100% {
+      transform: scale(3.4);
+      opacity: 0;
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes flash-highlight {
+    0%,
+    18% {
+      background-color: var(--tint-3);
+      box-shadow: inset 3px 0 0 var(--brand);
+    }
+    100% {
+      background-color: transparent;
+      box-shadow: inset 3px 0 0 transparent;
+    }
+  }
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes sound-bar {
+    0%,
+    100% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+  /* One icon bar sweeping through its box: in from the left, hold, out to the right. */
+  @keyframes speed-lines {
+    0% {
+      transform: translateX(-118%);
+    }
+    40%,
+    60% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(118%);
+    }
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-tint: var(--tint);
+  --color-tint-2: var(--tint-2);
+  --color-tint-3: var(--tint-3);
+  --color-tint-border: var(--tint-border);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-faint: var(--faint);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-bright: var(--brand-bright);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-brand-soft: var(--brand-soft);
+  --color-nav: var(--nav-bg);
+  --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-success-soft: var(--success-soft);
+  --color-overlay: var(--overlay);
+
+  /* Latin from Archivo / Source Serif 4; Kannada glyphs fall through to Noto (SPEC §2.3). */
+  --font-sans:
+    var(--font-archivo), var(--font-noto-kannada), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display:
+    var(--font-archivo), var(--font-noto-kannada), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-source-serif), var(--font-noto-serif-kannada), ui-serif, Georgia, "Times New Roman", serif;
+
+  --shadow-pop: var(--elev-pop);
+  --shadow-card: var(--elev-card);
+}
+
+/* ─────────────────────────── Base ─────────────────────────── */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* 2px crimson ring with a 2px white gap (SPEC §2.2). */
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--tint-3);
+    color: var(--ink);
+  }
+
+  * {
+    scrollbar-width: thin;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--faint);
+    opacity: 1;
+  }
+
+  img {
+    /* Keep alt text readable against the blur placeholder while an image fails. */
+    color: var(--muted);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/* ─────────────────────────── Utilities ─────────────────────────── */
+
+/* Wide headline cut (Archivo wdth axis) echoing the wordmark. */
+@utility font-wide {
+  font-stretch: 112%;
+}
+@utility font-wider {
+  font-stretch: 125%;
+}
+
+/* Small uppercase label: "LIVE WIRE", section kickers, meta. */
+@utility kicker {
+  font-size: var(--text-kicker);
+  line-height: var(--text-kicker--line-height);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-stretch: 112%;
+}
+
+/* Tagline tracking from the reference lockup. */
+@utility tracking-tagline {
+  letter-spacing: 0.32em;
+}
+
+/*
+ * BrandLockup size presets: wordmark height + tagline size/tracking/gap, tuned so the tagline
+ * always fits UNDER the wordmark (SPEC §2.1). Responsive: `lockup-2xs md:lockup-xs lg:lockup-md`.
+ */
+@utility lockup-2xs {
+  --lockup-h: 14px;
+  --tag-size: 7px;
+  --tag-track: 0.07em;
+  --tag-gap: 3px;
+}
+@utility lockup-xs {
+  --lockup-h: 24px;
+  --tag-size: 9px;
+  --tag-track: 0.18em;
+  --tag-gap: 5px;
+}
+@utility lockup-sm {
+  --lockup-h: 32px;
+  --tag-size: 10.5px;
+  --tag-track: 0.22em;
+  --tag-gap: 6px;
+}
+@utility lockup-md {
+  --lockup-h: 48px;
+  --tag-size: 12.5px;
+  --tag-track: 0.24em;
+  --tag-gap: 9px;
+}
+@utility lockup-lg {
+  --lockup-h: 72px;
+  --tag-size: 16px;
+  --tag-track: 0.25em;
+  --tag-gap: 13px;
+}
+@utility lockup-xl {
+  --lockup-h: 104px;
+  --tag-size: 20.5px;
+  --tag-track: 0.25em;
+  --tag-gap: 18px;
+}
+
+/* Profile photo (owner 2026-10-01): its red ring draws itself round from the top on load, like the press card's red
+   rule. Where @property isn't supported the ring just appears once the animation ends. */
+@property --ring-sweep {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 360deg;
+}
+@utility ring-draw {
+  background: conic-gradient(var(--brand) var(--ring-sweep), transparent 0);
+  animation: ring-draw 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s backwards;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+@keyframes ring-draw {
+  from {
+    --ring-sweep: 0deg;
+  }
+}
+
+/* Cards: white, 1px grey rule, 16px radius, barely-there shadow (SPEC §2.2). */
+/* Redesign 2026-10-07: rounder corners and a softer pink rule on panels, site-wide. */
+@utility card {
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background-color: var(--surface);
+  box-shadow: var(--elev-card);
+}
+/* Soft pink panel (old platform's PeopleHub banner): callouts, stats, empty states. */
+@utility panel-tint {
+  border: 1px solid var(--tint-3);
+  border-radius: 1.25rem;
+  background-color: var(--tint);
+}
+
+/* Diagonal slice — one corner cut at the logo's "N" angle. Size via --slice (default 1.75rem). */
+@utility slice-tr {
+  clip-path: polygon(0 0, calc(100% - var(--slice, 1.75rem)) 0, 100% var(--slice, 1.75rem), 100% 100%, 0 100%);
+}
+@utility slice-br {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--slice, 1.75rem)), calc(100% - var(--slice, 1.75rem)) 100%, 0 100%);
+}
+@utility slice-bl {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, var(--slice, 1.75rem) 100%, 0 calc(100% - var(--slice, 1.75rem)));
+}
+@utility slice-tl {
+  clip-path: polygon(var(--slice, 1.75rem) 0, 100% 0, 100% 100%, 0 100%, 0 var(--slice, 1.75rem));
+}
+
+/* Forward-leaning parallelogram clip, like the icon's bars (chips, badges, indicators). Slant via --slant-x. */
+@utility slant {
+  clip-path: polygon(var(--slant-x, 0.45rem) 0, 100% 0, calc(100% - var(--slant-x, 0.45rem)) 100%, 0 100%);
+}
+/* Only the right edge slanted (LIVE badge, band labels that sit flush left). */
+@utility slant-r {
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant-x, 0.6rem)) 100%, 0 100%);
+}
+
+/* Outlined display type (404 numerals, decorative headings). */
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: var(--outline-w, 1.5px) var(--outline-color, currentColor);
+}
+
+/* Offsets for sticky UI below the nav. */
+@utility top-below-nav {
+  top: calc(var(--nav-h) + 1rem);
+}
+@utility scroll-mt-nav {
+  scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+
+/* Hide scrollbars on horizontally scrolling rails while keeping them scrollable. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Soft fade at both horizontal edges (ticker, chip rails). */
+@utility mask-fade-x {
+  mask-image: linear-gradient(90deg, transparent, #000 1.5rem, #000 calc(100% - 1.5rem), transparent);
+}
+
+/* Bottom padding that clears the mobile bottom tab bar (+ iOS home indicator). */
+@utility pb-tabbar {
+  padding-bottom: calc(var(--tabbar-h) + 1.5rem + env(safe-area-inset-bottom));
+}
+
+/* Chat screen on phones (owner 2026-09-30, like Instagram): the chat fills the screen — its own header with the back
+   arrow on top, the message box at the bottom — so the masthead bar, the tab bar and back-to-top step aside. */
+@media (max-width: 767.98px) {
+  html:has([data-chat-screen]) :is([data-masthead-bar], nav[aria-label="Primary"]) {
+    display: none;
+  }
+  html:has([data-chat-screen]) #main {
+    padding-bottom: 0;
+  }
+}
+
+/* Back-to-top would sit on the chat's message box at every width. */
+html:has([data-chat-screen]) [data-back-to-top] {
+  display: none;
+}
+
+/* ─────────────────────────── Components ─────────────────────────── */
+
+@layer components {
+  /*
+   * Legacy "slanted button" class, now a rounded pill (SPEC §2.2: pill buttons). The background
+   * still lives on ::before so existing `--btn-bg` / `--btn-border` overrides keep working.
+   */
+  .btn-slant {
+    position: relative;
+    isolation: isolate;
+    background: transparent;
+    border-radius: 9999px;
+  }
+  .btn-slant::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 9999px;
+    background: var(--btn-bg, var(--brand));
+    box-shadow: inset 0 0 0 1px var(--btn-border, transparent);
+    transition:
+      background-color 150ms,
+      box-shadow 150ms;
+  }
+  .btn-slant:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  /* Verified Reporter badge (VerifiedBadge; owner design revised 2026-09-26): grey bars → each fills with logo red
+     from right to left along the tilt (staggered) → a blue check draws over them → a blue ring draws around the badge →
+     the blue floods that circle and the check turns white → pop with a soft blue glow. Final: blue disc + white check. Always animates (owner request); loops. */
+  .verified-badge {
+    --vb-blue: #1d9bf0;
+  }
+  .verified-badge svg {
+    overflow: visible;
+  }
+  .vb-bar-grey {
+    fill: #d6d8dd;
+  }
+  .vb-bar-red {
+    fill: var(--brand);
+  }
+  .vb-disc {
+    fill: var(--vb-blue);
+    transform-origin: 50px 50px;
+  }
+  /* Lines that draw themselves. Dash 100 + gap 200, hidden at offset 101: a round cap never peeks out as a dot. */
+  .vb-check,
+  .vb-check-halo,
+  .vb-ring {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 100 200;
+  }
+  .vb-ring {
+    stroke: var(--vb-blue);
+    stroke-width: 6;
+    transform: rotate(-90deg);
+    transform-origin: 50px 50px;
+  }
+  .vb-check {
+    stroke: var(--vb-blue);
+    stroke-width: 11;
+  }
+  .vb-check-halo {
+    stroke: #fff;
+    stroke-width: 19;
+  }
+  /* Before the first play and during the play: nothing filled yet. */
+  .vb-idle .vb-sheet,
+  .vb-play .vb-sheet {
+    transform: translateX(62px);
+  }
+  .vb-idle .vb-disc,
+  .vb-play .vb-disc {
+    transform: scale(0);
+  }
+  .vb-idle .vb-check,
+  .vb-play .vb-check,
+  .vb-idle .vb-check-halo,
+  .vb-play .vb-check-halo,
+  .vb-idle .vb-ring,
+  .vb-play .vb-ring {
+    stroke-dashoffset: 101;
+    opacity: 0;
+  }
+  /* Finished badge. */
+  .vb-done .vb-sheet {
+    transform: none;
+  }
+  .vb-done .vb-disc {
+    transform: none;
+  }
+  .vb-done .vb-check {
+    stroke-dashoffset: 0;
+    stroke: #fff;
+  }
+  .vb-done .vb-ring {
+    stroke-dashoffset: 0;
+  }
+  .vb-done .vb-check-halo {
+    opacity: 0;
+  }
+  /* The sequence. */
+  .vb-play .vb-sheet {
+    animation: vb-fill 0.5s cubic-bezier(0.65, 0, 0.25, 1) forwards;
+  }
+  .vb-play .vb-sheet-0 {
+    animation-delay: 0.15s;
+  }
+  .vb-play .vb-sheet-1 {
+    animation-delay: 0.35s;
+  }
+  .vb-play .vb-sheet-2 {
+    animation-delay: 0.55s;
+  }
+  /* 0.15–1.05s bars fill · 1.1s check draws · 1.55s ring draws · 2.1s blue fills the circle · 2.55s pop. */
+  .vb-play .vb-check {
+    animation:
+      vb-draw 0.4s cubic-bezier(0.65, 0, 0.25, 1) 1.1s forwards,
+      vb-check-white 0.25s ease-out 2.25s forwards;
+  }
+  .vb-play .vb-check-halo {
+    animation:
+      vb-draw 0.4s cubic-bezier(0.65, 0, 0.25, 1) 1.1s forwards,
+      vb-fade 0.2s ease-out 2.15s forwards;
+  }
+  .vb-play .vb-ring {
+    animation: vb-draw 0.5s cubic-bezier(0.65, 0, 0.25, 1) 1.55s forwards;
+  }
+  .vb-play .vb-disc {
+    animation: vb-flood 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) 2.1s forwards;
+  }
+  svg.vb-play {
+    transform-origin: 50% 50%;
+    animation: vb-pop 0.36s ease-out 2.55s;
+  }
+  @keyframes vb-fill {
+    to {
+      transform: none;
+    }
+  }
+  @keyframes vb-draw {
+    from {
+      opacity: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+  @keyframes vb-check-white {
+    to {
+      stroke: #fff;
+    }
+  }
+  @keyframes vb-fade {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes vb-flood {
+    to {
+      transform: none;
+    }
+  }
+  @keyframes vb-pop {
+    50% {
+      transform: scale(1.14);
+    }
+  }
+  /* While the finished badge holds, the blue glow breathes. Scales with the badge via --vb-size. */
+  .verified-badge.vb-breathe {
+    animation: vb-breathe 2.2s ease-in-out infinite;
+  }
+  /* Off-screen badges keep their state but stop repainting (VerifiedBadge toggles the class). */
+  .verified-badge.vb-offscreen,
+  .verified-badge.vb-offscreen * {
+    animation-play-state: paused;
+  }
+  @keyframes vb-breathe {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 rgb(29 155 240 / 0),
+        0 0 calc(var(--vb-size, 20px) * 0.3) 0 rgb(29 155 240 / 0.3);
+    }
+    50% {
+      box-shadow:
+        0 0 0 calc(var(--vb-size, 20px) * 0.14) rgb(29 155 240 / 0.14),
+        0 0 calc(var(--vb-size, 20px) * 0.6) calc(var(--vb-size, 20px) * 0.08) rgb(29 155 240 / 0.5);
+    }
+  }
+
+  /* Tagline shine — the same effect as the owner's webnews.in (.wn-tagline): a logo-red band with a soft pink
+     highlight sweeps across the dark tagline letters. One rhythm with the dot in front (owner 2026-10-02): every
+     4.2s the dot beats ("lub-dub"), then the wave runs slowly (~2.3s) from the dot to the end of the words, then a
+     short rest.
+     The dot's beat (.tagline-dot below) and the wave share the cycle and start together, so they stay in step.
+     Runs regardless of Reduce Motion (owner request). */
+  .tagline-shine {
+    background-image: linear-gradient(
+      100deg,
+      var(--ink) 0%,
+      var(--ink) 32%,
+      var(--brand) 45%,
+      #ff8b93 52%,
+      var(--brand) 59%,
+      var(--ink) 72%,
+      var(--ink) 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: tagline-wave 4.2s linear infinite;
+  }
+  /* 110% / -5%: the red band sits just off the left / right end (background-size 300%), so the jump back is unseen. */
+  @keyframes tagline-wave {
+    0%,
+    11% {
+      background-position: 110% 50%;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.35, 1);
+    }
+    66%,
+    100% {
+      background-position: -5% 50%;
+    }
+  }
+  /* The tagline's dot: its usual-speed heartbeat at the start of the 4.2s cycle, then still while the wave runs. */
+  .tagline-dot .pulse-beat {
+    animation: tagline-beat 4.2s ease-in-out infinite;
+  }
+  .tagline-dot .pulse-ring {
+    animation: tagline-ring 4.2s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+  }
+  .tagline-dot .pulse-ring-dub {
+    animation-delay: 0.34s;
+  }
+  @keyframes tagline-beat {
+    0%,
+    17.3%,
+    100% {
+      transform: scale(1);
+    }
+    4% {
+      transform: scale(1.38);
+    }
+    8% {
+      transform: scale(0.96);
+    }
+    12% {
+      transform: scale(1.26);
+    }
+  }
+  @keyframes tagline-ring {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    20%,
+    100% {
+      transform: scale(3.4);
+      opacity: 0;
+    }
+  }
+
+  /* Heartbeat pulse dot (PulseDot / the lockup's tagline dot): beat + two ripples ("lub", "dub"). */
+  .pulse-beat {
+    animation: var(--animate-heartbeat);
+    will-change: transform;
+  }
+  .pulse-ring {
+    animation: var(--animate-heartbeat-ring);
+    will-change: transform, opacity;
+  }
+  .pulse-ring-dub {
+    animation-delay: 0.34s;
+    opacity: 0;
+  }
+
+  /*
+   * Speed-lines loader: the icon's three bars (SVG polygons, viewBox "8 9 52 45") sweeping
+   * through in sequence. The SVG clips them to the icon box.
+   */
+  .speed-loader {
+    display: inline-block;
+    flex-shrink: 0;
+    width: var(--sl-w, 22px);
+    height: auto;
+    aspect-ratio: 52 / 45;
+    overflow: hidden;
+  }
+  .speed-loader polygon {
+    transform-box: fill-box;
+    animation: var(--animate-speed-lines);
+  }
+  .speed-loader polygon:nth-child(2) {
+    animation-delay: 120ms;
+  }
+  .speed-loader polygon:nth-child(3) {
+    animation-delay: 240ms;
+  }
+
+  /* Skeleton block with a GPU-friendly shimmer sweep. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--skeleton);
+    border-radius: 0.375rem;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(100deg, transparent 20%, var(--shimmer) 50%, transparent 80%);
+    animation: var(--animate-shimmer);
+  }
+
+  /* Marquee: the track holds two copies of the content and slides by -50%. The duration comes from the element's
+     own --marquee-duration (set by Ticker from the content width, so the reading speed is constant) — it must be read
+     here, not through a :root-level --animate-* variable, which would resolve it at :root (always the 60s fallback). */
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee var(--marquee-duration, 60s) linear infinite;
+    will-change: transform;
+  }
+  @keyframes marquee {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track,
+  .marquee[data-paused="true"] .marquee-track {
+    animation-play-state: paused;
+  }
+
+  /* Decorative speed lines trailing into a hairline rule (card dividers, section heads). */
+  .rule-speed {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .rule-speed::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: var(--border);
+  }
+
+  /* Faint diagonal speed-line texture for brand panels (auth split screen, empty states). */
+  .bg-speed-lines {
+    background-image: repeating-linear-gradient(
+      47deg,
+      transparent 0 22px,
+      color-mix(in srgb, var(--brand) 7%, transparent) 22px 24px,
+      transparent 24px 58px
+    );
+  }
+}
+
+/* ─────────────────────────── Article prose ─────────────────────────── */
+
+@layer components {
+  .prose-news {
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    line-height: 1.72;
+    color: var(--ink-2);
+    overflow-wrap: break-word;
+    font-feature-settings: "kern", "liga", "onum";
+  }
+  @media (min-width: 640px) {
+    .prose-news {
+      font-size: 1.1875rem;
+    }
+  }
+  .prose-news > * + * {
+    margin-top: 1.15em;
+  }
+  .prose-news h2,
+  .prose-news h3 {
+    font-family: var(--font-sans);
+    font-stretch: 112%;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .prose-news h2 {
+    font-size: 1.45em;
+    line-height: 1.18;
+    font-weight: 800;
+    margin-top: 1.9em;
+  }
+  .prose-news h3 {
+    font-size: 1.18em;
+    line-height: 1.25;
+    font-weight: 750;
+    margin-top: 1.6em;
+  }
+  .prose-news h2 + *,
+  .prose-news h3 + * {
+    margin-top: 0.6em;
+  }
+  .prose-news a {
+    color: var(--brand-strong);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: color-mix(in srgb, var(--brand-strong) 45%, transparent);
+    transition: text-decoration-color 150ms;
+  }
+  .prose-news a:hover {
+    text-decoration-color: currentColor;
+  }
+  .prose-news strong {
+    font-weight: 700;
+  }
+  .prose-news blockquote {
+    position: relative;
+    padding: 0.2em 0 0.2em 1.15em;
+    font-size: 1.08em;
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+  .prose-news blockquote::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.2em;
+    bottom: 0.2em;
+    width: 4px;
+    background: var(--brand);
+    transform: skewY(-12deg);
+  }
+  .prose-news ul,
+  .prose-news ol {
+    padding-left: 1.5em;
+  }
+  .prose-news li + li {
+    margin-top: 0.45em;
+  }
+  .prose-news ul > li {
+    position: relative;
+    list-style: none;
+  }
+  /* Bullets are tiny speed-line bars. */
+  .prose-news ul > li::before {
+    content: "";
+    position: absolute;
+    left: -1.2em;
+    top: 0.78em;
+    width: 0.62em;
+    height: 0.16em;
+    background: var(--brand);
+    transform: skewX(-45deg);
+  }
+  .prose-news ol {
+    list-style: decimal;
+  }
+  .prose-news ol > li::marker {
+    color: var(--brand-strong);
+    font-family: var(--font-sans);
+    font-weight: 800;
+    font-size: 0.9em;
+  }
+  .prose-news code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.86em;
+    padding: 0.12em 0.36em;
+    border-radius: 0.3rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .prose-news pre {
+    padding: 1em 1.1em;
+    border-radius: 0.6rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    font-size: 0.82em;
+    line-height: 1.6;
+  }
+  .prose-news pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: inherit;
+  }
+  /* Section break: the icon's three speed-line bars, centred. */
+  .prose-news hr {
+    height: 0.9em;
+    width: 1.05em;
+    border: 0;
+    margin: 2.4em auto;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='8 9 52 45'%3E%3Cg fill='%23E30613'%3E%3Cpolygon points='20,9 60,9 48,20 8,20'/%3E%3Cpolygon points='20,26 60,26 48,37 8,37'/%3E%3Cpolygon points='20,43 60,43 48,54 8,54'/%3E%3C/g%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+  /* Optional drop cap: <div class="prose-news prose-news-dropcap"> */
+  .prose-news-dropcap > p:first-child::first-letter {
+    float: left;
+    margin: 0.08em 0.12em 0 0;
+    font-family: var(--font-sans);
+    font-size: 3.5em;
+    line-height: 0.82;
+    font-weight: 900;
+    font-stretch: 118%;
+    color: var(--brand);
+  }
+}
+
+/* ─────────────────────────── Reel feed ─────────────────────────── */
+
+/*
+ * One story per screen (components/feed/reel-card.tsx, owner 2026-09-26). The window keeps scrolling and <html> snaps
+ * it one reel at a time: mandatory on feed pages ([data-reel-feed]), proximity for the publisher's reels under a story
+ * ([data-reel-proximity]) so reading the story is never interrupted.
+ *  --reel-top      masthead → snapped reel. Equals <main>'s top padding (pt-3 / md:pt-4), so the first reel's snap
+ *                  position is the page top and the first swipe is never a "dead" one.
+ *  --reel-gap      between reels (phones: reels are edge to edge and borderless, a sliver of page is enough).
+ *  --reel-h        a reel: the space between the masthead and the tab bar (phones) or the screen's bottom (≥768px)
+ *                  minus both gaps, so the next reel starts exactly where the screen (or the tab bar) ends.
+ *  --reel-rail-w   ≥640px: the action rail's column beside the poster (reel-controls.tsx), --reel-rail-gap between them.
+ *                  The poster leaves room for it on both sides so it stays centred (phones: the rail sits on the poster).
+ */
+:root {
+  --reel-top: 0.75rem;
+  --reel-gap: 0.5rem;
+  --reel-h: max(20rem, calc(100vh - var(--nav-h) - var(--tabbar-h) - env(safe-area-inset-bottom) - var(--reel-top) - var(--reel-gap)));
+  --reel-rail-w: 3.25rem;
+  --reel-rail-gap: 0.75rem;
+}
+@supports (height: 100dvh) {
+  :root {
+    --reel-h: max(20rem, calc(100dvh - var(--nav-h) - var(--tabbar-h) - env(safe-area-inset-bottom) - var(--reel-top) - var(--reel-gap)));
+  }
+}
+@media (min-width: 640px) {
+  :root {
+    /* Rounded posters: an equal gap above and below, so no edge of the previous one peeks out under the masthead. */
+    --reel-gap: var(--reel-top);
+  }
+}
+@media (min-width: 768px) {
+  :root {
+    --reel-top: 1rem;
+    --reel-h: max(22rem, calc(100vh - var(--nav-h) - var(--reel-top) - var(--reel-gap)));
+  }
+  @supports (height: 100dvh) {
+    :root {
+      --reel-h: max(22rem, calc(100dvh - var(--nav-h) - var(--reel-top) - var(--reel-gap)));
+    }
+  }
+}
+
+@layer components {
+  html:has([data-reel-feed]) {
+    scroll-snap-type: y mandatory;
+  }
+  html:has([data-reel-proximity]) {
+    scroll-snap-type: y proximity;
+  }
+  /* The page top stays a stop (≥1024px masthead row, notices above the feed): NavFrame's zero-height marker. */
+  html:has([data-reel-feed]) [data-snap-top] {
+    scroll-snap-align: start;
+  }
+  /* `always`: a fling moves one reel, never several. The offset under the masthead is a scroll-margin on the snap
+     targets (not scroll-padding on <html>), so in-page jumps such as a story's #comments keep their own offset. It
+     also places `scrollIntoView` (auto-scroll). */
+  .reel {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    scroll-margin-top: calc(var(--nav-h) + var(--reel-top));
+  }
+  /* Everything else in a reel list that must stay reachable under mandatory snapping (loading, errors, the end). */
+  .reel-snap {
+    scroll-snap-align: start;
+    scroll-margin-top: calc(var(--nav-h) + var(--reel-top));
+  }
+  /* Story pages below 1280px (comments under the story, just above the "More from" reels): #comments is a stop too, so
+     a jump there lands on a snap position and proximity snapping keeps it rather than pulling the page onto the first
+     reel, also when the list loads and the section grows. Its scroll-margin (nav-h + 1rem) is the offset. */
+  @media (max-width: 1279.98px) {
+    html:has([data-reel-proximity]) #comments {
+      scroll-snap-align: start;
+    }
+  }
+
+  /*
+   * A reel is the story's poster (components/poster/story-poster.tsx): the largest 9:16 box that fits the reel, centred.
+   * `.reel-frame` = a reel-sized box (the reel and its skeleton): an inline-size container, so 100cqw is the reel's
+   * width. Its custom properties hold that width as tokens, so they resolve for whichever element uses them inside the
+   * frame:
+   *  --reel-poster-w   the poster's width (its height is 16/9 of it, at most --reel-h). ≥640px it leaves the rail's
+   *                    column free on both sides (the rail sits just outside its right edge, the poster stays centred).
+   *  --reel-badge-top  where the overlay pills start on the poster ("Just in", labels): 16% of its width, under every
+   *                    template's logo strip / tag.
+   */
+  .reel-frame {
+    container-type: inline-size;
+    --reel-poster-w: min(100cqw, var(--reel-h) * 9 / 16);
+    --reel-badge-top: calc(var(--reel-poster-w) * 0.16);
+  }
+  @media (min-width: 640px) {
+    .reel-frame {
+      --reel-poster-w: min(100cqw - 2 * (var(--reel-rail-w) + var(--reel-rail-gap)), var(--reel-h) * 9 / 16);
+    }
+  }
+  .reel-poster {
+    width: var(--reel-poster-w);
+  }
+  /* Auto-scroll progress (reel-autoscroll.ts): the animation is the timer, so it also runs under Reduce Motion.
+     Duration and play state come inline from the controller. */
+  .reel-progress {
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    animation-name: reel-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+  @keyframes reel-progress {
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
+/*
+ * Reels on phones (owner 2026-09-30: "fill the screen, like Instagram Reels"): each reel fills the screen between the
+ * masthead (top bar + the category row on its white background, owner 2026-10-05) and the tab bar, square-cornered. The
+ * poster fills the reel's full width (owner 2026-10-08: "fill the articles" — before, it was fitted inside the reel
+ * with white at the sides): on a screen taller than 9:16 it's centred and a sliver of its top and bottom is cropped.
+ * Only the Reels feed ([data-reel-feed]); the publisher's reels under a story keep their card look.
+ */
+@media (max-width: 639.98px) {
+  html:has([data-reel-feed]) {
+    --reel-top: 0px;
+    --reel-gap: 0px;
+  }
+  html:has([data-reel-feed]) [data-category-nav] {
+    background-color: var(--surface);
+  }
+  /* The reporter line on a reel (photo · name · badge · Follow) a little bigger than its poster size (owner 2026-10-09:
+     too small to read on a phone; 2026-10-10: 1.4× was too big — 1.15×) — Home's reels and the publisher's reels under
+     a story; shared poster images are unchanged. */
+  :is([data-reel-feed], [data-reel-proximity]) [data-poster] {
+    --byline-scale: 1.15;
+  }
+  /* The reel follows the finger and glides to the next one by itself (useOneReelPerSwipe, reel-scroll.ts): no browser
+     panning here, so no fling to fight. And no blur behind the bars over moving reels: it made swiping stutter on
+     phones (they're near-opaque anyway). */
+  [data-reel-feed],
+  [data-reel-proximity] .reel {
+    touch-action: none;
+  }
+  /* Under a story the reels page by themselves (useOneReelPerSwipe "story"): no CSS snapping there on touch phones — it
+     tugged at the page while reading the comments just above (owner 2026-10-16: "lags in the comment section"). */
+  @media (pointer: coarse) {
+    html:has([data-reel-proximity]) {
+      scroll-snap-type: none;
+    }
+  }
+  html:has([data-reel-feed]) :is([data-masthead-bar], nav[aria-label="Primary"]) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--surface);
+  }
+  /* Out of the page column's padding (px-4, pt-3 on its container): the screen's edges. */
+  [data-reel-feed] {
+    margin: -0.75rem -1rem 0;
+  }
+  [data-reel-feed] .reel,
+  [data-reel-feed] .reel-poster {
+    border-radius: 0;
+  }
+  /* Fit and fill (owner 2026-10-10: the whole poster, no trimmed edges, no side bars): the poster takes the reel's exact
+     size — the screen's width and the height between the bars. Every design is built from its top and bottom edges
+     (templates/*.tsx: the photo takes what the words leave), so a screen shorter than 9:16 only makes the photo a
+     little shorter: headline and reporter line stay whole, nothing is cut off or stretched. */
+  [data-reel-feed] .reel-frame {
+    --reel-poster-w: 100cqw;
+  }
+  [data-reel-feed] .reel-poster {
+    width: 100%;
+    height: var(--reel-h);
+    background: var(--ink);
+  }
+  [data-reel-feed] .reel-poster > div:first-child {
+    width: 100%;
+    height: var(--reel-h);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  [data-reel-feed] .reel-poster [data-poster] {
+    aspect-ratio: auto;
+    height: var(--reel-h);
+  }
+  /* The action rail sits in the screen's right corner (owner 2026-10-16): the poster fills the full width now. */
+  [data-reel-feed] [data-reel-rail] {
+    right: 0.125rem;
+  }
+  [data-reel-feed] .reel-poster > .skeleton {
+    aspect-ratio: auto;
+    height: 100%;
+    border-radius: 0;
+  }
+}
+
+/* ─────────────────────────── Reduced motion ─────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Owner request: the heartbeat pulse keeps beating even with Reduce Motion on (small, non-flashing). */
+  .skeleton::after {
+    animation: none;
+    display: none;
+  }
+  /* Owner request: the headline ticker always scrolls automatically (no pause button); under Reduce Motion it
+     runs slower. It only pauses while hovered / focused so a headline can be clicked. */
+  .marquee-track {
+    animation-duration: calc(var(--marquee-duration, 60s) * 1.6);
+  }
+  .speed-loader polygon {
+    transform: none;
+    animation: speed-fade 1.4s ease-in-out infinite;
+  }
+  .animate-fade-up {
+    animation: none;
+  }
+  .animate-flash-highlight {
+    animation-duration: 1.2s;
+  }
+  .btn-slant::before {
+    transition: none;
+  }
+}
+
+@keyframes speed-fade {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
+ * Phones: the story actions (like, comment, share…) sit on the poster's right edge, so the headline and author line
+ * keep clear of that column (owner 2026-09-28: the rail was covering the headline). Unlayered on purpose: it beats the
+ * templates' own padding utilities (e.g. red-band's px-[7cqw]).
+ */
+@media (max-width: 639.98px) {
+  .reel [data-poster-text] {
+    padding-right: 2.5rem;
+  }
+}
+
+/*
+ * The WebNEWS app (mobile/, Capacitor) draws the page edge to edge (viewport-fit=cover). The page starts below the
+ * status bar / notch (--safe-top), sticky bars stick under it, and a solid strip keeps scrolled content from showing
+ * behind the clock and icons. Browsers report 0, so the website is unchanged.
+ * The Android app keeps the page below the status bar itself (mobile/…/MainActivity.java): there --safe-top is 0, or
+ * a phone with a camera cutout would get a second, empty white bar above the masthead (app/layout.tsx sets data-app).
+ */
+html[data-app="android"] {
+  --safe-top: 0px;
+}
+/* The Android app (owner 2026-10-10: "remove structure loading"): no skeleton screens while a page loads. */
+html[data-app="android"] [data-route-loading] {
+  display: none;
+}
+
+/* The Android app (owner 2026-10-05): no back arrow on any page — site, Editor Desk, press meet room, report viewer —
+   the phone's back button does it. Every BackButton is [data-back-button]; the shell's row is [data-page-back]; other
+   app-only removals are [data-app-no-back]. */
+html[data-app="android"] :is([data-back-button], [data-page-back], [data-app-no-back]) {
+  display: none;
+}
+
+/* The Android app (owner 2026-10-02): log in / sign up show just the form — no 3D Earth banner. */
+html[data-app="android"] [data-auth-globe] {
+  display: none;
+}
+body {
+  padding-top: var(--safe-top);
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1000;
+  height: var(--safe-top);
+  background: var(--bg);
+  pointer-events: none;
+}
+
+/* The reels being left stay mounted (hidden) under a tapped page's skeleton (components/layout/pending-page.tsx):
+   no snapping to them. Unlayered, so it beats the "Reel feed" rules above. */
+html:has([data-pending-page]) {
+  scroll-snap-type: none;
+}
+
+/* Profile pages (owner 2026-10-09, every width): no language or messages buttons in the top bar — the bell and the
+   account menu only, like Instagram's profile. */
+:root:has([data-page="profile"]) [data-profile-hide] {
+  display: none;
+}
+/* Phones (owner 2026-10-16): the bell leaves the profile's top bar too. */
+@media (max-width: 767.98px) {
+  :root:has([data-page="profile"]) [data-profile-hide-phone] {
+    display: none;
+  }
+}
+
+/* Pages that place the back arrow themselves (the profile card, the composer's "← NEWSROOM"): no shell arrow above. */
+:root:has([data-own-back]) [data-page-back] {
+  display: none;
+}
+
+/* A section's story progress bar (components/layout/section-story.tsx, owner 2026-10-10). */
+@keyframes story-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

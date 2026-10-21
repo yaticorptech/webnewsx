@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "press_meet_price" integer;

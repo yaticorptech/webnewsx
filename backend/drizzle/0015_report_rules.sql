@@ -1,0 +1,1 @@
+ALTER TABLE "article" ADD COLUMN "report_warned_at" timestamp with time zone;

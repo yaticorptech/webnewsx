@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">WebNEWS</string>
+    <string name="title_activity_main">WebNEWS</string>
+    <string name="package_name">in.webnews.app</string>
+    <string name="custom_url_scheme">in.webnews.app</string>
+</resources>

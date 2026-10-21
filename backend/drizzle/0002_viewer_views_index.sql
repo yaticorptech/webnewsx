@@ -1,0 +1,1 @@
+CREATE INDEX "article_view_viewer_idx" ON "article_view" USING btree ("viewer_key","article_id");

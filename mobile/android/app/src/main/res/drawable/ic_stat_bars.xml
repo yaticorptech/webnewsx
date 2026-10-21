@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The WebNEWS three bars as a small notification icon (owner 2026-10-07, the "now playing" notification —
+     MediaNotificationPlugin): Android draws it white, so one flat shape. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="60"
+    android:viewportHeight="60">
+    <group android:translateX="4" android:translateY="7.5">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M12,0 L52,0 L40,11 L0,11 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M12,17 L52,17 L40,28 L0,28 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M12,34 L52,34 L40,45 L0,45 Z" />
+    </group>
+</vector>

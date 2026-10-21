@@ -1,0 +1,719 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model account {
+  id                       String    @id
+  account_id               String
+  provider_id              String
+  user_id                  String
+  access_token             String?
+  refresh_token            String?
+  id_token                 String?
+  access_token_expires_at  DateTime? @db.Timestamptz(6)
+  refresh_token_expires_at DateTime? @db.Timestamptz(6)
+  scope                    String?
+  password                 String?
+  created_at               DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime  @db.Timestamptz(6)
+  user                     user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "account_user_id_user_id_fk")
+
+  @@index([user_id])
+}
+
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model admin_audit_log {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actor_id     String?
+  action       String
+  target_type  String
+  target_id    String
+  target_label String?
+  meta         Json?
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  user         user?    @relation(fields: [actor_id], references: [id], onUpdate: NoAction, map: "admin_audit_log_actor_id_user_id_fk")
+
+  @@index([created_at(sort: Desc), id(sort: Desc)], map: "admin_audit_created_idx")
+  @@index([target_type, target_id], map: "admin_audit_target_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model article {
+  id                             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  author_id                      String
+  status                         String              @default("draft")
+  title                          String?
+  body_html                      String?
+  body_text                      String?
+  excerpt                        String?
+  cover_url                      String?
+  cover_key                      String?
+  cover_width                    Int?
+  cover_height                   Int?
+  cover_blur                     String?
+  link_url                       String?
+  link_domain                    String?
+  slug                           String?             @unique(map: "article_slug_unique")
+  reading_minutes                Int?
+  view_count                     Int                 @default(0)
+  like_count                     Int                 @default(0)
+  share_count                    Int                 @default(0)
+  created_at                     DateTime            @default(now()) @db.Timestamptz(3)
+  updated_at                     DateTime            @default(now()) @db.Timestamptz(3)
+  published_at                   DateTime?           @db.Timestamptz(3)
+  submitted_at                   DateTime?           @db.Timestamptz(3)
+  review_note                    String?
+  reviewed_by                    String?
+  reviewed_at                    DateTime?           @db.Timestamptz(6)
+  returned_at                    DateTime?           @db.Timestamptz(6)
+  hidden_at                      DateTime?           @db.Timestamptz(6)
+  hidden_reason                  String?
+  pinned_at                      DateTime?           @db.Timestamptz(6)
+  pin_order                      Int?
+  video_url                      String?
+  video_key                      String?
+  video_width                    Int?
+  video_height                   Int?
+  video_duration_ms              Int?
+  category                       String?
+  district                       String?
+  comment_count                  Int                 @default(0)
+  short_code                     String?             @unique(map: "article_short_code_unique")
+  template                       String?
+  poster_x                       Float?              @db.Real
+  poster_y                       Float?              @db.Real
+  poster_zoom                    Float?              @db.Real
+  article_image_url              String?
+  article_image_key              String?
+  article_image_width            Int?
+  article_image_height           Int?
+  article_image_blur             String?
+  article_video_url              String?
+  article_video_key              String?
+  article_video_width            Int?
+  article_video_height           Int?
+  article_video_duration_ms      Int?
+  report_warned_at               DateTime?           @db.Timestamptz(6)
+  report_locked_at               DateTime?           @db.Timestamptz(6)
+  edited_at                      DateTime?           @db.Timestamptz(3)
+  user_article_author_idTouser   user                @relation("article_author_idTouser", fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_author_id_user_id_fk")
+  user_article_reviewed_byTouser user?               @relation("article_reviewed_byTouser", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "article_reviewed_by_user_id_fk")
+  article_anon_like              article_anon_like[]
+  article_comment                article_comment[]
+  article_flag                   article_flag[]
+  article_like                   article_like[]
+  article_read                   article_read[]
+  article_save                   article_save[]
+  article_share                  article_share[]
+  article_view                   article_view[]
+  message                        message[]
+  notification                   notification[]
+  press_meet_invite              press_meet_invite[]
+  social_post                    social_post[]
+  spotlight_order                spotlight_order[]
+  user_notice                    user_notice[]
+
+  @@index([author_id, status, published_at(sort: Desc)], map: "article_author_status_published_idx")
+  @@index([author_id, updated_at(sort: Desc)], map: "article_author_updated_idx")
+  @@index([status, published_at(sort: Desc), id(sort: Desc)], map: "article_feed_idx")
+  @@index([status, submitted_at], map: "article_review_idx")
+}
+
+model article_anon_like {
+  viewer_id  String   @db.Uuid
+  article_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  article    article  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_anon_like_article_id_article_id_fk")
+
+  @@id([viewer_id, article_id], map: "article_anon_like_viewer_id_article_id_pk")
+  @@index([article_id], map: "article_anon_like_article_idx")
+  @@index([created_at], map: "article_anon_like_created_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model article_comment {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id            String                 @db.Uuid
+  author_id             String
+  body                  String
+  created_at            DateTime               @default(now()) @db.Timestamptz(3)
+  parent_id             String?                @db.Uuid
+  like_count            Int                    @default(0)
+  article               article                @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_comment_article_id_article_id_fk")
+  user                  user                   @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_comment_author_id_user_id_fk")
+  article_comment       article_comment?       @relation("article_commentToarticle_comment", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_comment_parent_id_article_comment_id_fk")
+  other_article_comment article_comment[]      @relation("article_commentToarticle_comment")
+  article_comment_like  article_comment_like[]
+
+  @@index([article_id, created_at(sort: Desc), id(sort: Desc)], map: "article_comment_article_created_idx")
+  @@index([parent_id, created_at, id], map: "article_comment_parent_created_idx")
+}
+
+model article_comment_like {
+  comment_id      String          @db.Uuid
+  user_id         String
+  created_at      DateTime        @default(now()) @db.Timestamptz(3)
+  article_comment article_comment @relation(fields: [comment_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_comment_like_comment_id_article_comment_id_fk")
+  user            user            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_comment_like_user_id_user_id_fk")
+
+  @@id([comment_id, user_id], map: "article_comment_like_comment_id_user_id_pk")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model article_flag {
+  id                                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id                          String    @db.Uuid
+  user_id                             String
+  reason                              String
+  note                                String?
+  status                              String    @default("open")
+  resolution                          String?
+  resolved_by                         String?
+  resolved_at                         DateTime? @db.Timestamptz(6)
+  created_at                          DateTime  @default(now()) @db.Timestamptz(3)
+  article                             article   @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_flag_article_id_article_id_fk")
+  user_article_flag_resolved_byTouser user?     @relation("article_flag_resolved_byTouser", fields: [resolved_by], references: [id], onUpdate: NoAction, map: "article_flag_resolved_by_user_id_fk")
+  user_article_flag_user_idTouser     user      @relation("article_flag_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_flag_user_id_user_id_fk")
+
+  @@index([article_id, created_at(sort: Desc)], map: "article_flag_article_idx")
+  @@index([status, created_at(sort: Desc)], map: "article_flag_status_created_idx")
+}
+
+model article_like {
+  user_id    String
+  article_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  article    article  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_like_article_id_article_id_fk")
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_like_user_id_user_id_fk")
+
+  @@id([user_id, article_id], map: "article_like_user_id_article_id_pk")
+  @@index([article_id], map: "article_like_article_idx")
+  @@index([created_at], map: "article_like_created_idx")
+}
+
+model article_read {
+  article_id String   @db.Uuid
+  viewer_key String
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  article    article  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_read_article_id_article_id_fk")
+
+  @@id([article_id, viewer_key], map: "article_read_article_id_viewer_key_pk")
+  @@index([created_at, article_id], map: "article_read_created_idx")
+}
+
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model article_save {
+  user_id    String
+  article_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  article    article  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_save_article_id_article_id_fk")
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_save_user_id_user_id_fk")
+
+  @@id([user_id, article_id], map: "article_save_user_id_article_id_pk")
+  @@index([user_id, created_at(sort: Desc), article_id(sort: Desc)], map: "article_save_user_created_idx")
+}
+
+model article_share {
+  id         BigInt   @id @default(autoincrement())
+  article_id String   @db.Uuid
+  channel    String
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  viewer_key String?
+  article    article  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_share_article_id_article_id_fk")
+
+  @@index([article_id, created_at], map: "article_share_article_created_idx")
+  @@index([created_at], map: "article_share_created_idx")
+  @@index([article_id, viewer_key, created_at], map: "article_share_viewer_idx")
+}
+
+model article_view {
+  article_id String   @db.Uuid
+  viewer_key String
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  article    article  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "article_view_article_id_article_id_fk")
+
+  @@id([article_id, viewer_key], map: "article_view_article_id_viewer_key_pk")
+  @@index([created_at, article_id], map: "article_view_created_idx")
+  @@index([viewer_key, article_id], map: "article_view_viewer_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model community_invite {
+  id                                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id                        String         @db.Uuid
+  inviter_id                             String?
+  invitee_id                             String
+  status                                 String         @default("pending")
+  created_at                             DateTime       @default(now()) @db.Timestamptz(3)
+  responded_at                           DateTime?      @db.Timestamptz(6)
+  conversation                           conversation   @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "community_invite_conversation_id_conversation_id_fk")
+  user_community_invite_invitee_idTouser user           @relation("community_invite_invitee_idTouser", fields: [invitee_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "community_invite_invitee_id_user_id_fk")
+  user_community_invite_inviter_idTouser user?          @relation("community_invite_inviter_idTouser", fields: [inviter_id], references: [id], onUpdate: NoAction, map: "community_invite_inviter_id_user_id_fk")
+  notification                           notification[]
+
+  @@index([invitee_id, created_at(sort: Desc)], map: "community_invite_invitee_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conversation {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind                String
+  name                String?
+  description         String?
+  image               String?
+  visibility          String?
+  created_by          String?
+  direct_key          String?               @unique(map: "conversation_direct_key_unique")
+  last_message_at     DateTime              @default(now()) @db.Timestamptz(3)
+  created_at          DateTime              @default(now()) @db.Timestamptz(3)
+  updated_at          DateTime              @default(now()) @db.Timestamptz(6)
+  community_invite    community_invite[]
+  user                user?                 @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "conversation_created_by_user_id_fk")
+  conversation_member conversation_member[]
+  message             message[]
+  notification        notification[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conversation_member {
+  conversation_id String       @db.Uuid
+  user_id         String
+  role            String       @default("member")
+  status          String       @default("active")
+  last_read_at    DateTime     @default(now()) @db.Timestamptz(3)
+  cleared_at      DateTime?    @db.Timestamptz(3)
+  joined_at       DateTime     @default(now()) @db.Timestamptz(3)
+  keep_listed     Boolean      @default(false)
+  conversation    conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "conversation_member_conversation_id_conversation_id_fk")
+  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "conversation_member_user_id_user_id_fk")
+
+  @@id([conversation_id, user_id], map: "conversation_member_conversation_id_user_id_pk")
+  @@index([user_id, status], map: "conversation_member_user_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model follow {
+  follower_id                    String
+  following_id                   String
+  created_at                     DateTime @default(now()) @db.Timestamptz(3)
+  user_follow_follower_idTouser  user     @relation("follow_follower_idTouser", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "follow_follower_id_user_id_fk")
+  user_follow_following_idTouser user     @relation("follow_following_idTouser", fields: [following_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "follow_following_id_user_id_fk")
+
+  @@id([follower_id, following_id], map: "follow_follower_id_following_id_pk")
+  @@index([follower_id, created_at(sort: Desc), following_id(sort: Desc)], map: "follow_follower_created_idx")
+  @@index([following_id, created_at(sort: Desc), follower_id(sort: Desc)], map: "follow_following_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model message {
+  id                            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id               String       @db.Uuid
+  sender_id                     String?
+  kind                          String
+  body                          String?
+  article_id                    String?      @db.Uuid
+  profile_id                    String?
+  event                         String?
+  target_id                     String?
+  created_at                    DateTime     @default(now()) @db.Timestamptz(3)
+  article                       article?     @relation(fields: [article_id], references: [id], onUpdate: NoAction, map: "message_article_id_article_id_fk")
+  conversation                  conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "message_conversation_id_conversation_id_fk")
+  user_message_profile_idTouser user?        @relation("message_profile_idTouser", fields: [profile_id], references: [id], onUpdate: NoAction, map: "message_profile_id_user_id_fk")
+  user_message_sender_idTouser  user?        @relation("message_sender_idTouser", fields: [sender_id], references: [id], onUpdate: NoAction, map: "message_sender_id_user_id_fk")
+  user_message_target_idTouser  user?        @relation("message_target_idTouser", fields: [target_id], references: [id], onUpdate: NoAction, map: "message_target_id_user_id_fk")
+
+  @@index([conversation_id, created_at(sort: Desc), id(sort: Desc)], map: "message_conversation_created_idx")
+}
+
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model notification {
+  id                               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                          String
+  type                             String
+  actor_id                         String?
+  article_id                       String?           @db.Uuid
+  article_title                    String?
+  reason                           String?
+  note                             String?
+  reports                          Int?
+  reasons                          Json?
+  created_at                       DateTime          @default(now()) @db.Timestamptz(3)
+  read_at                          DateTime?         @db.Timestamptz(6)
+  batch_start                      DateTime?         @db.Timestamptz(3)
+  conversation_id                  String?           @db.Uuid
+  invite_id                        String?           @db.Uuid
+  press_meet_id                    String?           @db.Uuid
+  amount                           Int?
+  pushed_at                        DateTime?         @db.Timestamptz(6)
+  user_notification_actor_idTouser user?             @relation("notification_actor_idTouser", fields: [actor_id], references: [id], onUpdate: NoAction, map: "notification_actor_id_user_id_fk")
+  article                          article?          @relation(fields: [article_id], references: [id], onUpdate: NoAction, map: "notification_article_id_article_id_fk")
+  conversation                     conversation?     @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notification_conversation_id_conversation_id_fk")
+  community_invite                 community_invite? @relation(fields: [invite_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notification_invite_id_community_invite_id_fk")
+  press_meet                       press_meet?       @relation(fields: [press_meet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notification_press_meet_id_press_meet_id_fk")
+  user_notification_user_idTouser  user              @relation("notification_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notification_user_id_user_id_fk")
+
+  @@index([user_id, created_at(sort: Desc)], map: "notification_user_created_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This table contains exclusion constraints and requires additional setup for migrations. Visit https://pris.ly/d/exclusion-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model press_meet {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizer_id         String
+  title                String
+  agenda               String?
+  starts_at            DateTime               @db.Timestamptz(3)
+  ends_at              DateTime               @db.Timestamptz(3)
+  duration_minutes     Int
+  platform             String                 @default("webnews")
+  meet_url             String?
+  status               String                 @default("scheduled")
+  started_at           DateTime?              @db.Timestamptz(6)
+  ended_at             DateTime?              @db.Timestamptz(6)
+  cancelled_at         DateTime?              @db.Timestamptz(6)
+  reminded_day_at      DateTime?              @db.Timestamptz(6)
+  reminded_soon_at     DateTime?              @db.Timestamptz(6)
+  created_at           DateTime               @default(now()) @db.Timestamptz(3)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  chat_enabled         Boolean                @default(true)
+  notification         notification[]
+  user                 user                   @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_organizer_id_user_id_fk")
+  press_meet_invite    press_meet_invite[]
+  press_meet_message   press_meet_message[]
+  press_meet_note      press_meet_note[]
+  press_meet_peer      press_meet_peer[]
+  press_meet_recording press_meet_recording[]
+
+  @@index([organizer_id, starts_at(sort: Desc)], map: "press_meet_organizer_idx")
+  @@index([starts_at], map: "press_meet_starts_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model press_meet_invite {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  press_meet_id String     @db.Uuid
+  reporter_id   String
+  price         Int
+  status        String     @default("invited")
+  responded_at  DateTime?  @db.Timestamptz(6)
+  joined_at     DateTime?  @db.Timestamptz(6)
+  article_id    String?    @db.Uuid
+  article_title String?
+  submitted_at  DateTime?  @db.Timestamptz(6)
+  review        String?
+  review_note   String?
+  reviewed_at   DateTime?  @db.Timestamptz(6)
+  payment       String     @default("unpaid")
+  payment_ref   String?
+  released_at   DateTime?  @db.Timestamptz(6)
+  received_at   DateTime?  @db.Timestamptz(6)
+  created_at    DateTime   @default(now()) @db.Timestamptz(3)
+  article       article?   @relation(fields: [article_id], references: [id], onUpdate: NoAction, map: "press_meet_invite_article_id_article_id_fk")
+  press_meet    press_meet @relation(fields: [press_meet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_invite_press_meet_id_press_meet_id_fk")
+  user          user       @relation(fields: [reporter_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_invite_reporter_id_user_id_fk")
+
+  @@unique([press_meet_id, reporter_id], map: "press_meet_invite_unique")
+  @@index([reporter_id, created_at(sort: Desc)], map: "press_meet_invite_reporter_idx")
+}
+
+model press_meet_message {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  press_meet_id String     @db.Uuid
+  user_id       String
+  body          String
+  created_at    DateTime   @default(now()) @db.Timestamptz(3)
+  press_meet    press_meet @relation(fields: [press_meet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_message_press_meet_id_press_meet_id_fk")
+  user          user       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_message_user_id_user_id_fk")
+
+  @@index([press_meet_id, created_at], map: "press_meet_message_meet_idx")
+}
+
+model press_meet_note {
+  press_meet_id String     @db.Uuid
+  user_id       String
+  body          String     @default("")
+  updated_at    DateTime   @default(now()) @db.Timestamptz(6)
+  press_meet    press_meet @relation(fields: [press_meet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_note_press_meet_id_press_meet_id_fk")
+  user          user       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_note_user_id_user_id_fk")
+
+  @@id([press_meet_id, user_id], map: "press_meet_note_press_meet_id_user_id_pk")
+}
+
+model press_meet_peer {
+  peer_id       String     @id
+  press_meet_id String     @db.Uuid
+  user_id       String
+  role          String
+  mic_on        Boolean    @default(false)
+  camera_on     Boolean    @default(false)
+  hand          Boolean    @default(false)
+  recording     Boolean    @default(false)
+  joined_at     DateTime   @default(now()) @db.Timestamptz(6)
+  last_seen_at  DateTime   @default(now()) @db.Timestamptz(6)
+  press_meet    press_meet @relation(fields: [press_meet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_peer_press_meet_id_press_meet_id_fk")
+  user          user       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_peer_user_id_user_id_fk")
+
+  @@index([press_meet_id], map: "press_meet_peer_meet_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model press_meet_recording {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  press_meet_id String     @db.Uuid
+  reporter_id   String
+  status        String     @default("recording")
+  source_type   String
+  chunks        Int        @default(0)
+  bytes         BigInt     @default(0)
+  duration_ms   Int?
+  last_chunk_at DateTime?  @db.Timestamptz(6)
+  created_at    DateTime   @default(now()) @db.Timestamptz(3)
+  finished_at   DateTime?  @db.Timestamptz(6)
+  press_meet    press_meet @relation(fields: [press_meet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_recording_press_meet_id_press_meet_id_fk")
+  user          user       @relation(fields: [reporter_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_meet_recording_reporter_id_user_id_fk")
+
+  @@index([press_meet_id, reporter_id], map: "press_meet_recording_reporter_idx")
+  @@index([status])
+}
+
+model press_meet_signal {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  payload    Json
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model press_pass {
+  user_id          String    @id
+  pass_number      String    @unique(map: "press_pass_pass_number_unique")
+  beats            String[]  @default([])
+  state            String?
+  district         String?
+  languages        String[]  @default([])
+  about            String?
+  links            String[]  @default([])
+  pledge_signed_at DateTime? @db.Timestamptz(6)
+  pledge_signature String?
+  level            String    @default("trainee")
+  approved_count   Int       @default(0)
+  issued_at        DateTime  @default(now()) @db.Timestamptz(3)
+  revoked_at       DateTime? @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  mobile           String?   @unique(map: "press_pass_mobile_unique")
+  reporter_type    String?
+  outlet           String?
+  experience       String?
+  user             user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "press_pass_user_id_user_id_fk")
+
+  @@index([issued_at(sort: Desc), user_id(sort: Desc)], map: "press_pass_issued_idx")
+}
+
+model push_device {
+  token      String   @id
+  user_id    String
+  platform   String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "push_device_user_id_user_id_fk")
+
+  @@index([user_id], map: "push_device_user_idx")
+}
+
+model session {
+  id         String   @id
+  expires_at DateTime @db.Timestamptz(6)
+  token      String   @unique(map: "session_token_unique")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @db.Timestamptz(6)
+  ip_address String?
+  user_agent String?
+  user_id    String
+  user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "session_user_id_user_id_fk")
+
+  @@index([user_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model social_connection {
+  user_id            String
+  provider           String
+  account_id         String
+  account_name       String
+  token_enc          String
+  token_expires_at   DateTime? @db.Timestamptz(6)
+  pages              Json      @default("[]")
+  auto_post          Boolean   @default(true)
+  needs_reconnect_at DateTime? @db.Timestamptz(6)
+  connected_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+  user               user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "social_connection_user_id_user_id_fk")
+
+  @@id([user_id, provider], map: "social_connection_user_id_provider_pk")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model social_post {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id      String    @db.Uuid
+  user_id         String
+  provider        String
+  status          String    @default("waiting")
+  image_key       String?
+  remote_id       String?
+  error           String?
+  attempts        Int       @default(0)
+  next_attempt_at DateTime  @default(now()) @db.Timestamptz(3)
+  created_at      DateTime  @default(now()) @db.Timestamptz(3)
+  posted_at       DateTime? @db.Timestamptz(6)
+  article         article   @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "social_post_article_id_article_id_fk")
+  user            user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "social_post_user_id_user_id_fk")
+
+  @@unique([article_id, provider], map: "social_post_article_provider_unique")
+  @@index([status, next_attempt_at], map: "social_post_due_idx")
+  @@index([user_id, provider, created_at(sort: Desc)], map: "social_post_user_created_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model spotlight_order {
+  id                                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id                             String             @db.Uuid
+  reporter_id                            String
+  package_id                             String?            @db.Uuid
+  package_name                           String
+  hours                                  Int
+  price_inr                              Int
+  status                                 String             @default("pending")
+  provider                               String             @default("manual")
+  provider_ref                           String?
+  starts_at                              DateTime?          @db.Timestamptz(3)
+  ends_at                                DateTime?          @db.Timestamptz(3)
+  granted_by                             String?
+  decided_at                             DateTime?          @db.Timestamptz(6)
+  note                                   String?
+  created_at                             DateTime           @default(now()) @db.Timestamptz(3)
+  updated_at                             DateTime           @default(now()) @db.Timestamptz(6)
+  article                                article            @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "spotlight_order_article_id_article_id_fk")
+  user_spotlight_order_granted_byTouser  user?              @relation("spotlight_order_granted_byTouser", fields: [granted_by], references: [id], onUpdate: NoAction, map: "spotlight_order_granted_by_user_id_fk")
+  spotlight_package                      spotlight_package? @relation(fields: [package_id], references: [id], onUpdate: NoAction, map: "spotlight_order_package_id_spotlight_package_id_fk")
+  user_spotlight_order_reporter_idTouser user               @relation("spotlight_order_reporter_idTouser", fields: [reporter_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "spotlight_order_reporter_id_user_id_fk")
+
+  @@index([article_id, created_at(sort: Desc)], map: "spotlight_order_article_idx")
+  @@index([created_at(sort: Desc), id(sort: Desc)], map: "spotlight_order_created_idx")
+  @@index([reporter_id, created_at(sort: Desc)], map: "spotlight_order_reporter_idx")
+  @@index([status, ends_at], map: "spotlight_order_status_idx")
+}
+
+model spotlight_package {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  hours           Int
+  price_inr       Int
+  active          Boolean           @default(true)
+  sort            Int               @default(0)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
+  spotlight_order spotlight_order[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user {
+  id                                                 String                 @id
+  name                                               String
+  email                                              String                 @unique(map: "user_email_unique")
+  email_verified                                     Boolean                @default(false)
+  image                                              String?
+  created_at                                         DateTime               @default(now()) @db.Timestamptz(3)
+  updated_at                                         DateTime               @default(now()) @db.Timestamptz(3)
+  username                                           String?                @unique(map: "user_username_unique")
+  bio                                                String?
+  onboarded_at                                       DateTime?              @db.Timestamptz(6)
+  terms_accepted_at                                  DateTime?              @db.Timestamptz(6)
+  terms_version                                      String?
+  role                                               String                 @default("reader")
+  reporter_level                                     String?
+  suspended_at                                       DateTime?              @db.Timestamptz(6)
+  suspend_reason                                     String?
+  last_active_at                                     DateTime?              @db.Timestamptz(6)
+  press_meet_price                                   Int?
+  push_notifications                                 Boolean                @default(true)
+  account                                            account[]
+  admin_audit_log                                    admin_audit_log[]
+  article_article_author_idTouser                    article[]              @relation("article_author_idTouser")
+  article_article_reviewed_byTouser                  article[]              @relation("article_reviewed_byTouser")
+  article_comment                                    article_comment[]
+  article_comment_like                               article_comment_like[]
+  article_flag_article_flag_resolved_byTouser        article_flag[]         @relation("article_flag_resolved_byTouser")
+  article_flag_article_flag_user_idTouser            article_flag[]         @relation("article_flag_user_idTouser")
+  article_like                                       article_like[]
+  article_save                                       article_save[]
+  community_invite_community_invite_invitee_idTouser community_invite[]     @relation("community_invite_invitee_idTouser")
+  community_invite_community_invite_inviter_idTouser community_invite[]     @relation("community_invite_inviter_idTouser")
+  conversation                                       conversation[]
+  conversation_member                                conversation_member[]
+  follow_follow_follower_idTouser                    follow[]               @relation("follow_follower_idTouser")
+  follow_follow_following_idTouser                   follow[]               @relation("follow_following_idTouser")
+  message_message_profile_idTouser                   message[]              @relation("message_profile_idTouser")
+  message_message_sender_idTouser                    message[]              @relation("message_sender_idTouser")
+  message_message_target_idTouser                    message[]              @relation("message_target_idTouser")
+  notification_notification_actor_idTouser           notification[]         @relation("notification_actor_idTouser")
+  notification_notification_user_idTouser            notification[]         @relation("notification_user_idTouser")
+  press_meet                                         press_meet[]
+  press_meet_invite                                  press_meet_invite[]
+  press_meet_message                                 press_meet_message[]
+  press_meet_note                                    press_meet_note[]
+  press_meet_peer                                    press_meet_peer[]
+  press_meet_recording                               press_meet_recording[]
+  press_pass                                         press_pass?
+  push_device                                        push_device[]
+  session                                            session[]
+  social_connection                                  social_connection[]
+  social_post                                        social_post[]
+  spotlight_order_spotlight_order_granted_byTouser   spotlight_order[]      @relation("spotlight_order_granted_byTouser")
+  spotlight_order_spotlight_order_reporter_idTouser  spotlight_order[]      @relation("spotlight_order_reporter_idTouser")
+  user_notice_user_notice_created_byTouser           user_notice[]          @relation("user_notice_created_byTouser")
+  user_notice_user_notice_user_idTouser              user_notice[]          @relation("user_notice_user_idTouser")
+
+  @@index([role])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model user_notice {
+  id                                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                           String
+  kind                              String
+  article_id                        String?   @db.Uuid
+  article_title                     String?
+  message                           String?
+  created_by                        String?
+  created_at                        DateTime  @default(now()) @db.Timestamptz(3)
+  read_at                           DateTime? @db.Timestamptz(6)
+  article                           article?  @relation(fields: [article_id], references: [id], onUpdate: NoAction, map: "user_notice_article_id_article_id_fk")
+  user_user_notice_created_byTouser user?     @relation("user_notice_created_byTouser", fields: [created_by], references: [id], onUpdate: NoAction, map: "user_notice_created_by_user_id_fk")
+  user_user_notice_user_idTouser    user      @relation("user_notice_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_notice_user_id_user_id_fk")
+
+  @@index([user_id, created_at(sort: Desc)], map: "user_notice_user_created_idx")
+}
+
+model verification {
+  id         String   @id
+  identifier String
+  value      String
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([identifier])
+}

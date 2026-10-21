@@ -1,0 +1,5 @@
+node_modules/
+# Written by capacitor.config.ts from WEBNEWS_URL
+www/app-url.js
+# Self-signed https certificate for `npm run phone` (scripts/phone.mjs)
+.dev-cert/

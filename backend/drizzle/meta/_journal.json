@@ -1,0 +1,468 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790232372246,
+      "tag": "0000_init",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790244524262,
+      "tag": "0001_trending_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790244588847,
+      "tag": "0002_viewer_views_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790262121822,
+      "tag": "0003_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790290309516,
+      "tag": "0004_share_viewer_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790319858740,
+      "tag": "0005_article_video",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790332214991,
+      "tag": "0006_user_notices",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790400837315,
+      "tag": "0007_press_pass_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790402423549,
+      "tag": "0008_story_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790405566304,
+      "tag": "0009_article_comments",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790406087757,
+      "tag": "0010_comment_replies_likes",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790407895975,
+      "tag": "0011_article_short_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790410967509,
+      "tag": "0012_poster_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790419836419,
+      "tag": "0013_poster_frame",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790569349076,
+      "tag": "0014_article_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790573221018,
+      "tag": "0015_report_rules",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790576511934,
+      "tag": "0016_anon_likes",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790589105145,
+      "tag": "0017_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790590905729,
+      "tag": "0018_follower_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790591251806,
+      "tag": "0019_like_comment_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790740840195,
+      "tag": "0020_messages",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790752322495,
+      "tag": "0021_social_autopost",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790837577107,
+      "tag": "0022_user_presence",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790841754327,
+      "tag": "0023_chat_keep_listed",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790846812894,
+      "tag": "0024_press_meet_price",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790849049482,
+      "tag": "0025_press_meets",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790851914573,
+      "tag": "0026_press_meet_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790915619097,
+      "tag": "0027_press_meet_overlap_per_organizer",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790919348056,
+      "tag": "0028_article_edited_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790920879866,
+      "tag": "0029_push_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790925780229,
+      "tag": "0030_press_meet_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790927985158,
+      "tag": "0031_more_poster_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790930842762,
+      "tag": "0032_tall_poster_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790935247419,
+      "tag": "0033_contact_messages",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791174393048,
+      "tag": "0034_press_pass_city",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791176588416,
+      "tag": "0035_press_meet_report_fee",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791177218482,
+      "tag": "0036_press_meet_recording_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791178954518,
+      "tag": "0037_press_meet_speak_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791181475944,
+      "tag": "0038_remove_story_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791183524415,
+      "tag": "0039_remove_polaroid_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791183718818,
+      "tag": "0040_remove_newspaper_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791194107012,
+      "tag": "0041_article_language",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791195283195,
+      "tag": "0042_user_preferred_languages",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791197713331,
+      "tag": "0043_one_language_list",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791348208962,
+      "tag": "0044_remove_duotone_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1791348512861,
+      "tag": "0045_more_poster_templates_oct",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1791348734762,
+      "tag": "0046_exclusive_poster_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791348922161,
+      "tag": "0047_remove_exclusive_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791352444150,
+      "tag": "0048_press_meet_stories",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1791353457410,
+      "tag": "0049_press_pass_personal_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1791374208419,
+      "tag": "0050_public_press_meets",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791376201603,
+      "tag": "0051_plain_poster_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791441692483,
+      "tag": "0052_press_pass_aadhaar",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791444036738,
+      "tag": "0053_poster_own_frame",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1791616176096,
+      "tag": "0054_contact_reply",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1791975264019,
+      "tag": "0055_premium_membership",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791977025745,
+      "tag": "0056_gemini_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791979288266,
+      "tag": "0057_subcategory_blurb",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1792055372350,
+      "tag": "0058_membership_payout",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792124092491,
+      "tag": "0059_membership_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1792126348922,
+      "tag": "0060_membership_monthly_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1792130794823,
+      "tag": "0061_spotlight_impressions",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1792131019449,
+      "tag": "0062_user_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1792131651665,
+      "tag": "0063_follow_notify",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1792131858196,
+      "tag": "0064_user_event_cascade",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1792133480967,
+      "tag": "0065_article_dislike",
+      "breakpoints": true
+    }
+  ]
+}

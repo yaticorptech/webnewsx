@@ -1,0 +1,2 @@
+CREATE INDEX "article_like_created_idx" ON "article_like" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "article_view_created_idx" ON "article_view" USING btree ("created_at","article_id");

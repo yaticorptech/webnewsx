@@ -1,0 +1,11 @@
+{
+  "name": "webnews-prisma-studio",
+  "private": true,
+  "description": "Browse the WebNEWS database in Prisma Studio. Read-only tooling: the app itself uses Drizzle (backend/).",
+  "scripts": {
+    "studio": "prisma db pull --force && prisma studio"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  }
+}

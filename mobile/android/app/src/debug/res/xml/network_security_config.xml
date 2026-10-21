@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug (test) builds only: plain http to the Mac's dev relay on the Wi-Fi (npm run phone). Release builds use
+     src/main/res/xml/network_security_config.xml (https only). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

@@ -1,0 +1,15 @@
+{
+  // Compiler options live in tsconfig.base.json. Because this file `extends` another config,
+  // `next dev` / `next build` never rewrite it — otherwise every custom NEXT_DIST_DIR
+  // (.next-e2e-3199, .next-int, …) would append its own `types` globs here.
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "playwright-report", "test-results", ".next-*", ".next-*/**"]
+}

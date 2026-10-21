@@ -1,0 +1,55 @@
+/*
+ * ProseMirror internals for the composer's Tiptap editor. The reading styles come from the global
+ * `.prose-news` (so the editor looks like the published article); this file only adds editing
+ * affordances: placeholder, caret, selection, link hints and the gap cursor.
+ */
+
+/* Compact (owner 2026-10-08: "make it small"): it still grows with the story. */
+.content {
+  min-height: 10rem;
+  padding: 1rem 1rem 1.25rem;
+  outline: none;
+  caret-color: var(--brand);
+  word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .content {
+    min-height: 12rem;
+    padding: 1.125rem 1.25rem 1.5rem;
+  }
+}
+
+/* Tiptap Placeholder: first empty paragraph shows the hint. */
+/* The empty editor's prompt (owner 2026-10-08: it read like text already written): the UI font, smaller and light grey. */
+.content :global(p.is-editor-empty:first-child)::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted-2);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* Links are not followed while editing; make them look editable. */
+.content a {
+  cursor: text;
+}
+
+.content :global(.ProseMirror-selectednode) {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.content :global(.ProseMirror-gapcursor)::after {
+  border-top-color: var(--brand);
+}
+
+/* The global prose rule spaces siblings; the first block sits flush with the padding. */
+.content > :first-child {
+  margin-top: 0;
+}

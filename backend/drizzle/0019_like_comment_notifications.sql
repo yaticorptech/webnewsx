@@ -1,0 +1,2 @@
+ALTER TABLE "notification" ADD COLUMN "batch_start" timestamp (3) with time zone;--> statement-breakpoint
+CREATE UNIQUE INDEX "notification_batch_unique" ON "notification" USING btree ("user_id","article_id","type") WHERE "notification"."read_at" is null and "notification"."type" in ('story_liked', 'story_commented');

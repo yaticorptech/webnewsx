@@ -1,0 +1,1 @@
+ALTER TABLE "follow" ADD COLUMN "notify" boolean DEFAULT true NOT NULL;

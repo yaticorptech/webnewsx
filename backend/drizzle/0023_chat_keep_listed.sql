@@ -1,0 +1,1 @@
+ALTER TABLE "conversation_member" ADD COLUMN "keep_listed" boolean DEFAULT false NOT NULL;

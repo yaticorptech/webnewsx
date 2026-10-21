@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One bar filling and fading, the next ones a beat later: the three bars fill in sequence (loading). -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:propertyName="fillAlpha"
+    android:valueFrom="0.15"
+    android:valueTo="1"
+    android:valueType="floatType"
+    android:duration="450"
+    android:startOffset="300"
+    android:repeatCount="infinite"
+    android:repeatMode="reverse"
+    android:interpolator="@android:interpolator/fast_out_slow_in" />

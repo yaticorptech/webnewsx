@@ -1,0 +1,21 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+.data/
+dist/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+next-env.d.ts
+
+# Firebase keys (push notifications): the backend's service account and the app's google-services.json
+*firebase-adminsdk*.json
+firebase-service-account*.json
+
+# Android app Firebase config (rebuild needs a copy from the Firebase console)
+mobile/android/app/google-services.json

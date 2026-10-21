@@ -1,0 +1,1 @@
+ALTER TABLE "press_meet" ADD COLUMN "recording_consent_at" timestamp with time zone;

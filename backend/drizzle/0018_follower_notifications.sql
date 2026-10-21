@@ -1,0 +1,2 @@
+ALTER TABLE "notification" ALTER COLUMN "article_title" DROP NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "notification_new_follower_unique" ON "notification" USING btree ("user_id","actor_id") WHERE "notification"."type" = 'new_follower';
