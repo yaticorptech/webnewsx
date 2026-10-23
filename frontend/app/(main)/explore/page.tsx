@@ -10,5 +10,10 @@ export const metadata: Metadata = {
 
 /** /explore — search people and stories; below the field, stories as a grid of posters (owner 2026-09-30). */
 export default function ExplorePage() {
-  return <ExploreView />;
+  return (
+    <>
+      <h1 className="sr-only">Search and explore WebNEWS</h1>
+      <ExploreView />
+    </>
+  );
 }

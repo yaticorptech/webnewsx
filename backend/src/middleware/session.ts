@@ -1,5 +1,7 @@
 import type { MiddlewareHandler } from "hono";
+import { getCookie } from "hono/cookie";
 import { auth } from "../auth.js";
+import { ACT_AS_COOKIE, actAsGroup } from "../lib/acting.js";
 import { fromNativeApp, toBrowserSessionCookie } from "../lib/browser-session-cookie.js";
 import { deskSessionOver } from "../lib/desk-sign-in.js";
 import { toReporterLevel, toRole } from "../lib/roles.js";
@@ -46,7 +48,9 @@ export const sessionMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
         role: toRole(u.role),
         reporterLevel: toReporterLevel(u.reporterLevel),
       };
-      c.set("viewer", viewer);
+      // Switched to a group account (lib/acting.ts): served as the group while still a member.
+      const groupId = viewer.role === "admin" ? undefined : getCookie(c, ACT_AS_COOKIE);
+      c.set("viewer", (groupId && (await actAsGroup(viewer, groupId))) || viewer);
       c.set("sessionId", response.session.id);
     }
     await next();

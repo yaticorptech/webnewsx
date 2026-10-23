@@ -28,6 +28,10 @@ export const qk = {
 
   headlines: (limit: number) => ["headlines", limit] as const,
   trending: (limit: number) => ["trending", limit] as const,
+  /** The Market page's live quotes (GET /api/market). */
+  market: ["market"] as const,
+  /** One quote's chart over a range (GET /api/market/history). */
+  marketHistory: (id: string, range: string) => ["market", "history", id, range] as const,
   /** Notices from the Editor Desk (warnings, hidden stories) for the signed-in reporter. */
   notices: ["notices"] as const,
   /** The bell: `notifications` prefixes both the unread count and the list (invalidate it to refresh both). */
@@ -41,6 +45,11 @@ export const qk = {
   myMemberships: ["me", "memberships"] as const,
   membershipEarnings: ["me", "membership-earnings"] as const,
   adminMemberships: ["admin", "memberships"] as const,
+  /** Group accounts (owner 2026-10-23): your Groups page, and one group's members + waiting stories. */
+  groups: ["groups"] as const,
+  group: (id: string) => ["groups", id] as const,
+  adminGroups: ["admin", "groups"] as const,
+  adminGroup: (applicationId: string) => ["admin", "groups", applicationId] as const,
   messagesUnread: ["messages", "unread"] as const,
   inbox: (folder: "primary" | "requests") => ["messages", "inbox", folder] as const,
   chat: (id: string) => ["messages", "chat", id] as const,

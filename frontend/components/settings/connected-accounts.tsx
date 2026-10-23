@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleAlert, CircleCheck, Clock } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { FacebookGlyph, InstagramGlyph } from "@/components/layout/social-links";
+import { FacebookIcon, InstagramIcon } from "@/components/feed/share-glyphs";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TimeAgo } from "@/components/ui/time-ago";
@@ -15,16 +15,16 @@ import { qk } from "@/lib/query-keys";
 import { SOCIAL_PROVIDER_LABELS, type SocialConnection, type SocialProvider, type SocialStatus } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 
-const PROVIDERS: { provider: SocialProvider; icon: ReactNode; what: string; needs: string }[] = [
+const PROVIDERS: { provider: SocialProvider; Icon: (props: { size?: number }) => ReactNode; what: string; needs: string }[] = [
   {
     provider: "instagram",
-    icon: <InstagramGlyph className="size-5" />,
+    Icon: InstagramIcon,
     what: "Each story you publish is posted to your Instagram Story as its poster.",
     needs: "Needs an Instagram Professional account (Business or Creator — free to switch in the Instagram app).",
   },
   {
     provider: "facebook",
-    icon: <FacebookGlyph className="size-5" />,
+    Icon: FacebookIcon,
     what: "Each story you publish is posted to your Facebook Page as a photo with the headline and link.",
     needs: "Needs a Facebook Page you manage (Meta doesn't allow posting to personal profiles).",
   },
@@ -100,14 +100,16 @@ export function ConnectedAccounts() {
       </p>
 
       <ul className="mt-5 flex flex-col gap-3">
-        {PROVIDERS.map(({ provider, icon, what, needs }) => {
+        {PROVIDERS.map(({ provider, Icon, what, needs }) => {
           const connection = status.data?.connections.find((c) => c.provider === provider) ?? null;
           const configured = status.data?.configured[provider] ?? false;
           return (
             <li key={provider} className="rounded-2xl border border-border p-4">
               {/* Phones: the button gets its own full-width line under the name; from 640px it sits on the right. */}
               <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-tint-2 text-brand">{icon}</span>
+                <span className="flex size-10 shrink-0 items-center justify-center">
+                  <Icon size={40} />
+                </span>
                 <div className="min-w-0">
                   <p className="font-bold text-ink">{SOCIAL_PROVIDER_LABELS[provider]}</p>
                   {status.isPending ? (
@@ -144,11 +146,11 @@ export function ConnectedAccounts() {
                     }}
                     className={buttonClasses({ size: "sm", className: "col-span-2 w-full sm:col-span-1 sm:w-auto" })}
                   >
-                    {icon}
+                    <Icon size={18} />
                     Connect {SOCIAL_PROVIDER_LABELS[provider]}
                   </a>
                 ) : (
-                  <Button size="sm" disabled leftIcon={icon} className="col-span-2 w-full sm:col-span-1 sm:w-auto">
+                  <Button size="sm" disabled leftIcon={<Icon size={18} />} className="col-span-2 w-full sm:col-span-1 sm:w-auto">
                     Connect {SOCIAL_PROVIDER_LABELS[provider]}
                   </Button>
                 )}

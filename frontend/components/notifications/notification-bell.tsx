@@ -369,6 +369,16 @@ export function notificationParts(item: AppNotification, username: string, onNav
     } else if (item.invite) {
       detail = item.invite.status === "accepted" ? "You joined." : "You declined.";
     }
+  } else if (item.type === "outlet_invite") {
+    // Group accounts (owner 2026-10-23): an outlet invited you to post for it; you join on the Groups page.
+    href = "/groups";
+    icon = <BadgedAvatar actor={item.actor} badge={<UserPlus aria-hidden />} />;
+    text = (
+      <>
+        <Name>{actorName}</Name> invited you to join their team{item.note ? (item.note === "editor" ? " as an Editor" : " as a Writer") : ""}
+      </>
+    );
+    detail = "Open Group accounts to join or decline.";
   } else if (item.type === "community_joined") {
     href = chat ? `/communities/${chat.id}` : null;
     icon = <BadgedAvatar actor={item.actor} badge={<UsersRound aria-hidden />} />;

@@ -5,7 +5,7 @@ import { unauthorized, validationError } from "../lib/errors.js";
 import { decodeRankCursor } from "../lib/ranking.js";
 import { parseWith } from "../lib/validate.js";
 import { viewerKeyOf } from "../lib/viewer-id.js";
-import { listCategoryFeed, listFeed, listLanguageFeed, readerLanguages, readShuffle } from "../queries/articles.js";
+import { listCategoryFeed, listFeed, listLanguageFeed, listVisitorMix, readerLanguages, readShuffle } from "../queries/articles.js";
 import { listForYou } from "../queries/foryou.js";
 import { listHeadlines } from "../queries/headlines.js";
 import { clampLimit } from "../queries/shared.js";
@@ -54,18 +54,27 @@ export function feedRoutes() {
         throw validationError({ district: "Unknown district" });
       }
       const load = () => listCategoryFeed({ category, district, viewerId: viewer?.id ?? null, cursor, limit, shuffle });
-      if (viewer || shuffle) return c.json(await load());
-      return c.json(await cached(`feed:cat:${category}:${district ?? ""}:${cursor ?? ""}:${limit}`, PUBLIC_FEED_TTL, load));
+      if (viewer) return c.json(await load());
+      // Signed out, a shuffled page is the day's mix (one seed all day): the same for everyone, so cached too.
+      return c.json(await cached(`feed:cat:${category}:${district ?? ""}:${cursor ?? ""}:${limit}:${shuffle?.seed ?? ""}`, PUBLIC_FEED_TTL, load));
     }
     const tab = parseWith(tabSchema, c.req.query("tab") || undefined);
     if (tab === "following" && !viewer) throw unauthorized();
     if (tab === "foryou") {
+      // Visitors (owner 2026-10-22: "old and latest articles mixed on top, then sign in to read more"): sent the day's
+      // seed (frontend lib/shuffle.ts), Home is the visitor mix instead of the ranking — the newest stories taking
+      // turns with older ones (queries/articles.ts listVisitorMix) — so the open cards aren't simply the newest. The
+      // same for everyone that day, so cached; its next pages come back as `s.` cursors like any shuffled feed.
+      if (!viewer && shuffle) {
+        const load = () => listVisitorMix({ shuffle, limit });
+        return c.json(await cached(`feed:visitor:${shuffle.seed}:${shuffle.offset}:${limit}`, PUBLIC_FEED_TTL, load));
+      }
       const viewerKey = viewerKeyOf(c);
       return c.json(await listForYou({ viewerId: viewer?.id ?? null, viewerKey, cursor: decodeRankCursor(cursor), limit }));
     }
     const load = () => listFeed({ tab, viewerId: viewer?.id ?? null, cursor, limit, shuffle });
-    if (viewer || shuffle) return c.json(await load());
-    return c.json(await cached(`feed:${tab}:${cursor ?? ""}:${limit}`, PUBLIC_FEED_TTL, load));
+    if (viewer) return c.json(await load());
+    return c.json(await cached(`feed:${tab}:${cursor ?? ""}:${limit}:${shuffle?.seed ?? ""}`, PUBLIC_FEED_TTL, load));
   });
 
   // GET /api/feed/headlines?limit= — ticker + Live Wire.

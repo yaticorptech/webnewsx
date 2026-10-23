@@ -10,7 +10,7 @@ import type {
   NewsroomSummary,
   Page,
 } from "../../src/shared/contracts.js";
-import { LONG_BODY, adminUser, cleanupFixtures, client, coverOf, freshApp, json, onboardedUser, publishArticle, reporterUser } from "../helpers.js";
+import { LONG_BODY, adminUser, cleanupFixtures, client, coverOf, freshApp, json, onboardedUser, publishArticle, reporterUser, PUBLISH_EXTRAS } from "../helpers.js";
 
 /*
  * Newsroom analytics (SPEC §3.11) for this file's own reporters: every number below comes from events on
@@ -142,7 +142,7 @@ describe("Newsroom", () => {
     const desk = await adminUser(app);
     const trainee = await reporterUser(app, { level: "trainee" });
     const submit = async (title: string) => {
-      const res = await trainee.req("/api/articles", { json: { title, bodyHtml: LONG_BODY, cover: await coverOf(trainee), articleImage: await coverOf(trainee), category: "national", action: "publish" } });
+      const res = await trainee.req("/api/articles", { json: { title, bodyHtml: LONG_BODY, cover: await coverOf(trainee), articleImage: await coverOf(trainee), category: "national", ...PUBLISH_EXTRAS, action: "publish" } });
       expect(res.status, await res.clone().text()).toBe(201);
       return (await json<{ article: { id: string } }>(res)).article.id;
     };

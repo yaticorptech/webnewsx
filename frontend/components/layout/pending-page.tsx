@@ -11,6 +11,7 @@ import NotificationsLoading from "@/app/(main)/notifications/loading";
 import PressPassLoading from "@/app/(main)/press-pass/loading";
 import PublishLoading from "@/app/(main)/publish/loading";
 import SettingsLoading from "@/app/(main)/settings/loading";
+import MarketLoading from "@/app/(main)/market/loading";
 import TrendingLoading from "@/app/(main)/trending/loading";
 import { ArticleSkeleton } from "@/components/article/article-skeleton";
 import { isFeedPath } from "@/components/feed/feed-views";
@@ -41,6 +42,7 @@ const SECTIONS: Record<string, () => ReactNode> = {
   about: AboutLoading,
   communities: CommunitiesLoading,
   explore: ExploreLoading,
+  market: MarketLoading,
   messages: MessagesLoading,
   newsroom: NewsroomLoading,
   notifications: NotificationsLoading,

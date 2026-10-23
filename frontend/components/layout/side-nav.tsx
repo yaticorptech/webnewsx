@@ -14,6 +14,7 @@ import {
   type LucideIcon,
   ShieldCheck,
   Menu,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -63,6 +64,9 @@ const useMenuOpen = () => useSyncExternalStore(subscribeMenu, () => menuOpen, ()
 const FOLLOWING_SHOWN = 8;
 
 type Item = { href: string; label: string; icon: LucideIcon; active: boolean };
+
+/** The guided tour's hook for a menu entry (components/tour): Home, Explore, Press Pass, Newsroom. */
+const TOUR_HOOKS: Record<string, string> = { "/": "nav-home", "/explore": "nav-explore", "/press-pass": "nav-press-pass", "/newsroom": "nav-newsroom" };
 
 /**
  * The side menu (redesign 2026-10-07, Instagram / YouTube): ≥1024px only — phones and tablets have the bottom bar.
@@ -138,7 +142,7 @@ function SideNavView({ tab }: { tab: string | null }) {
       // Expanded (owner 2026-10-15): beside the page, pushing it over — never on top of it.
       className="no-scrollbar sticky top-(--nav-h) hidden h-[calc(100dvh-var(--nav-h))] w-60 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-border bg-surface px-3 pb-4 pt-3 lg:flex"
     >
-      {/* ☰ in the same spot collapses it again. */}
+      {/* ✕ in the same spot collapses it again. */}
       <MenuButton open className="ml-1.5" />
       <nav aria-label="Main" className="flex flex-col gap-0.5">
         {main.map((item) => (
@@ -185,7 +189,7 @@ function SideNavView({ tab }: { tab: string | null }) {
   );
 }
 
-/** The ☰ (owner 2026-10-16, like YouTube's hamburger): on the rail it expands the menu, on the menu it collapses it. */
+/** The ☰ (owner 2026-10-16, like YouTube's hamburger) expands the menu from the rail; on the open menu it's an ✕ that collapses it (owner 2026-10-23). */
 function MenuButton({ open, className }: { open: boolean; className?: string }) {
   return (
     <button
@@ -200,7 +204,7 @@ function MenuButton({ open, className }: { open: boolean; className?: string }) 
         className,
       )}
     >
-      <Menu aria-hidden className="size-6" />
+      {open ? <X aria-hidden className="size-6" /> : <Menu aria-hidden className="size-6" />}
     </button>
   );
 }
@@ -214,6 +218,7 @@ function RailLink({ item }: { item: Item }) {
       aria-current={item.active ? "page" : undefined}
       aria-label={item.label}
       title={item.label}
+      data-tour={TOUR_HOOKS[item.href]}
       className={cn(
         // The page you're on: red icon on a faint tint with a slim red bar at the rail's edge.
         "relative inline-flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors",
@@ -233,6 +238,7 @@ function MenuLink({ item, full }: { item: Item; full: boolean }) {
       href={item.href}
       aria-current={item.active ? "page" : undefined}
       title={item.label}
+      data-tour={TOUR_HOOKS[item.href]}
       className={cn(
         full
           ? "flex h-11 items-center gap-4 rounded-xl px-3 text-[0.9375rem] font-semibold transition-colors"

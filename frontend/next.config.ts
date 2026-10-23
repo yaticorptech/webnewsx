@@ -10,6 +10,23 @@ const isDev = process.env.NODE_ENV !== "production";
 const distDir = process.env.NEXT_DIST_DIR || ".next";
 const backendUrl = (process.env.BACKEND_URL || "http://127.0.0.1:4000").replace(/\/+$/, "");
 
+/*
+ * Hosting checks (owner 2026-10-22, "ready to host"): canonical links, the sitemaps and robots.txt are baked in at build
+ * time from NEXT_PUBLIC_SITE_URL, and the API rewrites from BACKEND_URL. A Vercel production build without them would
+ * publish localhost links to Google — so it stops with the reason. Other builds only warn.
+ */
+if (!isDev) {
+  const problems = [
+    !process.env.NEXT_PUBLIC_SITE_URL || /localhost|127\.0\.0\.1/.test(process.env.NEXT_PUBLIC_SITE_URL) ? "NEXT_PUBLIC_SITE_URL (the public https:// address of the site)" : null,
+    !process.env.BACKEND_URL ? "BACKEND_URL (the API's address)" : null,
+  ].filter(Boolean);
+  if (problems.length > 0) {
+    const message = `Set ${problems.join(" and ")} before building for production.`;
+    if (process.env.VERCEL_ENV === "production") throw new Error(message);
+    console.warn(`⚠ ${message}`);
+  }
+}
+
 function toOrigin(value: string | undefined): string | null {
   if (!value) return null;
   try {

@@ -59,6 +59,7 @@ export function BottomTabBar() {
         <TabLink
           href="/"
           label="Home"
+          tour="tab-home"
           active={homeActive}
           onClick={(event) => {
             if (layout !== "reel") return;
@@ -72,6 +73,7 @@ export function BottomTabBar() {
         <TabLink
           href="/"
           label="Reels"
+          tour="tab-reels"
           active={reelsActive}
           onClick={(event) => {
             event.preventDefault();
@@ -83,7 +85,7 @@ export function BottomTabBar() {
 
         {!adminVisit && <NewPostTab />}
 
-        <TabLink href="/explore" label="Explore" ariaLabel="Search and explore" active={searchActive}>
+        <TabLink href="/explore" label="Explore" ariaLabel="Search and explore" tour="tab-explore" active={searchActive}>
           <Search aria-hidden strokeWidth={searchActive ? 2.75 : 2} />
         </TabLink>
 
@@ -93,7 +95,7 @@ export function BottomTabBar() {
             <LayoutDashboard aria-hidden />
           </TabLink>
         ) : username ? (
-          <TabLink href={`/${username}`} label="Profile" active={profileActive}>
+          <TabLink href={`/${username}`} label="Profile" tour="tab-profile" active={profileActive}>
             <Avatar
               src={viewer?.image}
               name={viewer?.name ?? username}
@@ -103,7 +105,7 @@ export function BottomTabBar() {
             />
           </TabLink>
         ) : (
-          <TabLink href="/login" label="Log in" active={pathname === "/login"}>
+          <TabLink href="/login" label="Log in" tour="tab-login" active={pathname === "/login"}>
             <LogIn aria-hidden />
           </TabLink>
         )}
@@ -116,6 +118,7 @@ function TabLink({
   href,
   label,
   ariaLabel,
+  tour,
   active,
   onClick,
   children,
@@ -124,6 +127,8 @@ function TabLink({
   label: string;
   /** A fuller name for screen readers than the short visible label. */
   ariaLabel?: string;
+  /** The guided tour's hook for this tab (components/tour). */
+  tour?: string;
   active: boolean;
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
   children: ReactNode;
@@ -134,6 +139,7 @@ function TabLink({
         href={href}
         onClick={onClick}
         aria-label={ariaLabel}
+        data-tour={tour}
         aria-current={active ? "page" : undefined}
         className={cn(
           "relative flex h-12 w-14 flex-col items-center justify-center gap-1 rounded-2xl -outline-offset-2 transition-colors [&_svg]:size-6",
@@ -163,7 +169,7 @@ function NewPostTab() {
   if (action.kind === "press-pass") {
     return (
       <li className="flex">
-        <button type="button" aria-label="New story" title="Post" onClick={() => setGateOpen(true)} className={NEW_POST_CLASS}>
+        <button type="button" aria-label="New story" title="Post" data-tour="tab-post" onClick={() => setGateOpen(true)} className={NEW_POST_CLASS}>
           <SquarePlus aria-hidden strokeWidth={2} />
           <span aria-hidden className="size-1.25" />
         </button>
@@ -185,6 +191,7 @@ function NewPostTab() {
         href={href}
         aria-label={label}
         title="Post"
+        data-tour="tab-post"
         className={NEW_POST_CLASS}
       >
         <SquarePlus aria-hidden strokeWidth={2} />

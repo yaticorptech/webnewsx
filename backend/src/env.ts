@@ -36,6 +36,23 @@ const schema = z.object({
     ),
   GOOGLE_CLIENT_ID: optionalString,
   GOOGLE_CLIENT_SECRET: optionalString,
+  /** Sign in with LinkedIn (optional): a LinkedIn app with "Sign In with LinkedIn using OpenID Connect". */
+  LINKEDIN_CLIENT_ID: optionalString,
+  LINKEDIN_CLIENT_SECRET: optionalString,
+  /** Sign in with X (optional, owner 2026-10-23): an X developer app's OAuth 2.0 Client ID and Client Secret. */
+  X_CLIENT_ID: optionalString,
+  X_CLIENT_SECRET: optionalString,
+  /**
+   * WhatsApp number check (owner 2026-10-23): the reader taps "Verify on WhatsApp", WhatsApp opens a chat with our
+   * business number with a one-time code typed in, they press Send, and Meta's webhook tells us which number sent it
+   * (routes/phone-auth.ts). WHATSAPP_BUSINESS_NUMBER is that number in digits (the wa.me link); the Cloud API's phone
+   * number id + System User token send the "Number verified" reply; WHATSAPP_WEBHOOK_VERIFY_TOKEN is the string typed
+   * into the webhook setup. Without them (development) every check passes by itself after a few seconds.
+   */
+  WHATSAPP_BUSINESS_NUMBER: optionalString,
+  WHATSAPP_PHONE_NUMBER_ID: optionalString,
+  WHATSAPP_ACCESS_TOKEN: optionalString,
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN: optionalString,
   /**
    * Transactional email (password reset) through Resend (https://resend.com). Without a key the email isn't sent:
    * in development its link is printed to this terminal instead (lib/mail.ts).
@@ -122,6 +139,11 @@ export const env = {
   instagramTunnelUrl: raw.NODE_ENV === "production" ? undefined : raw.INSTAGRAM_TUNNEL_URL,
   /** "Continue with Google" is available only when both credentials are set. */
   googleEnabled: Boolean(raw.GOOGLE_CLIENT_ID && raw.GOOGLE_CLIENT_SECRET),
+  /** "Continue with LinkedIn" (owner 2026-10-22), only with its keys. Facebook login shares the Meta app (META_APP_ID). */
+  linkedinEnabled: Boolean(raw.LINKEDIN_CLIENT_ID && raw.LINKEDIN_CLIENT_SECRET),
+  xEnabled: Boolean(raw.X_CLIENT_ID && raw.X_CLIENT_SECRET),
+  /** Numbers are really checked on WhatsApp only with the business number and the Cloud API keys (lib/whatsapp.ts). */
+  whatsappEnabled: Boolean(raw.WHATSAPP_BUSINESS_NUMBER && raw.WHATSAPP_PHONE_NUMBER_ID && raw.WHATSAPP_ACCESS_TOKEN),
   FIREBASE_SERVICE_ACCOUNT_FILE: raw.FIREBASE_SERVICE_ACCOUNT_FILE ? fromBackendRoot(raw.FIREBASE_SERVICE_ACCOUNT_FILE) : undefined,
   /** Phone pushes are sent only with a Firebase service account (lib/push.ts). */
   pushEnabled: Boolean(raw.FIREBASE_SERVICE_ACCOUNT_FILE || raw.FIREBASE_SERVICE_ACCOUNT_JSON),

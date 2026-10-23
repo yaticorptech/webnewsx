@@ -43,7 +43,8 @@ export function articleRoutes({ limiter }: RouteDeps) {
         throw new ApiError(429, "rate_limited", "You're creating stories too quickly. Try again later.");
       }
     }
-    const result = await saveArticle({ id: viewer.id, needsReview: needsReview(viewer) }, input);
+    const groupWriter = viewer.actor ? { id: viewer.actor.id, role: viewer.actor.role } : undefined;
+    const result = await saveArticle({ id: viewer.id, needsReview: needsReview(viewer), groupWriter }, input);
     return c.json(result, input.id ? 200 : 201);
   });
 
@@ -97,7 +98,8 @@ export function articleRoutes({ limiter }: RouteDeps) {
   // DELETE /api/articles/:id — owner only (any role: a former reporter can still remove their stories).
   app.delete("/:id", requireUser, async (c) => {
     const viewer = mustViewer(c);
-    const deleted = await deleteArticle(viewer.id, c.req.param("id"));
+    const groupWriter = viewer.actor ? { id: viewer.actor.id, role: viewer.actor.role } : undefined;
+    const deleted = await deleteArticle(viewer.id, c.req.param("id"), groupWriter);
     if (!deleted) throw notFound("Story not found");
     return c.body(null, 204);
   });

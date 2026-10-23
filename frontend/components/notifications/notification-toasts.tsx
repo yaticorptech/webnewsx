@@ -34,6 +34,7 @@ const POPUP_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "story_hidden",
   "story_warned",
   "community_invite",
+  "outlet_invite",
   "group_added",
   // Premium membership renewals (owner 2026-10-16).
   "membership_ending",
@@ -106,6 +107,8 @@ function copyOf(item: AppNotification, username: string): { title: string; descr
       return { title: "A warning from the Editor Desk", description: item.note ?? item.story?.title, href: `/${username}?tab=reported`, cta: "Open" };
     case "community_invite":
       return { title: "Community invitation", description: `${who} invited you to join ${chat?.name ?? "a community"}.`, href: chat ? `/communities/${chat.id}` : null, cta: "Open" };
+    case "outlet_invite":
+      return { title: "Team invitation", description: `${who} invited you to post for them${item.note ? ` as ${item.note === "editor" ? "an Editor" : "a Writer"}` : ""}.`, href: "/groups", cta: "View" };
     case "group_added":
       return { title: "Added to a group", description: `${who} added you to ${chat?.name ?? "a group chat"}.`, href: chat ? `/messages/${chat.id}` : null, cta: "Open" };
     case "membership_ending":

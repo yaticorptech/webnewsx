@@ -52,7 +52,7 @@ export const USERNAME_MESSAGES: Record<UsernameIssue, string> = {
   leading_dot: "Can't start with a dot",
   trailing_dot: "Can't end with a dot",
   double_dot: "No consecutive dots",
-  pattern: "Use at least 5 letters, a dot, then at least 2 letters — like kiran.shetty",
+  pattern: "Use at least 4 letters, a dot, then at least 2 letters — like hari.ap",
   reserved: "Username is not available",
   taken: "Username is not available",
 };
@@ -83,11 +83,11 @@ export function validateUsernameFormat(username: string): UsernameFormatResult {
 }
 
 /**
- * New usernames (owner 2026-10-15): at least 5 letters, a dot, then at least 2 letters — "abcde.abc", "kiran.shetty".
+ * New usernames (owner 2026-10-15; 4 letters since 2026-10-23): at least 4 letters, a dot, then at least 2 letters — "hari.ap", "ravi.kumar".
  * Checked when an account picks or changes its username; accounts that already have an older, shorter one keep it
  * (USERNAME_REGEX, the database rule and profile links stay as they were).
  */
-export const NEW_USERNAME_REGEX = /^[a-z]{5,}(\.[a-z]+)*\.[a-z]{2,}$/;
+export const NEW_USERNAME_REGEX = /^[a-z]{4,}(\.[a-z]+)*\.[a-z]{2,}$/;
 
 /** validateUsernameFormat + the new-username pattern. */
 export function validateNewUsername(username: string): UsernameFormatResult {
@@ -230,12 +230,21 @@ export const TERMS_VERSION = "2026-09-24";
 
 /* ─────────────────────────── DTOs ─────────────────────────── */
 
+/**
+ * Phone accounts (owner 2026-10-22: readers sign up with their WhatsApp number) have no email of their own: Better Auth
+ * needs one, so they get `<digits>@phone.webnews.local` — never shown, never mailed.
+ */
+export const PHONE_ACCOUNT_EMAIL_DOMAIN = "phone.webnews.local";
+export const isPhoneAccountEmail = (email: string | null | undefined): boolean => Boolean(email?.endsWith(`@${PHONE_ACCOUNT_EMAIL_DOMAIN}`));
+
 export type ViewerUser = {
   id: string;
   username: string | null;
   name: string;
   image: string | null;
   email: string;
+  /** The WhatsApp-verified number the account signs in with (E.164); null for social / Editor Desk accounts. */
+  phoneNumber: string | null;
   bio: string | null;
   onboarded: boolean;
   /** SPEC §3.11: every account starts as a Reader; a Press Pass makes it a Reporter; admins are the Editor Desk. */
@@ -255,6 +264,17 @@ export type ViewerUser = {
   unreadNotifications?: number;
   /** Chats with unread messages (message requests not included) — `GET /api/messages/unread`. */
   unreadMessages?: number;
+  /** "group" = a group account (owner 2026-10-23); always sent by the API. */
+  accountType?: AccountType;
+  /** Stories live on WebNEWS (owner 2026-10-23: "post your first article" popup until the first one). */
+  publishedStories?: number;
+  /**
+   * Posting as a group account: then this whole object is the GROUP, and `actingAs` says who is really signed in and
+   * their role in it. Null on your own account. Always sent by the API.
+   */
+  actingAs?: GroupActor | null;
+  /** The group accounts you belong to (to switch into), always listed from your own account. Always sent by the API. */
+  groups?: GroupMembershipSummary[];
 };
 
 export type AuthorSummary = { id: string; username: string; name: string; image: string | null };
@@ -684,7 +704,9 @@ export type SaveArticleResponse =
   | { status: "published"; article: ArticleDetail & { status: "published" } }
   | { status: "in_review"; article: DraftDetail & { status: "in_review"; slug: null }; message: string }
   /** A press meet story went to its organizer (it stays a draft until they verify it); `message` explains it. */
-  | { status: "sent"; article: DraftDetail & { status: "draft"; slug: null }; pressMeetId: string; message: string };
+  | { status: "sent"; article: DraftDetail & { status: "draft"; slug: null }; pressMeetId: string; message: string }
+  /** A group Writer's story went to the group's Editors (it stays a draft until one publishes it); `message` explains it. */
+  | { status: "group_review"; article: DraftDetail & { status: "draft"; slug: null }; message: string };
 
 export type UserRow = {
   id: string;
@@ -718,6 +740,8 @@ export type ProfileData = {
     createdAt: string;
     /** Always sent by the API. */
     role?: Role;
+    /** "group" = a news outlet run by several members (owner 2026-10-23). Always sent by the API. */
+    accountType?: AccountType;
   };
   counts: { articles: number; followers: number; following: number };
   viewer: { isSelf: boolean; follows: boolean };
@@ -743,6 +767,49 @@ export type Headline = {
  * `GET /api/feed/trending` item ("Trending now" rail, SPEC §3.4b): a Headline plus live counts.
  * `score` = engagement in the last 24h (views + 4·likes, + 6·shares for stories published in that window).
  */
+/* ─────────────────────────── Market (owner 2026-10-22) ─────────────────────────── */
+
+/** One live quote on the Market page (`GET /api/market`): an index, a commodity, a currency pair or a coin. */
+export type MarketQuote = {
+  /** Our id: "nifty50", "sensex", "gold"… */
+  id: string;
+  group: "indices" | "commodities" | "currency" | "crypto";
+  name: string;
+  /** What the number is: "NSE", "₹ per 10 g", "$ per barrel"… */
+  unit: string;
+  currency: "INR" | "USD";
+  price: number;
+  previousClose: number;
+  change: number;
+  changePercent: number;
+  dayHigh: number | null;
+  dayLow: number | null;
+  /** The last 52 weeks' extremes (the details panel); null when the source doesn't say. */
+  fiftyTwoWeekHigh: number | null;
+  fiftyTwoWeekLow: number | null;
+  /** Today's path so far (closes at intervals) for the chart; oldest first. */
+  trend: number[];
+  /** When each `trend` point was (epoch seconds), one per point. */
+  times: number[];
+  /** The exchange is trading right now. */
+  open: boolean;
+  /** When the source last updated this quote (ISO). */
+  updatedAt: string;
+};
+export type MarketResponse = { quotes: MarketQuote[]; fetchedAt: string };
+
+/** The Market page's chart ranges: today (5-minute points), the week (30-minute), the month (daily). */
+export const MARKET_RANGE_VALUES = ["1d", "5d", "1mo"] as const;
+export type MarketRange = (typeof MARKET_RANGE_VALUES)[number];
+/** `GET /api/market/history?id=&range=`: one quote's path over a range, oldest first. */
+export type MarketHistory = {
+  id: string;
+  range: MarketRange;
+  points: { t: number; v: number }[];
+  /** The close before the range began (today's chart draws it as a dashed line); null when unknown. */
+  previousClose: number | null;
+};
+
 export type TrendingHeadline = Omit<Headline, "author"> & {
   author: { username: string; name: string; reporterLevel?: ReporterLevel | null };
   viewCount: number;
@@ -770,7 +837,7 @@ export type FeedTab = "foryou" | "latest" | "following";
 export const FEED_TAB_VALUES = ["foryou", "latest", "following"] as const satisfies readonly FeedTab[];
 
 /** `dm` = sent to people / chats inside WebNEWS (recorded by `POST /api/messages/send`, not by the share endpoint). */
-export type ShareChannel = "native" | "copy" | "whatsapp" | "x" | "facebook" | "linkedin" | "telegram" | "email" | "dm";
+export type ShareChannel = "native" | "copy" | "whatsapp" | "x" | "facebook" | "instagram" | "linkedin" | "telegram" | "email" | "dm";
 
 /* ─────────────────────────── Realtime (SSE) ─────────────────────────── */
 
@@ -986,7 +1053,7 @@ export type ArticleCategoryInput = z.input<typeof articleCategorySchema>;
 export type ArticleCategoryResult = { id: string; category: Category; district: string | null };
 
 export const shareSchema = z.object({
-  channel: z.enum(["native", "copy", "whatsapp", "x", "facebook", "linkedin", "telegram", "email"]),
+  channel: z.enum(["native", "copy", "whatsapp", "x", "facebook", "instagram", "linkedin", "telegram", "email"]),
 });
 
 export const viewsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(50) });
@@ -1464,6 +1531,8 @@ export const NOTIFICATION_TYPES = [
   // Premium membership renewals (owner 2026-10-16): the reporter is the actor; `amount` = days left.
   "membership_ending",
   "membership_ended",
+  // Group accounts (owner 2026-10-23): invited to post for an outlet; the actor is the group, `note` the role.
+  "outlet_invite",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -1834,7 +1903,11 @@ export type AuditAction =
   | "spotlight.package_update"
   | "spotlight.package_delete"
   | "press_meet.platform_fee"
-  | "membership.rules";
+  | "membership.rules"
+  /** Group accounts (owner 2026-10-23): the Desk approved / turned down an application. */
+  | "group.approve"
+  | "group.reject"
+  | "group.delete";
 
 export type AuditEntry = {
   id: string;
@@ -2224,6 +2297,8 @@ export const pressMeetPriceSchema = z.object({
 /** `GET /api/me/account` — what the Settings page needs about your account. */
 export type AccountSettings = {
   email: string;
+  /** The WhatsApp-verified number the account signs in with (owner 2026-10-22); null for social / Editor Desk accounts. */
+  phoneNumber: string | null;
   /** False for Google-only accounts: they set a password through an emailed link instead of changing one. */
   hasPassword: boolean;
   pressMeetPrice: number | null;
@@ -3224,6 +3299,12 @@ export const TRACKED_FEATURES = {
   page_view: "Opened a page",
   get_app: "Tapped “Get the app”",
   get_app_dismissed: "Dismissed “Get the app”",
+  tour_start: "Started the guided tour",
+  tour_step_done: "Did a tour step",
+  tour_step_skipped: "Skipped a tour step",
+  tour_done: "Finished the guided tour",
+  tour_exit: "Left the guided tour",
+  tour_declined: "Skipped the guided tour",
 } as const;
 export type TrackedFeature = keyof typeof TRACKED_FEATURES;
 
@@ -3334,3 +3415,145 @@ export type LiveVisitors = {
   /** Signed-in people on now, latest first. */
   people: (AuthorSummary & { path: string; at: string })[];
 };
+
+/* ─────────────────────────── Group accounts (owner 2026-10-23) ─────────────────────────── */
+
+/*
+ * A group account (e.g. @vkmangalore) is one public account several people post as — like a Facebook Page. Nobody
+ * signs in to it: its members keep their own accounts and switch to "Posting as VK Mangalore". A Press Pass holder
+ * applies, the Editor Desk approves; the group then has its own Press Pass, which covers its members. Readers see only
+ * the group's name; inside the group every story records which member wrote it. All money goes to the owner.
+ *
+ * Roles: owner (members, the group's profile, everything), editor (publishes and edits any story, approves the writers'),
+ * writer (writes; a story goes to the editors, not live).
+ */
+
+export type AccountType = "person" | "group";
+export const ACCOUNT_TYPE_VALUES = ["person", "group"] as const satisfies readonly AccountType[];
+
+export type GroupRole = "owner" | "editor" | "writer";
+export const GROUP_ROLE_VALUES = ["owner", "editor", "writer"] as const satisfies readonly GroupRole[];
+export const GROUP_ROLE_LABELS: Record<GroupRole, string> = { owner: "Owner", editor: "Editor", writer: "Writer" };
+export const GROUP_ROLE_HINTS: Record<GroupRole, string> = {
+  owner: "Manages members and the group's profile; publishes anything",
+  editor: "Publishes and edits any story; approves the writers' stories",
+  writer: "Writes stories; an editor approves them before they go live",
+};
+
+export type GroupApplicationStatus = "pending" | "approved" | "rejected";
+export const GROUP_APPLICATION_STATUS_VALUES = ["pending", "approved", "rejected"] as const satisfies readonly GroupApplicationStatus[];
+export type GroupMemberStatus = "invited" | "active";
+export const GROUP_MEMBER_STATUS_VALUES = ["invited", "active"] as const satisfies readonly GroupMemberStatus[];
+
+export const GROUP_LIMITS = { membersMax: 25, aboutMax: 300, groupsPerPersonMax: 10 } as const;
+
+/** Who is really behind a group account while posting as it (`ViewerUser.actingAs`). */
+export type GroupActor = {
+  groupId: string;
+  role: GroupRole;
+  member: { id: string; username: string | null; name: string; image: string | null };
+};
+
+/** A group you belong to, as the account switcher lists it. */
+export type GroupMembershipSummary = {
+  id: string;
+  username: string;
+  name: string;
+  image: string | null;
+  role: GroupRole;
+  /** Deactivated by its owner (owner 2026-10-23): hidden, nobody posts as it, until the owner reactivates it. */
+  deactivated?: boolean;
+};
+
+export type GroupMember = {
+  user: AuthorSummary;
+  role: GroupRole;
+  status: GroupMemberStatus;
+  joinedAt: string | null;
+  invitedAt: string;
+};
+
+export type GroupApplication = {
+  id: string;
+  name: string;
+  username: string;
+  about: string;
+  image: string;
+  link: string | null;
+  status: GroupApplicationStatus;
+  deskNote: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  /** The approved group's account (approved applications). */
+  groupUsername: string | null;
+};
+
+/** A writer's story waiting for the group's editors. */
+export type GroupPendingStory = {
+  id: string;
+  title: string | null;
+  coverUrl: string | null;
+  submittedAt: string;
+  writer: AuthorSummary | null;
+};
+
+/** `GET /api/groups` — the Groups page. */
+export type MyGroupsResponse = {
+  groups: (GroupMembershipSummary & { memberCount: number; pendingStories: number })[];
+  invites: (GroupMembershipSummary & { invitedBy: AuthorSummary | null })[];
+  applications: GroupApplication[];
+  /** Applying needs your own Press Pass. */
+  canApply: boolean;
+  /** One group per person (owner 2026-10-23): you already own one, so you can't start another. */
+  ownsGroup: boolean;
+};
+
+/** `GET /api/groups/:id` — one group, for its members. */
+export type GroupDetailResponse = {
+  group: GroupMembershipSummary & { bio: string | null };
+  members: GroupMember[];
+  pendingStories: GroupPendingStory[];
+};
+
+/** `GET /api/admin/groups` — the Editor Desk's queue. */
+export type AdminGroupApplication = GroupApplication & { applicant: AuthorSummary & { passNumber: string | null } };
+
+/** `GET /api/admin/groups/:applicationId/detail` — an approved group: who runs it, its members and what they posted. */
+export type AdminGroupDetail = {
+  group: AuthorSummary & { createdAt: string; passNumber: string | null; followers: number };
+  stories: { published: number; drafts: number; waiting: number };
+  /** Members (owner first), with how many of the group's stories each wrote. */
+  members: (GroupMember & { storiesPosted: number })[];
+  /** The group's latest stories and who really wrote each one. */
+  recent: { id: string; title: string | null; status: "draft" | "in_review" | "published"; at: string; writer: AuthorSummary | null }[];
+};
+
+export const groupApplicationSchema = z.object({
+  name: z.string().trim().min(2, "Enter the group's name").max(LIMITS.nameMax),
+  username: newUsernameSchema,
+  about: z.string().trim().min(10, "Tell readers what the group covers").max(GROUP_LIMITS.aboutMax),
+  image: z.string().trim().min(1, "Add the group's logo").max(LIMITS.linkMax),
+  link: httpUrl.nullable().optional(),
+});
+export type GroupApplicationInput = z.input<typeof groupApplicationSchema>;
+
+export const groupInviteSchema = z.object({
+  username: usernameSchema,
+  role: z.enum(["editor", "writer"]),
+});
+export type GroupInviteInput = z.input<typeof groupInviteSchema>;
+
+export const groupMemberRoleSchema = z.object({ role: z.enum(["editor", "writer"]) });
+
+export const groupDecisionSchema = z.object({ note: z.string().trim().max(500).optional() });
+
+/* ─────────────────────────── Leaving WebNEWS (owner 2026-10-23) ─────────────────────────── */
+
+/**
+ * Deactivate = the account is hidden (profile, stories, comments — like a suspension) until its owner logs in again,
+ * which brings it back. Stored as a suspension with this reason, so every "hide suspended accounts" rule applies.
+ */
+export const SELF_DEACTIVATED_REASON = "Deactivated by its owner";
+
+/** `POST /api/me/deactivate` and `POST /api/me/delete`: type your @username to confirm. */
+export const leaveAccountSchema = z.object({ confirm: z.string().trim().min(1).max(64) });

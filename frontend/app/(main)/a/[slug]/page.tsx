@@ -13,6 +13,7 @@ import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/config";
 import { getArticleBySlug } from "@/lib/server-api";
 import type { ArticleDetail } from "@/lib/shared/contracts";
 import { absoluteUrl } from "@/lib/utils";
+import { articleKeywords, articleLanguage, articleSection, articleSummary } from "@/lib/article-seo";
 
 /** Search results show ~160 characters: cut the excerpt on a word boundary. */
 function metaDescription(text: string, max = 160): string {
@@ -51,12 +52,14 @@ function structuredData(article: ArticleDetail) {
         "@type": "NewsArticle",
         "@id": `${url}#article`,
         headline: article.title.slice(0, 110),
-        description: article.excerpt,
+        description: articleSummary(article, 300),
+        keywords: articleKeywords(article).join(", "),
+        ...(articleSection(article) ? { articleSection: articleSection(article) } : {}),
         image: [image],
         thumbnailUrl: absoluteUrl(article.coverUrl),
         datePublished: article.publishedAt,
-        dateModified: article.publishedAt,
-        inLanguage: hasIndicScript(article.title) ? "kn" : "en",
+        dateModified: article.editedAt ?? article.publishedAt,
+        inLanguage: articleLanguage(article, hasIndicScript(article.title) ? "kn" : "en").lang,
         isAccessibleForFree: true,
         url,
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
@@ -67,7 +70,7 @@ function structuredData(article: ArticleDetail) {
               video: {
                 "@type": "VideoObject",
                 name: article.title,
-                description: article.excerpt || SITE_DESCRIPTION,
+                description: articleSummary(article, 300) || SITE_DESCRIPTION,
                 thumbnailUrl: [absoluteUrl(article.coverUrl)],
                 uploadDate: article.publishedAt,
                 contentUrl: absoluteUrl(article.video.url),
@@ -102,11 +105,19 @@ export async function generateMetadata({ params }: PageProps<"/a/[slug]">): Prom
     ...(article.coverWidth && article.coverHeight ? { width: article.coverWidth, height: article.coverHeight } : {}),
     alt: article.title,
   };
-  const description = metaDescription(article.excerpt || SITE_DESCRIPTION);
+  // The story's own summary (blurb → excerpt → its first lines), never the site's default (owner 2026-10-22).
+  const description = metaDescription(articleSummary(article, 300) || SITE_DESCRIPTION);
+  const keywords = articleKeywords(article);
+  const section = articleSection(article);
+  const { locale } = articleLanguage(article, hasIndicScript(article.title) ? "kn" : "en");
   return {
     title: article.title,
     description,
+    keywords,
+    category: section ?? undefined,
     alternates: { canonical: url },
+    // Google News reads news_keywords; article:section / article:tag are in openGraph below.
+    other: { news_keywords: keywords.slice(0, 10).join(", ") },
     authors: [{ name: article.author.name, url: absoluteUrl(`/${article.author.username}`) }],
     creator: article.author.name,
     publisher: SITE_NAME,
@@ -122,9 +133,11 @@ export async function generateMetadata({ params }: PageProps<"/a/[slug]">): Prom
       siteName: SITE_NAME,
       title: article.title,
       description,
-      locale: hasIndicScript(article.title) ? "kn_IN" : "en_IN",
+      locale,
       publishedTime: article.publishedAt,
-      modifiedTime: article.publishedAt,
+      modifiedTime: article.editedAt ?? article.publishedAt,
+      ...(section ? { section } : {}),
+      tags: keywords,
       authors: [absoluteUrl(`/${article.author.username}`)],
       images: [image],
       ...(article.video

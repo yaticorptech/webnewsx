@@ -1,5 +1,6 @@
 import {
   Activity,
+  Building2,
   Crown,
   Flag,
   IdCard,
@@ -44,6 +45,8 @@ export const DESK_SECTIONS: readonly DeskSection[] = [
   { key: "stories", href: "/admin/stories", label: "Stories", short: "Stories", icon: Newspaper, group: "Newsroom" },
   { key: "reporters", href: "/admin/reporters", label: "Reporters", short: "Reporters", icon: IdCard, group: "People" },
   { key: "people", href: "/admin/people", label: "People", short: "People", icon: UsersRound, group: "People" },
+  // Group account applications from Press Pass holders (owner 2026-10-23).
+  { key: "groups", href: "/admin/groups", label: "Group accounts", short: "Groups", icon: Building2, group: "People" },
   { key: "spotlight", href: "/admin/spotlight", label: "Spotlight", short: "Spotlight", icon: Sparkles, pending: (k) => k.spotlightRequests, group: "Revenue" },
   // The press meet platform fee + every press meet with its report (owner 2026-10-05).
   { key: "press-meets", href: "/admin/press-meets", label: "Press meets", short: "Meets", icon: Presentation, group: "Revenue" },

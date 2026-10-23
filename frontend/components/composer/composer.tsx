@@ -217,7 +217,7 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
   /** `path` = the story's category page, where the reporter lands (newest first, so it leads). */
   const [published, setPublished] = useState<{ title: string; slug: string; path: string } | null>(null);
   /** Sent to the Review Desk (Trainee "publish"): the success moment, then the profile's Desk. */
-  const [submitted, setSubmitted] = useState<{ title: string; message: string } | null>(null);
+  const [submitted, setSubmitted] = useState<{ title: string; message: string; reviewer?: string } | null>(null);
   /** Review Desk state of this story: saving as a draft withdraws an in-review story (returned notes stay). */
   const [reviewState, setReviewState] = useState<ArticleReview | null>(draft?.review ?? null);
   /** Written for a press meet (owner 2026-10-07): sent to its organizer, who verifies it before it goes live. */
@@ -225,8 +225,10 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
   const meetId = meet?.id ?? pressMeetId;
   /** Publishing sends it to the press meet's organizer instead (Trainees too: the organizer verifies it). */
   const toOrganizer = meetId !== null && !live;
+  /** Posting as a group as one of its Writers (owner 2026-10-23): publishing sends it to the group's editors. */
+  const toGroupEditors = account?.actingAs?.role === "writer" && !live;
   /** Publishing goes to the Review Desk. */
-  const toReviewDesk = trainee && !toOrganizer;
+  const toReviewDesk = trainee && !toOrganizer && !toGroupEditors;
   const pendingFocus = useRef<FieldKey | null>(null);
   const stepperRef = useRef<HTMLDivElement>(null);
 
@@ -567,6 +569,14 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
         router.replace(`/press-meet/${response.pressMeetId}`);
         return;
       }
+      if (response.status === "group_review") {
+        clearAutosave(autosaveKey(author.id, null), autosaveKey(author.id, response.article.id));
+        if (!draftId) setDraftId(response.article.id);
+        setRevs((r) => ({ ...r, saved: r.rev }));
+        invalidateLists(response.article.id);
+        setSubmitted({ title: title.trim(), message: response.message, reviewer: "the group's editors" });
+        return;
+      }
       if (response.status === "in_review") {
         clearAutosave(autosaveKey(author.id, null), autosaveKey(author.id, response.article.id));
         if (!draftId) setDraftId(response.article.id);
@@ -736,6 +746,10 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
     <span>
       Send<span className="max-sm:sr-only"> to organiser</span>
     </span>
+  ) : toGroupEditors ? (
+    <span>
+      Send<span className="max-sm:sr-only"> to editors</span>
+    </span>
   ) : trainee ? (
     <span>
       Submit<span className="max-sm:sr-only"> for review</span>
@@ -748,8 +762,6 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
   const writing = step !== "preview";
   // The live poster preview belongs to step 2 (owner 2026-10-16: step 1 is just the uploads); Preview shows the reel itself.
   const livePreview = step === "article";
-  /** Preview only once every detail is filled in correctly (owner 2026-10-16). */
-  const detailsReady = Object.keys(publishProblems).length === 0;
   /** The live preview's "Adjust photo" (only with a cover: nothing to adjust before). */
   const livePreviewControls = {
     frame: posterFrame,
@@ -788,7 +800,7 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
               dirty={dirty}
               savedAt={savedAt}
               uploading={uploading}
-              sending={toOrganizer ? "Sending…" : toReviewDesk ? "Submitting…" : "Publishing…"}
+              sending={toOrganizer || toGroupEditors ? "Sending…" : toReviewDesk ? "Submitting…" : "Publishing…"}
               live={live}
             />
           }
@@ -1261,9 +1273,13 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
               )}
               <div className="flex-1" />
               {step === "poster" ? (
-                <Button onClick={goNext} disabled={uploading !== null} rightIcon={<ArrowRight aria-hidden />}>
-                  Next
-                </Button>
+                <>
+                  {/* Next only once both images are in (owner 2026-10-22; the rule itself is from 2026-10-16). */}
+                  {!imagesReady && <span className="hidden text-xs font-semibold text-muted sm:inline">Add both images to continue</span>}
+                  <Button onClick={goNext} disabled={uploading !== null || !imagesReady} rightIcon={<ArrowRight aria-hidden />} data-tour="composer-next">
+                    Next
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button
@@ -1273,14 +1289,13 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
                     leftIcon={<ArrowLeft aria-hidden />}
                     className="px-3 sm:px-5"
                   >
-                    <span className="max-[380px]:sr-only">Images</span>
+                    <span className="max-[380px]:sr-only">Back</span>
                   </Button>
-                  {/* Only once both images are in (owner 2026-10-16). */}
-                  {imagesReady && detailsReady && (
-                    <Button onClick={openPreview} disabled={busy === "publish"} leftIcon={<Eye aria-hidden />}>
-                      Preview
-                    </Button>
-                  )}
+                  {/* Always there (owner 2026-10-23: the bar looked like it only went back): with details missing, it marks
+                      them in red and says so (goTo) instead of hiding. */}
+                  <Button onClick={openPreview} disabled={busy === "publish"} leftIcon={<Eye aria-hidden />} data-tour="composer-preview">
+                    Preview
+                  </Button>
                 </>
               )}
             </>
@@ -1314,6 +1329,7 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
                 loading={busy === "publish"}
                 disabled={actionsDisabled && busy !== "publish"}
                 leftIcon={<Send aria-hidden />}
+                data-tour="composer-publish"
               >
                 {publishLabel}
               </Button>
@@ -1407,7 +1423,7 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
         />
 
         {published && <PublishSuccess title={published.title} onDone={finishPublish} />}
-        {submitted && <PublishSuccess variant="review" title={submitted.title} onDone={finishSubmit} />}
+        {submitted && <PublishSuccess variant="review" title={submitted.title} reviewer={submitted.reviewer} onDone={finishSubmit} />}
       </div>
 
       {/* ≥1024px, beside the writing page (owner 2026-10-07): the poster and the article image, live; narrower screens

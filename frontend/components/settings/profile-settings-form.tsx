@@ -149,10 +149,16 @@ export function ProfileSettingsForm({ viewer }: { viewer: ViewerUser }) {
   };
 
   return (
-    <form noValidate onSubmit={onSubmit} aria-label="Edit profile" className="card relative overflow-hidden">
+    <form
+      noValidate
+      onSubmit={onSubmit}
+      aria-label="Edit profile"
+      // Full screen (owner 2026-10-23): ≥1024px the photo in a left column, the details beside it.
+      className="card relative overflow-hidden lg:grid lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]"
+    >
       <span aria-hidden className="absolute top-0 left-0 h-0.75 w-24 bg-brand" />
 
-      <section aria-labelledby="settings-photo" className="px-5 pb-6 pt-7 sm:px-8">
+      <section aria-labelledby="settings-photo" className="px-5 pb-6 pt-7 sm:px-8 lg:row-span-2 lg:border-r lg:border-border">
         <SectionTitle id="settings-photo" title="Photo" description="Shown on your profile and next to every story you publish." />
         <AvatarPicker
           className="mt-5"
@@ -166,7 +172,7 @@ export function ProfileSettingsForm({ viewer }: { viewer: ViewerUser }) {
         />
       </section>
 
-      <section aria-labelledby="settings-public" className="flex flex-col gap-6 border-t border-border px-5 py-7 sm:px-8">
+      <section aria-labelledby="settings-public" className="flex flex-col gap-6 border-t border-border px-5 py-7 sm:px-8 lg:border-t-0">
         <SectionTitle id="settings-public" title="Public profile" description="Everything here is visible to readers." />
         <UsernameField
           value={form.username}
@@ -208,7 +214,7 @@ export function ProfileSettingsForm({ viewer }: { viewer: ViewerUser }) {
         </Field>
       </section>
 
-      <section aria-labelledby="settings-languages" className="flex flex-col gap-5 border-t border-border px-5 py-7 sm:px-8">
+      <section aria-labelledby="settings-languages" className="flex flex-col gap-5 border-t border-border px-5 py-7 sm:px-8 lg:col-start-2">
         <SectionTitle id="settings-languages" title="Your feeds" description="Only you see this." />
         <ReadLanguagesPicker
           value={form.languages}
@@ -218,7 +224,7 @@ export function ProfileSettingsForm({ viewer }: { viewer: ViewerUser }) {
         />
       </section>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-border bg-surface-2/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+      <div className="flex flex-col-reverse gap-3 border-t border-border bg-surface-2/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:col-span-2">
         <div aria-live="polite" className="min-h-5 text-[0.8125rem]">
           {dirty ? (
             <motion.span

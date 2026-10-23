@@ -1,3 +1,4 @@
+import { phoneNumberClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { googleEnabled, googleWebClientId } from "./config";
 import { nativeGoogleIdToken } from "./native-app";
@@ -10,7 +11,29 @@ import { forgetPushDevice } from "./native-push";
  */
 export const authClient = createAuthClient({
   basePath: "/api/auth",
+  // Phone sign-in (owner 2026-10-23): number + password once the number is verified on WhatsApp (phone-auth-form.tsx).
+  plugins: [phoneNumberClient()],
 });
+
+/** Logs in with a WhatsApp-verified number (E.164) and its password. */
+export const signInWithPhonePassword = (phoneNumber: string, password: string) =>
+  authClient.signIn.phoneNumber({ phoneNumber, password, rememberMe: true });
+
+/** The social logins (owner 2026-10-22): Google as before, plus Facebook, LinkedIn and X when their keys are set. */
+export type SocialProvider = "google" | "facebook" | "linkedin" | "twitter";
+
+/**
+ * "Continue with Facebook / LinkedIn / X": the backend's consent URL, then that provider's page; it comes back to
+ * `${FRONTEND_URL}/api/auth/callback/<provider>` and Better Auth sends the person to `callbackURL` (new accounts to
+ * `newUserCallbackURL`). Resolves with an error message when the request fails (the page stays put).
+ */
+export async function signInWithSocial(
+  provider: SocialProvider,
+  { callbackURL = "/", newUserCallbackURL = "/onboarding", errorCallbackURL = "/login" }: { callbackURL?: string; newUserCallbackURL?: string; errorCallbackURL?: string } = {},
+): Promise<{ error: string | null }> {
+  const { error } = await signIn.social({ provider, callbackURL, newUserCallbackURL, errorCallbackURL });
+  return { error: error ? error.message || "Couldn't start the sign-in. Please try again." : null };
+}
 
 export const { signIn, signUp, useSession } = authClient;
 

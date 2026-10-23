@@ -4,6 +4,7 @@ import { Bell, Download, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { isTourActive } from "@/components/tour/guided-tour";
 import { isNativeApp } from "@/lib/native-app";
 import { track } from "@/lib/track";
 
@@ -15,6 +16,11 @@ import { track } from "@/lib/track";
 
 /** Where the app comes from: the Play Store link once it's listed, else the app file the server hands out. */
 const APP_URL = process.env.NEXT_PUBLIC_ANDROID_APP_URL || "/webnews.apk";
+/**
+ * The hosted site has no /webnews.apk (only the local phone relay serves it, mobile/README.md): without a configured
+ * download link a production build shows no card at all, rather than a link to nowhere (owner 2026-10-22).
+ */
+const HAS_APP_LINK = Boolean(process.env.NEXT_PUBLIC_ANDROID_APP_URL) || process.env.NODE_ENV !== "production";
 const KEY = "webnews:get-app";
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Back again after (owner 2026-10-16: "show again with an interval"): "Not now" 1 day; "Get the app" 1 hour (a browser
@@ -44,12 +50,17 @@ export function GetAppBanner() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (isNativeApp() || !/Android/i.test(navigator.userAgent) || pathname.startsWith("/admin")) return;
+    // Phones only (owner 2026-10-22: it showed on a computer): an Android phone's browser, at a phone's width.
+    const phone = /Android/i.test(navigator.userAgent) && window.matchMedia("(max-width: 767.98px)").matches;
+    if (!HAS_APP_LINK || isNativeApp() || !phone || pathname.startsWith("/admin")) return;
     // Testing: any page with ?app-card=reset forgets the earlier answer, so the card shows again.
     if (new URLSearchParams(window.location.search).get("app-card") === "reset") save({});
     const saved = read();
     if (saved.until && saved.until > Date.now()) return;
-    const timer = setTimeout(() => setOpen(true), DELAY_MS);
+    // Not over the guided tour (it comes back next visit).
+    const timer = setTimeout(() => {
+      if (!isTourActive()) setOpen(true);
+    }, DELAY_MS);
     return () => clearTimeout(timer);
     // Once per visit: not re-armed on every page change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,7 +86,8 @@ export function GetAppBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0, transition: { duration: 0.15 } }}
           transition={{ type: "spring", stiffness: 420, damping: 34 }}
-          className="fixed inset-x-3 bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+0.75rem)] z-40 mx-auto max-w-md rounded-2xl border border-border bg-surface p-4 shadow-[0_18px_40px_-16px_rgb(16_24_40/0.45)]"
+          // md:hidden as well: a phone turned sideways or a window widened later never shows it on a wide screen.
+          className="fixed inset-x-3 bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom)+0.75rem)] z-40 mx-auto max-w-md rounded-2xl border border-border bg-surface p-4 shadow-[0_18px_40px_-16px_rgb(16_24_40/0.45)] md:hidden"
         >
           <button
             type="button"

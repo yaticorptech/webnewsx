@@ -12,6 +12,7 @@ import {
   IndianRupee,
   KeyRound,
   LifeBuoy,
+  MousePointerClick,
   Link2,
   Mail,
   Sparkles,
@@ -33,6 +34,7 @@ import { FormAlert } from "@/components/auth/form-bits";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength";
 import { useViewer } from "@/components/providers/viewer-provider";
+import { restartTour } from "@/components/tour/guided-tour";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -57,6 +59,7 @@ import {
   isPasswordStrongEnough,
   type AccountSettings,
   type MembershipEligibility,
+  isPhoneAccountEmail,
 } from "@/lib/shared/contracts";
 import { EarningsDashboard } from "@/components/memberships/earnings-dashboard";
 import { MyMembershipsCard } from "@/components/memberships/my-memberships";
@@ -256,7 +259,8 @@ export function SettingsView({ verifiedReporter }: { verifiedReporter: boolean }
         ) : current.key === "notifications" ? (
           <NotificationsCard enabled={account.data.pushNotifications} />
         ) : current.key === "password" ? (
-          <PasswordCard account={account.data} />
+          // Phone accounts (owner 2026-10-22) sign in with a WhatsApp code: no password to change.
+          isPhoneAccountEmail(account.data.email) ? null : <PasswordCard account={account.data} />
         ) : (
           <>
             {verifiedReporter ? (
@@ -268,7 +272,7 @@ export function SettingsView({ verifiedReporter }: { verifiedReporter: boolean }
                 Connecting Instagram and Facebook (each story you publish posted there automatically) is for Verified reporters.
               </p>
             )}
-            <AccountCard email={account.data.email} />
+            <AccountCard email={account.data.email} phoneNumber={account.data.phoneNumber} />
           </>
         )}
       </div>
@@ -776,8 +780,19 @@ const FAQ: ReadonlyArray<{ q: string; a: ReactNode }> = [
 ];
 
 function HelpCenterCard() {
+  const router = useRouter();
   return (
     <Card id="settings-help" icon={<LifeBuoy aria-hidden />} title="Help center" description="Answers to common questions.">
+      {/* The guided tour again (owner 2026-10-22): forgets that it was taken and opens it on Home. */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-tint px-4 py-3.5">
+        <div className="min-w-0">
+          <p className="text-[0.9375rem] font-bold text-ink">Guided tour</p>
+          <p className="text-sm text-muted">Try every feature again, step by step — Reels, News radio, publishing.</p>
+        </div>
+        <Button variant="outline" size="sm" leftIcon={<MousePointerClick aria-hidden />} onClick={() => restartTour(router)}>
+          Take the tour again
+        </Button>
+      </div>
       <div className="grid gap-3 xl:grid-cols-2">
         {FAQ.map((item) => (
           <details key={item.q} className="group self-start overflow-hidden rounded-xl border border-border">
@@ -805,15 +820,27 @@ function HelpCenterCard() {
 /* ─────────────── Account ─────────────── */
 
 /** Moved here from Edit profile (owner 2026-10-01): your email, the Terms and Privacy Policy, and Log out. */
-function AccountCard({ email }: { email: string | null }) {
+function AccountCard({ email, phoneNumber }: { email: string | null; phoneNumber: string | null }) {
+  // A phone account's email is a placeholder (contracts PHONE_ACCOUNT_EMAIL_DOMAIN): show the WhatsApp number instead.
+  const phoneAccount = isPhoneAccountEmail(email);
   return (
     <section aria-labelledby="settings-account" className="card relative overflow-hidden px-5 py-6 sm:px-8">
       <h2 id="settings-account" className="font-wide text-lg font-extrabold tracking-[-0.01em] text-ink">
         Account
       </h2>
-      <dl className="mt-4 grid gap-1">
-        <dt className="kicker text-muted">Email</dt>
-        <dd className="break-all text-[0.9375rem] font-semibold text-ink">{email ?? "—"}</dd>
+      <dl className="mt-4 grid gap-3">
+        {phoneNumber && (
+          <div className="grid gap-1">
+            <dt className="kicker text-muted">WhatsApp number</dt>
+            <dd className="text-[0.9375rem] font-semibold text-ink tabular-nums">{phoneNumber}</dd>
+          </div>
+        )}
+        {!phoneAccount && (
+          <div className="grid gap-1">
+            <dt className="kicker text-muted">Email</dt>
+            <dd className="break-all text-[0.9375rem] font-semibold text-ink">{email ?? "—"}</dd>
+          </div>
+        )}
       </dl>
       <div className="mt-6 flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-relaxed text-muted">

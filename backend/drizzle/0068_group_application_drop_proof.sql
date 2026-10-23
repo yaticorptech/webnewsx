@@ -1,0 +1,1 @@
+ALTER TABLE "group_application" DROP COLUMN "proof";

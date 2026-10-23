@@ -32,12 +32,13 @@ export function LayoutSwitch({ className }: { labels?: boolean; squared?: boolea
       role="switch"
       aria-checked={reels}
       aria-label="Reels layout"
+      data-tour="layout-switch"
       title={reels ? "Showing reels — switch to grid" : "Showing grid — switch to reels"}
       onClick={() => setLayout(next)}
       className={cn(
         "relative inline-flex h-8 w-14 shrink-0 items-center rounded-full p-1 transition-colors duration-200 after:absolute after:-inset-y-1.5 after:inset-x-0 after:content-['']",
-        // Grid too in the brand colour (owner 2026-10-16: "highlighted, not grey"): a soft red track, the icon in red.
-        reels ? "bg-brand" : "bg-brand/15 ring-1 ring-brand/35 ring-inset hover:bg-brand/25",
+        // Solid red in both positions (owner 2026-10-23: "red color only"; before: a soft pink track for grid).
+        "bg-brand hover:bg-brand-hover",
         className,
       )}
     >

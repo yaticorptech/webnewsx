@@ -12,6 +12,7 @@ import { RateLimiter } from "./lib/rate-limit.js";
 import type { RealtimeBus } from "./lib/realtime.js";
 import { clientIpMiddleware, originGuard } from "./middleware/request-context.js";
 import { VIEW_AS_VISITOR_HEADER, sessionMiddleware } from "./middleware/session.js";
+import { actingGuard } from "./middleware/acting-guard.js";
 import { fromNativeApp, withBrowserSessionCookies } from "./lib/browser-session-cookie.js";
 import { markOffline } from "./lib/presence.js";
 import { adminRoutes } from "./routes/admin.js";
@@ -19,6 +20,7 @@ import { articleRoutes } from "./routes/articles.js";
 import { communityRoutes } from "./routes/communities.js";
 import type { RouteDeps } from "./routes/deps.js";
 import { feedRoutes } from "./routes/feed.js";
+import { groupRoutes } from "./routes/groups.js";
 import { healthRoutes } from "./routes/health.js";
 import { searchRoutes } from "./routes/search.js";
 import { socialRoutes } from "./routes/social.js";
@@ -26,10 +28,12 @@ import { sitemapRoutes } from "./routes/sitemap.js";
 import { mediaRoutes } from "./routes/media.js";
 import { meRoutes } from "./routes/me.js";
 import { membershipRoutes } from "./routes/memberships.js";
+import { marketRoutes } from "./routes/market.js";
 import { aiRoutes } from "./routes/ai.js";
 import { messageRoutes } from "./routes/messages.js";
 import { newsroomRoutes } from "./routes/newsroom.js";
 import { onboardingRoutes } from "./routes/onboarding.js";
+import { phoneAuthRoutes, whatsAppWebhookRoutes } from "./routes/phone-auth.js";
 import { pressMeetRoutes } from "./routes/press-meets.js";
 import { placeRoutes } from "./routes/places.js";
 import { pressPassRoutes } from "./routes/press-pass.js";
@@ -137,6 +141,8 @@ export function createApp(options: CreateAppOptions = {}) {
 
   app.use("/api/*", originGuard);
   app.use("/api/*", sessionMiddleware);
+  // Posting as a group account: what the member's role allows (owner 2026-10-23).
+  app.use("/api/*", actingGuard);
 
   app.route("/api/health", healthRoutes());
   app.route("/api/sitemap", sitemapRoutes());
@@ -144,8 +150,12 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route("/api/me", meRoutes(deps));
   app.route("/api/username", usernameRoutes(deps));
   app.route("/api/onboarding", onboardingRoutes(deps));
+  app.route("/api/phone-auth", phoneAuthRoutes(deps));
+  app.route("/api/groups", groupRoutes(deps));
+  app.route("/api/whatsapp", whatsAppWebhookRoutes());
   app.route("/api/upload", uploadRoutes(deps));
   app.route("/api/feed", feedRoutes());
+  app.route("/api/market", marketRoutes());
   app.route("/api/articles", articleRoutes(deps));
   app.route("/api/views", viewRoutes(deps));
   app.route("/api/events", eventRoutes(deps));

@@ -153,6 +153,7 @@ const ACTIONS: Partial<Record<NotificationType, string>> = {
   message: "Reply",
   group_added: "Open chat",
   community_invite: "View invite",
+  outlet_invite: "View invite",
   community_joined: "View",
   story_returned: "Edit story",
   membership_ending: "Renew",
@@ -247,6 +248,13 @@ function toMessage(row: QueuedRow): PushMessage | null {
         title: `${who} added you to ${row.conv_name || "a group chat"}`,
         body: row.conv_request ? "They're not someone you follow — it's waiting in your message requests." : "Say hello in the chat",
         url: row.conversation_id ? `/messages/${row.conversation_id}` : "/messages",
+        tag,
+      };
+    case "outlet_invite":
+      return {
+        title: `${who} invited you to join their team${row.note ? ` as ${row.note === "editor" ? "an Editor" : "a Writer"}` : ""}`,
+        body: "Join to post stories as the group",
+        url: "/groups",
         tag,
       };
     case "community_invite":

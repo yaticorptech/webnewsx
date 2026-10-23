@@ -37,7 +37,7 @@ let app: App | null = null;
 
 function firebase(): App {
   if (app) return app;
-  const json = env.FIREBASE_SERVICE_ACCOUNT_JSON ?? readFileSync(env.FIREBASE_SERVICE_ACCOUNT_FILE!, "utf8");
+  const json = env.FIREBASE_SERVICE_ACCOUNT_JSON ?? readFileSync(env.FIREBASE_SERVICE_ACCOUNT_FILE ?? "", "utf8");
   app = getApps()[0] ?? initializeApp({ credential: cert(JSON.parse(json)) });
   return app;
 }
@@ -77,7 +77,8 @@ export async function sendPush(tokens: string[], message: PushMessage): Promise<
   const dead: string[] = [];
   result.responses.forEach((response, i) => {
     const code = response.error?.code;
-    if (code && DEAD_TOKEN.has(code)) dead.push(tokens[i]!);
+    const token = tokens[i];
+    if (code && token && DEAD_TOKEN.has(code)) dead.push(token);
   });
   return dead;
 }

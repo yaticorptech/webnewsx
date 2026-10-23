@@ -87,7 +87,7 @@ describe("GET /api/feed?tab=foryou", () => {
     const personal = await forYouPage(reader, null, 10);
     expect(personal.items.map((i) => i.id)).toContain(story.id);
     const card = personal.items.find((i) => i.id === story.id);
-    expect(card?.viewer).toEqual({ liked: false, followingAuthor: false, isAuthor: false, saved: false });
+    expect(card?.viewer).toEqual({ liked: false, followingAuthor: false, isAuthor: false, saved: false, reported: null });
   });
 
   it("marks cards with the viewer's like / follow / author flags", async () => {

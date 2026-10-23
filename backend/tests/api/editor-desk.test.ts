@@ -16,7 +16,7 @@ import {
   type SpotlightOrderResponse,
   type SpotlightPackage,
 } from "../../src/shared/contracts.js";
-import { adminUser, cleanupFixtures, freshApp, json, onboardedUser, publishArticle, randomLetters, reporterUser, type Client } from "../helpers.js";
+import { adminUser, cleanupFixtures, freshApp, json, onboardedUser, publishArticle, randomLetters, reporterUser, type Client, PUBLISH_EXTRAS } from "../helpers.js";
 
 /*
  * Editor's Picks and Spotlight change what everyone sees, so this file is careful with shared state:
@@ -247,7 +247,9 @@ describe("Editor's Picks", () => {
         const page = await json<Page<ArticleCard>>(await reader.req(`/api/feed?tab=${tab}&limit=10`));
         expect(page.items.slice(0, pins.length).map((c) => c.id), tab).toEqual(pins);
         expect(page.items[pins.length - 1]?.badges?.editorsPick).toBe(true);
-        expect(page.items).toHaveLength(10);
+        // A running Spotlight may be woven in (like a sponsored post): 10 stories, or 11 with it.
+        expect(page.items.length).toBeGreaterThanOrEqual(10);
+        expect(page.items.filter((c) => !c.badges?.spotlight).length).toBeLessThanOrEqual(10);
         // Never repeated further down.
         const rest = await json<Page<ArticleCard>>(await reader.req(`/api/feed?tab=${tab}&limit=10&cursor=${encodeURIComponent(page.nextCursor ?? "")}`));
         for (const id of mine.map((s) => s.id)) expect(rest.items.map((c) => c.id)).not.toContain(id);
@@ -285,7 +287,7 @@ describe("Editor Desk lists", () => {
     const live = await publishArticle(verified, "A live story for the desk list");
     const cover = (await import("../helpers.js")).coverOf;
     const review = await trainee.req("/api/articles", {
-      json: { title: "A story waiting at the desk", bodyHtml: "<p>" + "Plenty of words in this review story. ".repeat(3) + "</p>", cover: await cover(trainee), articleImage: await cover(trainee), category: "education", action: "publish" },
+      json: { title: "A story waiting at the desk", bodyHtml: "<p>" + "Plenty of words in this review story. ".repeat(3) + "</p>", cover: await cover(trainee), articleImage: await cover(trainee), category: "education", ...PUBLISH_EXTRAS, action: "publish" },
     });
     const reviewId = (await json<{ article: { id: string } }>(review)).article.id;
 
@@ -331,7 +333,7 @@ describe("Editor Desk lists", () => {
         articleImage: await cover(trainee),
         category: "education",
         template: "slant",
-        action: "publish",
+        ...PUBLISH_EXTRAS, action: "publish",
       },
     });
     expect(submitted.status, await submitted.clone().text()).toBe(201);

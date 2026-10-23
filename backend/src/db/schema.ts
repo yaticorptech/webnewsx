@@ -18,6 +18,10 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import {
+  ACCOUNT_TYPE_VALUES,
+  GROUP_APPLICATION_STATUS_VALUES,
+  GROUP_MEMBER_STATUS_VALUES,
+  GROUP_ROLE_VALUES,
   PLATFORM_FEE_PROVIDER_VALUES,
   CATEGORY_VALUES,
   CHAT_EVENT_VALUES,
@@ -107,6 +111,11 @@ export const user = pgTable(
     posterOverlayKey: text("poster_overlay_key"),
     /** Settings → Notifications (owner 2026-10-02): push new stories / likes / comments to their phones. */
     pushNotifications: boolean("push_notifications").notNull().default(true),
+    /** Phone sign-in (owner 2026-10-22; Better Auth's phone-number plugin): the E.164 number, verified by a WhatsApp code. */
+    phoneNumber: text("phone_number").unique(),
+    phoneNumberVerified: boolean("phone_number_verified").notNull().default(false),
+    /** "group" = a group account (owner 2026-10-23): nobody signs in to it; its members post as it (group_member). */
+    accountType: text("account_type", { enum: ACCOUNT_TYPE_VALUES }).notNull().default("person"),
   },
   (t) => [
     check("user_username_format", sql`${t.username} ~ ${sql.raw(`'${USERNAME_REGEX.source}'`)}`),
@@ -288,6 +297,10 @@ export const article = pgTable(
     subcategory: text("subcategory"),
     /** The 2-line summary under the headline (owner 2026-10-14); also the cards' excerpt when set. */
     blurb: text("blurb"),
+    /** A group account's story (owner 2026-10-23): the member who wrote it — shown only inside the group and to the Desk. */
+    postedById: text("posted_by_id").references((): AnyPgColumn => user.id, { onDelete: "set null" }),
+    /** A group Writer sent this draft to the group's Editors (cleared when it goes live or is saved as a draft again). */
+    groupSubmittedAt: tsMs("group_submitted_at"),
   },
   (t) => [
     index("article_feed_idx").on(t.status, t.publishedAt.desc(), t.id.desc()),
@@ -1310,6 +1323,62 @@ export const pressMeetSignal = pgTable("press_meet_signal", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
+/* ─────────────── Group accounts (owner 2026-10-23) ─────────────── */
+
+/** A Press Pass holder's request for a group account; the Editor Desk approves it (the account is made then). */
+export const groupApplication = pgTable(
+  "group_application",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    applicantId: text("applicant_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    username: text("username").notNull(),
+    about: text("about").notNull(),
+    /** The logo: one of the applicant's uploaded avatars; becomes the group's photo. */
+    image: text("image").notNull(),
+    link: text("link"),
+    status: text("status", { enum: GROUP_APPLICATION_STATUS_VALUES }).notNull().default("pending"),
+    deskNote: text("desk_note"),
+    decidedBy: text("decided_by").references(() => user.id, { onDelete: "set null" }),
+    decidedAt: ts("decided_at"),
+    /** The group account made on approval. */
+    groupId: text("group_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("group_application_status_idx").on(t.status, t.createdAt),
+    index("group_application_applicant_idx").on(t.applicantId, t.createdAt.desc()),
+    check("group_application_status_valid", sql`${t.status} in ('pending', 'approved', 'rejected')`),
+  ],
+);
+
+/** Who may post as a group account, and how (owner / editor / writer). "invited" until they accept. */
+export const groupMember = pgTable(
+  "group_member",
+  {
+    groupId: text("group_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: text("role", { enum: GROUP_ROLE_VALUES }).notNull(),
+    status: text("status", { enum: GROUP_MEMBER_STATUS_VALUES }).notNull().default("invited"),
+    invitedBy: text("invited_by").references(() => user.id, { onDelete: "set null" }),
+    invitedAt: tsMs("invited_at").notNull().defaultNow(),
+    joinedAt: tsMs("joined_at"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.userId] }),
+    index("group_member_user_idx").on(t.userId, t.status),
+    check("group_member_role_valid", sql`${t.role} in ('owner', 'editor', 'writer')`),
+    check("group_member_status_valid", sql`${t.status} in ('invited', 'active')`),
+    check("group_member_not_self", sql`${t.groupId} <> ${t.userId}`),
+  ],
+);
+
 export const authSchema = { user, session, account, verification };
 export const schema = {
   ...authSchema,
@@ -1343,6 +1412,8 @@ export const schema = {
   pressMeetPeer,
   pressMeetSignal,
   pressMeetNote,
+  groupApplication,
+  groupMember,
 };
 
 export type UserRecord = typeof user.$inferSelect;

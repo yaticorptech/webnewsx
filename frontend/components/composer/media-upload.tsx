@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Camera, Check, ImagePlus, Images, Play, X } from "lucide-react";
+import { Camera, Check, Copy, ImagePlus, Images, Play, X } from "lucide-react";
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Modal } from "@/components/ui/modal";
 import type { VideoRef } from "@/lib/shared/contracts";
@@ -88,7 +88,6 @@ export function MediaUpload(props: MediaUploadProps) {
         : article.cover && !cover.cover
           ? "cover"
           : null;
-  const sameLabel = sameTo === "article" ? "Use the cover image for the article too" : "Use the article image as the cover too";
   return (
     <div id={MEDIA_FIELD_ID} tabIndex={-1} className="relative grid gap-4 outline-none sm:grid-cols-2 sm:gap-5">
       <SlotCard
@@ -98,6 +97,9 @@ export function MediaUpload(props: MediaUploadProps) {
         done={Boolean(cover.cover)}
         invalid={Boolean(coverError)}
       >
+        {sameTo === "cover" && (
+          <SameImageButton label="Use the same image as the article" busy={copying !== null} onClick={() => void reuseImage("cover")} />
+        )}
         <CoverPicker
           compact
           handleRef={coverPicker}
@@ -115,31 +117,6 @@ export function MediaUpload(props: MediaUploadProps) {
           onChange={onCoverChange}
         />
       </SlotCard>
-      {sameTo && (
-        // Phones (stacked, owner 2026-10-19): a row of its own between the two boxes, so it never sits on the cover
-        // image. From 640px (side by side): floated on the centre of the gap between them.
-        <div className="flex justify-center max-sm:-my-2 sm:absolute sm:left-1/2 sm:top-1/2 sm:z-10 sm:-translate-x-1/2 sm:-translate-y-1/2">
-          <button
-            type="button"
-            onClick={() => void reuseImage(sameTo)}
-            disabled={copying !== null}
-            aria-label={sameLabel}
-            title={sameLabel}
-            className="inline-flex size-12 items-center justify-center rounded-full bg-brand text-white shadow-[0_8px_20px_-8px_rgb(227_6_19/0.7)] ring-4 ring-bg transition-transform hover:scale-105 disabled:opacity-70"
-          >
-            {copying ? (
-              <span aria-hidden className="size-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-            ) : (
-              // Points from the filled box to the empty one: sideways from 640px, up / down on phones (stacked).
-              <ArrowRight
-                aria-hidden
-                className={cn("size-5.5 transition-transform", sameTo === "article" ? "max-sm:rotate-90" : "rotate-180 max-sm:rotate-[270deg]")}
-                strokeWidth={2.5}
-              />
-            )}
-          </button>
-        </div>
-      )}
       <SlotCard
         title="Article image"
         size="Any shape · 16:9 works best"
@@ -147,6 +124,9 @@ export function MediaUpload(props: MediaUploadProps) {
         done={Boolean(article.cover)}
         invalid={Boolean(articleError)}
       >
+        {sameTo === "article" && (
+          <SameImageButton label="Use the same image as the cover" busy={copying !== null} onClick={() => void reuseImage("article")} />
+        )}
         <CoverPicker
           compact
           slot="article"
@@ -210,11 +190,34 @@ export function MediaUpload(props: MediaUploadProps) {
   );
 }
 
+/**
+ * "Use the same image" (owner 2026-10-22: the unlabelled arrow between the boxes wasn't noticed): a clear button at the
+ * top of the empty box, once the other box has an image. The image goes through this box's own crop to fit its size.
+ */
+function SameImageButton({ label, busy, onClick }: { label: string; busy: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand/40 bg-tint text-sm font-bold text-brand transition-colors hover:bg-brand hover:text-white disabled:opacity-70"
+    >
+      {busy ? (
+        <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-current/40 border-t-current" />
+      ) : (
+        <Copy aria-hidden className="size-4" strokeWidth={2.4} />
+      )}
+      {label}
+    </button>
+  );
+}
+
 /** One upload section: title, size and use, then its drop zone / preview. */
 function SlotCard({ title, size, note, done, invalid, children }: { title: string; size: string; note: string; done: boolean; invalid: boolean; children: ReactNode }) {
   return (
     <section
       aria-label={title}
+      data-done={done || undefined}
       className={cn(
         "flex min-w-0 flex-col gap-3 rounded-2xl border bg-surface p-4 shadow-[0_10px_30px_-24px_rgb(22_24_29/0.35)] transition-colors sm:p-5",
         invalid ? "border-brand" : done ? "border-tint-border" : "border-border",

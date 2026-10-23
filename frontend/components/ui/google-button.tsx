@@ -82,6 +82,7 @@ export function GoogleButton({ callbackURL = "/", newUserCallbackURL = "/onboard
     <button
       type="button"
       onClick={onClick}
+      aria-label={label === "Google" ? "Continue with Google" : undefined}
       aria-busy={pending || undefined}
       className={cn(
         "relative inline-flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border-strong bg-surface px-5",

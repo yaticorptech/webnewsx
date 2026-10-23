@@ -27,8 +27,7 @@ import {
   publishArticle,
   randomLetters,
   reporterUser,
-  type Client,
-} from "../helpers.js";
+  type Client, PUBLISH_EXTRAS } from "../helpers.js";
 
 const app = freshApp();
 
@@ -102,7 +101,7 @@ describe("drafts", () => {
 describe("publish", () => {
   it("reports every missing field", async () => {
     const author = await reporterUser(app);
-    const res = await author.req("/api/articles", { json: { title: "", bodyHtml: "<p>too short</p>", action: "publish" } });
+    const res = await author.req("/api/articles", { json: { title: "", bodyHtml: "<p>too short</p>", ...PUBLISH_EXTRAS, action: "publish" } });
     expect(res.status).toBe(400);
     const { error } = await json<ApiErrorBody>(res);
     expect(error.code).toBe("validation_error");
@@ -114,7 +113,7 @@ describe("publish", () => {
     const author = await reporterUser(app);
     const cover = await coverOf(author);
     const res = await author.req("/api/articles", {
-      json: { title: "Markup only", bodyHtml: `<p><strong>${"&nbsp;".repeat(40)}</strong></p><p>short</p>`, cover, articleImage: cover, category: "others", action: "publish" },
+      json: { title: "Markup only", bodyHtml: `<p><strong>${"&nbsp;".repeat(40)}</strong></p><p>short</p>`, cover, articleImage: cover, category: "others", ...PUBLISH_EXTRAS, action: "publish" },
     });
     expect(res.status).toBe(400);
     expect(Object.keys((await json<ApiErrorBody>(res)).error.fields ?? {})).toEqual(["bodyHtml"]);
@@ -144,7 +143,7 @@ describe("publish", () => {
         linkUrl: "https://www.Example.com/transit",
         category: "karnataka",
         district: "Mysuru",
-        action: "publish",
+        ...PUBLISH_EXTRAS, action: "publish",
       },
     });
     expect(res.status).toBe(201);
@@ -157,7 +156,8 @@ describe("publish", () => {
     expect(article).toMatchObject({ category: "karnataka", district: "Mysuru" });
     expect(article.linkUrl).toBe("https://www.Example.com/transit");
     expect(article.readingMinutes).toBe(1);
-    expect(article.excerpt.startsWith("City officials confirmed")).toBe(true);
+    // Cards show the blurb as their text (owner 2026-10-15).
+    expect(article.excerpt).toBe(PUBLISH_EXTRAS.blurb);
     expect(article.bodyHtml).not.toMatch(/script|onclick|javascript/);
     expect(article.bodyHtml).toContain('rel="noopener noreferrer nofollow ugc"');
     expect(article.bodyHtml).toContain('target="_blank"');
@@ -172,7 +172,7 @@ describe("publish", () => {
     const draft = await json<SaveArticleResponse>(await author.req("/api/articles", { json: { title: "Soon", action: "draft" } }));
     const cover = await coverOf(author);
     const published = await author.req("/api/articles", {
-      json: { id: draft.article.id, title: "Now live", bodyHtml: LONG_BODY, cover, articleImage: cover, category: "sports", action: "publish" },
+      json: { id: draft.article.id, title: "Now live", bodyHtml: LONG_BODY, cover, articleImage: cover, category: "sports", ...PUBLISH_EXTRAS, action: "publish" },
     });
     expect(published.status).toBe(200);
     const body = await json<SaveArticleResponse>(published);
@@ -194,7 +194,7 @@ describe("categories", () => {
     const author = await reporterUser(app);
     const cover = await coverOf(author);
     const publish = (extra: Record<string, unknown>) =>
-      author.req("/api/articles", { json: { title: "Ward budget passed", bodyHtml: LONG_BODY, cover, articleImage: cover, action: "publish", ...extra } });
+      author.req("/api/articles", { json: { title: "Ward budget passed", bodyHtml: LONG_BODY, cover, articleImage: cover, ...PUBLISH_EXTRAS, action: "publish", ...extra } });
     const fieldsOf = async (res: Response) => {
       expect(res.status).toBe(400);
       return (await json<ApiErrorBody>(res)).error.fields ?? {};
@@ -221,7 +221,7 @@ describe("categories", () => {
     const sports = await publishArticle(author, `Kabaddi final goes to a raid-off ${randomLetters(5)}`, "sports");
     const cover = await coverOf(author);
     const res = await author.req("/api/articles", {
-      json: { title: `Mysuru Dasara lights switch on ${randomLetters(5)}`, bodyHtml: LONG_BODY, cover, articleImage: cover, category: "karnataka", district: "Mysuru", action: "publish" },
+      json: { title: `Mysuru Dasara lights switch on ${randomLetters(5)}`, bodyHtml: LONG_BODY, cover, articleImage: cover, category: "karnataka", district: "Mysuru", ...PUBLISH_EXTRAS, action: "publish" },
     });
     const mysuru = (await json<{ article: ArticleDetail }>(res)).article;
     const feed = async (query: string) => ids((await json<Page<ArticleCard>>(await app.request(`/api/feed?${query}`))).items);
@@ -272,7 +272,7 @@ describe("poster templates", () => {
     const author = await reporterUser(app);
     const publish = async (extra: Record<string, unknown>) =>
       author.req("/api/articles", {
-        json: { title: `Ferry timetable changes ${randomLetters(5)}`, bodyHtml: LONG_BODY, cover: await coverOf(author), articleImage: await coverOf(author), category: "national", action: "publish", ...extra },
+        json: { title: `Ferry timetable changes ${randomLetters(5)}`, bodyHtml: LONG_BODY, cover: await coverOf(author), articleImage: await coverOf(author), category: "national", ...PUBLISH_EXTRAS, action: "publish", ...extra },
       });
 
     const unknown = await publish({ template: "polaroid" });
@@ -306,7 +306,7 @@ describe("poster templates", () => {
     const trainee = await reporterUser(app, { level: "trainee" });
     const submit = async (extra: Record<string, unknown>) => {
       const res = await trainee.req("/api/articles", {
-        json: { title: `Ward water tanker rota ${randomLetters(4)}`, bodyHtml: LONG_BODY, cover: await coverOf(trainee), articleImage: await coverOf(trainee), category: "education", action: "publish", ...extra },
+        json: { title: `Ward water tanker rota ${randomLetters(4)}`, bodyHtml: LONG_BODY, cover: await coverOf(trainee), articleImage: await coverOf(trainee), category: "education", ...PUBLISH_EXTRAS, action: "publish", ...extra },
       });
       expect(res.status, await res.clone().text()).toBe(201);
       const body = await json<SaveArticleResponse>(res);
@@ -516,7 +516,7 @@ describe("short links", () => {
     expect((await desk.req(`/api/admin/stories/${story.id}/unpublish`, { json: { reason: "Needs a second source" } })).status).toBe(200);
     expect((await resolve(code)).status).toBe(404);
     const again = await author.req("/api/articles", {
-      json: { id: story.id, title: story.title, bodyHtml: LONG_BODY, cover: await coverOf(author), articleImage: await coverOf(author), category: "national", action: "publish" },
+      json: { id: story.id, title: story.title, bodyHtml: LONG_BODY, cover: await coverOf(author), articleImage: await coverOf(author), category: "national", ...PUBLISH_EXTRAS, action: "publish" },
     });
     expect(again.status, await again.clone().text()).toBe(200);
     const republished = await json<SaveArticleResponse>(again);
@@ -531,7 +531,7 @@ describe("short links", () => {
     const trainee = await reporterUser(app, { level: "trainee" });
     const submit = async (id?: string) => {
       const res = await trainee.req("/api/articles", {
-        json: { id, title: `A ward story for the Review Desk ${randomLetters(4)}`, bodyHtml: LONG_BODY, cover: await coverOf(trainee), articleImage: await coverOf(trainee), category: "education", action: "publish" },
+        json: { id, title: `A ward story for the Review Desk ${randomLetters(4)}`, bodyHtml: LONG_BODY, cover: await coverOf(trainee), articleImage: await coverOf(trainee), category: "education", ...PUBLISH_EXTRAS, action: "publish" },
       });
       expect(res.status, await res.clone().text()).toBe(id ? 200 : 201);
       const body = await json<SaveArticleResponse>(res);

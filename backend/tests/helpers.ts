@@ -1,3 +1,4 @@
+import { SUBCATEGORIES } from "../src/shared/contracts.js";
 import { randomInt } from "node:crypto";
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
@@ -38,9 +39,12 @@ export function randomLetters(length = 8): string {
   return out;
 }
 
-/** Unique username made of letters and dots only, e.g. "t.qxkzvbma". */
+/**
+ * Unique username in the new-username shape (owner 2026-10-15: at least 5 letters, a dot, then at least 2 letters),
+ * e.g. "tzzzz.qxkzvbma" — the prefix padded to 5 letters.
+ */
 export function testUsername(prefix = "t"): string {
-  return `${prefix}.${randomLetters(8)}`;
+  return `${prefix.padEnd(5, "z")}.${randomLetters(8)}`;
 }
 
 /** Random 10-digit Indian mobile number (Press Pass verification; one pass per number). */
@@ -272,6 +276,15 @@ export async function coverOf(c: Client) {
   return { url: cover.url, key: cover.key, width: cover.width, height: cover.height, blurDataUrl: cover.blurDataUrl };
 }
 
+/**
+ * What a story needs besides its headline, body, images and category to go live (owner 2026-10-14): a blurb of 50+
+ * characters and a sub category ("Other" is in every list). Spread into hand-written publish payloads.
+ */
+export const PUBLISH_EXTRAS = {
+  subcategory: "Other",
+  blurb: "A short summary of the story for the feed cards, long enough to pass the blurb rule.",
+} as const;
+
 export async function publishArticle(
   c: Client,
   title = `Riverside tram line opens next spring ${randomLetters(5)}`,
@@ -279,7 +292,18 @@ export async function publishArticle(
 ): Promise<ArticleDetail> {
   const cover = await coverOf(c);
   const res = await c.req("/api/articles", {
-    json: { title, bodyHtml: LONG_BODY, cover, articleImage: cover, linkUrl: "https://www.example.com/transit", category, action: "publish" },
+    // Blurb and sub category are required to publish (owner 2026-10-14); Karnataka uses its district instead.
+    json: {
+      title,
+      bodyHtml: LONG_BODY,
+      cover,
+      articleImage: cover,
+      linkUrl: "https://www.example.com/transit",
+      category,
+      ...(category === "karnataka" ? { district: "Mysuru" } : { subcategory: category ? (SUBCATEGORIES[category]?.[0] ?? "Other") : "Other" }),
+      blurb: "A short summary of the story for the feed cards, long enough to pass the blurb rule.",
+      action: "publish",
+    },
   });
   expect(res.status, await res.clone().text()).toBe(201);
   const body = await json<SaveArticleResponse>(res);

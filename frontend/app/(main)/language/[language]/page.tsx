@@ -7,7 +7,7 @@ import { NewsFeed } from "@/components/feed/news-feed";
 import { getFeedLayout } from "@/lib/feed-layout-server";
 import { getFeedPage } from "@/lib/server-api";
 import { getSiteViewer } from "@/lib/session";
-import { newShuffleSeed } from "@/lib/shuffle";
+import { newShuffleSeed, visitorShuffleSeed } from "@/lib/shuffle";
 
 type Params = Promise<{ language: string }>;
 
@@ -32,7 +32,8 @@ export default async function LanguagePage({ params }: { params: Params }) {
   const key = languages.join(",");
   // Logged out: newest first, not a fresh mix (the blurred stories past the free ones stay the same on a refresh).
   const viewer = await getSiteViewer();
-  const shuffle = viewer ? newShuffleSeed() : null;
+  // Visitors: the day's mix, the same all day (lib/shuffle.ts).
+  const shuffle = viewer ? newShuffleSeed() : visitorShuffleSeed();
   const [initialPage, layout] = await Promise.all([getFeedPage({ languages, shuffle }), getFeedLayout()]);
   return (
     <section aria-labelledby="feed-heading">

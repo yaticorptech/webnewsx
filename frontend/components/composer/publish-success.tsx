@@ -11,6 +11,8 @@ export type PublishSuccessProps = {
   title: string;
   /** `live` = published ("You're live"); `review` = a Trainee's story sent to the Review Desk ("Filed"). */
   variant?: "live" | "review";
+  /** Who reviews it (default the Review Desk; a group writer's story: "the group's editors", owner 2026-10-23). */
+  reviewer?: string;
   /** Called once the moment has played (navigate away here). */
   onDone: () => void;
 };
@@ -21,7 +23,7 @@ const noopSubscribe = () => () => {};
  * Full-screen "You're live" (or, for a Trainee's submission, "In review") moment: a white page with a soft pink glow, the icon's crimson speed lines
  * sweep across, then a rubber stamp slams in over the headline. Reduced motion: a short static card.
  */
-export function PublishSuccess({ title, onDone, variant = "live" }: PublishSuccessProps) {
+export function PublishSuccess({ title, onDone, variant = "live", reviewer = "the Review Desk" }: PublishSuccessProps) {
   const review = variant === "review";
   const reduce = useReducedMotion();
   const isClient = useSyncExternalStore(
@@ -55,7 +57,8 @@ export function PublishSuccess({ title, onDone, variant = "live" }: PublishSucce
       tabIndex={-1}
       role="status"
       aria-live="assertive"
-      aria-label={review ? "Your story was sent to the Review Desk" : "Your story is live"}
+      aria-label={review ? `Your story was sent to ${reviewer}` : "Your story is live"}
+      data-tour="publish-success"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18 }}
@@ -76,7 +79,7 @@ export function PublishSuccess({ title, onDone, variant = "live" }: PublishSucce
           className="kicker mb-10 flex items-center gap-2 text-muted"
         >
           <PulseDot size="sm" />
-          {review ? "Sent to the Review Desk" : "Published to WebNEWS"}
+          {review ? `Sent to ${reviewer}` : "Published to WebNEWS"}
         </motion.p>
 
         <motion.div

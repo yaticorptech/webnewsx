@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDatabase } from "../../src/db/client.js";
 import { LocalStorage, storage } from "../../src/lib/storage.js";
 import type { ApiErrorBody, ArticleCard, DraftDetail, Page, SaveArticleResponse, UploadedVideo } from "../../src/shared/contracts.js";
-import { LONG_BODY, cleanupFixtures, freshApp, json, onboardedUser, reporterUser, samplePng, type Client } from "../helpers.js";
+import { LONG_BODY, cleanupFixtures, freshApp, json, onboardedUser, reporterUser, samplePng, type Client, PUBLISH_EXTRAS } from "../helpers.js";
 
 /*
  * Story videos (owner rule 2026-09-25): ≤ 30 s, or the first 30 s of a longer clip when the uploader agrees.
@@ -118,7 +118,7 @@ describe("video stories", () => {
     expect((draft.article as DraftDetail).video).toMatchObject({ key: video.key, url: video.url });
 
     const res = await reporter.req("/api/articles", {
-      json: { id: draft.article.id, title: "Harbour lights, in motion", bodyHtml: LONG_BODY, cover, articleImage: cover, video, category: "cinema", action: "publish" },
+      json: { id: draft.article.id, title: "Harbour lights, in motion", bodyHtml: LONG_BODY, cover, articleImage: cover, video, category: "cinema", ...PUBLISH_EXTRAS, action: "publish" },
     });
     expect(res.status, await res.clone().text()).toBe(200);
     const published = await json<SaveArticleResponse>(res);

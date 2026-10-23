@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AuthHeading, AuthShell } from "@/components/auth/auth-shell";
 import { readNextParam, type PageSearchParams } from "@/components/auth/next-path";
-import { SignupForm } from "@/components/auth/signup-form";
+import { AuthOptions } from "@/components/auth/auth-options";
 import { redirectIfLoggedIn } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -31,10 +31,9 @@ export default async function SignupPage({ searchParams }: { searchParams: PageS
       <AuthHeading
         kicker="Create account"
         title="Your byline starts here"
-        lede="Create an account in seconds, then claim your username."
       />
       <div className="mt-8">
-        <SignupForm next={next} />
+        <AuthOptions next={next} mode="signup" />
       </div>
     </AuthShell>
   );

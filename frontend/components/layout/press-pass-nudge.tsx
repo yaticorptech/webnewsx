@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useViewer } from "@/components/providers/viewer-provider";
+import { isTourActive } from "@/components/tour/guided-tour";
 import { toast } from "@/components/ui/toast";
 import { canPublish } from "@/lib/shared/contracts";
 
@@ -45,7 +46,7 @@ export function PressPassNudge() {
     if (!reader || quiet) return;
     let next = Math.max(Date.now() + FIRST_MS, readLastShown() + EVERY_MS);
     const tick = setInterval(() => {
-      if (Date.now() < next || document.hidden || document.querySelector("[role=dialog]")) return;
+      if (Date.now() < next || document.hidden || document.querySelector("[role=dialog]") || isTourActive()) return;
       toast("Want to publish a story?", {
         id: "press-pass-nudge",
         description: "Create your Press Pass and file news on WebNEWS.",

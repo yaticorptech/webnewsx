@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   Bookmark,
+  Building2,
   Info,
   LogOut,
   Menu,
@@ -13,14 +14,18 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserHandle, handleText } from "@/components/brand/user-handle";
+import { useSwitchAccount } from "@/components/groups/use-switch-account";
+import { useViewer } from "@/components/providers/viewer-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { DropdownMenu, type DropdownItem } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
 import { signOut } from "@/lib/auth-client";
 import {
+  GROUP_ROLE_LABELS,
   canPublish,
   type ReporterLevel,
   type Role,
+  type ViewerUser,
 } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +69,8 @@ export function UserMenu({
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const viewer = useViewer();
+  const { switchTo } = useSwitchAccount();
   const onProfile =
     pathname === `/${username}` ||
     pathname.startsWith("/settings") ||
@@ -94,6 +101,7 @@ export function UserMenu({
       <Link
         href={`/${username}`}
         aria-label={`Your profile, ${handleText(username)}`}
+        data-tour="profile"
         className="relative rounded-full p-1 outline-offset-0 transition-transform duration-150 ease-snap hover:scale-105 motion-reduce:hover:scale-100 max-md:hidden"
       >
         <Avatar
@@ -140,26 +148,66 @@ export function UserMenu({
                   className="flex text-xs text-muted"
                 />
                 <p className="mt-0.5 truncate text-xs font-semibold text-ink-2">
-                  {
-                    ROLE_LINE[
-                      role === "reporter" ? (reporterLevel ?? "trainee") : role
-                    ]
-                  }
+                  {viewer?.actingAs
+                    ? `Group · you're ${GROUP_ROLE_LABELS[viewer.actingAs.role].toLowerCase()}`
+                    : ROLE_LINE[
+                        role === "reporter" ? (reporterLevel ?? "trainee") : role
+                      ]}
                 </p>
               </div>
             </div>
           }
-          items={menuItems({
-            username,
-            role,
-            reporterLevel,
-            unreadNotices,
-            logOut,
-          })}
+          items={[
+            ...switchItems(viewer, switchTo),
+            ...menuItems({
+              username,
+              role,
+              reporterLevel,
+              unreadNotices,
+              logOut,
+            }),
+          ]}
         />
       )}
     </div>
   );
+}
+
+/**
+ * "Switch account" (owner 2026-10-23, like Instagram): your own account and each group account you belong to, then the
+ * Groups page (invitations, applying, members).
+ */
+function switchItems(
+  viewer: ViewerUser | null,
+  switchTo: (group: { id: string; name: string } | null) => void,
+): DropdownItem[] {
+  if (!viewer) return [];
+  const items: DropdownItem[] = [{ type: "separator" }];
+  const acting = viewer.actingAs;
+  const others = (viewer.groups ?? []).filter((g) => g.id !== viewer.id);
+  if (acting || others.length > 0) items.push({ type: "label", label: "Switch account" });
+  if (acting) {
+    items.push({
+      label: <span className="truncate">{acting.member.name || "Your account"}</span>,
+      icon: <Avatar src={acting.member.image} name={acting.member.name} size={20} decorative />,
+      onSelect: () => switchTo(null),
+    });
+  }
+  for (const group of others) {
+    items.push({
+      label: <span className="truncate">{group.name}</span>,
+      icon: <Avatar src={group.image} name={group.name} size={20} decorative />,
+      onSelect: () => switchTo(group),
+    });
+  }
+  // One entry (owner 2026-10-23: both went to the same page): posting as a group, "Group settings" opens that group
+  // on the Groups page (members, waiting stories, deactivate / delete); otherwise "Group accounts".
+  items.push(
+    acting
+      ? { label: "Group settings", href: `/groups?manage=${encodeURIComponent(acting.groupId)}`, icon: <Building2 aria-hidden /> }
+      : { label: "Group accounts", href: "/groups", icon: <Building2 aria-hidden /> },
+  );
+  return items;
 }
 
 function menuItems({

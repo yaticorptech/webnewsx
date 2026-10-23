@@ -20,6 +20,7 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
+import { MarketIcon } from "@/components/brand/market-icon";
 import { CATEGORY_LABELS, categoryPath, type Category } from "@/lib/shared/contracts";
 
 /*
@@ -46,7 +47,7 @@ export const CATEGORY_ICONS: Record<Category, LucideIcon> = {
   jobs: BriefcaseBusiness,
 };
 
-export type NavKey = "home" | "following" | "trending" | Category;
+export type NavKey = "home" | "following" | "trending" | "market" | Category;
 export type NavItem = { key: NavKey; label: string; href: string; icon: LucideIcon };
 
 const categoryItem = (category: Category): NavItem => ({
@@ -60,6 +61,8 @@ export const NAV_HOME: NavItem = { key: "home", label: "Home", href: "/", icon: 
 export const NAV_FOLLOWING: NavItem = { key: "following", label: "Following", href: "/?tab=following", icon: UsersRound };
 /** Trending isn't a category: it opens the automatic "most read right now" list. */
 export const NAV_TRENDING: NavItem = { key: "trending", label: "Trending", href: "/trending", icon: Flame };
+/** Market (owner 2026-10-22) isn't a category either: the live prices page, right after Home in every sections row. */
+export const NAV_MARKET: NavItem = { key: "market", label: "Market", href: "/market", icon: MarketIcon };
 
 /** The "More" chip's own icon (it borrows the section's icon while one of its sections is open). */
 export const MORE_ICON: LucideIcon = LayoutGrid;

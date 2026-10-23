@@ -13,7 +13,7 @@ import {
   type PressMeetRoom,
   type PressMeetSlotsResponse,
 } from "../../src/shared/contracts.js";
-import { adminUser, cleanupFixtures, freshApp, json, onboardedUser, publishArticle, reporterUser, type Client } from "../helpers.js";
+import { adminUser, cleanupFixtures, freshApp, json, onboardedUser, reporterUser, type Client, coverOf, LONG_BODY, PUBLISH_EXTRAS } from "../helpers.js";
 
 const app = freshApp();
 
@@ -183,14 +183,14 @@ describe("press meets", () => {
 
     expect((await organizer.req(`/api/press-meets/${id}/end`, { json: {} })).status).toBe(200);
 
-    // After: the reporter sends a story, the organizer verifies it and releases the fee, the reporter confirms. Only a
-    // story published after the press meet ended can be sent (owner 2026-10-05).
-    const before = await json<{ items: { id: string }[] }>(await reporter.req(`/api/press-meets/${id}/stories`));
-    expect(before.items).toHaveLength(0);
-    const story = await publishArticle(reporter);
-    const options = await json<{ items: { id: string }[] }>(await reporter.req(`/api/press-meets/${id}/stories`));
-    expect(options.items.map((s) => s.id)).toContain(story.id);
-    expect((await reporter.req(`/api/press-meets/${id}/submission`, { json: { articleId: story.id } })).status).toBe(200);
+    // After: the reporter writes the story from the composer for this press meet (owner 2026-10-07: POST /api/articles
+    // with pressMeetId — "publish" sends it to the organizer instead of going live), the organizer verifies it and
+    // releases the fee, the reporter confirms.
+    const cover = await coverOf(reporter);
+    const sent = await reporter.req("/api/articles", {
+      json: { title: "Water board press meet: new pipeline", bodyHtml: LONG_BODY, cover, articleImage: cover, category: "national", ...PUBLISH_EXTRAS, pressMeetId: id, action: "publish" },
+    });
+    expect(sent.status, await sent.clone().text()).toBeLessThan(300);
     expect(await bellTypes(organizer)).toContain("press_meet_submitted");
 
     const detail = await json<PressMeetDetail>(await organizer.req(`/api/press-meets/${id}`));

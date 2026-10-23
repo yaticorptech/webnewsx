@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Play, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { MORE_ICON, NAV_FOLLOWING, NAV_HOME, NAV_MAIN, type NavItem, type NavKey } from "@/lib/categories";
+import { MORE_ICON, NAV_FOLLOWING, NAV_HOME, NAV_MAIN, NAV_MARKET, type NavItem, type NavKey } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import type { Menu } from "./category-nav";
 import { useViewer } from "@/components/providers/viewer-provider";
@@ -159,6 +159,8 @@ export function CategoryCircles({
         ) : (
           <>
             {link(FOR_YOU)}
+            {/* Market right after Home (owner 2026-10-22): the live prices page. */}
+            {link(NAV_MARKET)}
             {link(NAV_FOLLOWING, true)}
             {/* Karnataka is a section like the others (owner 2026-10-12); its districts are picked on its page. */}
             {NAV_MAIN.map((item) => link(item))}

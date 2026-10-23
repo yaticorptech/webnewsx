@@ -223,6 +223,7 @@ export function ReelRail({ article, stats, like, save, isOwn, preview = false }:
               event.currentTarget.blur();
             }}
             aria-pressed={autoScrollOn}
+            data-tour="autoscroll"
             aria-label={autoScrollOn ? "Turn off auto-scroll" : `Auto-scroll — next story every ${REEL_SECONDS} s`}
             title={autoScrollOn ? "Turn off auto-scroll" : `Auto-scroll — next story every ${REEL_SECONDS} s`}
             className={cn("inline-flex items-center justify-center", icon)}

@@ -114,7 +114,7 @@ function sniffReport(bytes: Uint8Array, name: string): ReportKind | null {
 
 /** A tidy display name with the right extension: no folders or control characters, at most 120 characters. */
 function displayName(raw: string, ext: string): string {
-  const base = (raw.split(/[\\/]/).pop() ?? "").replace(/[\u0000-\u001f\u007f"]/g, "").trim();
+  const base = (raw.split(/[\\/]/).pop() ?? "").replace(/[\p{Cc}"]/gu, "").trim();
   const stem = base.replace(/\.[^.]*$/, "").slice(0, 110) || "report";
   return `${stem}.${ext}`;
 }

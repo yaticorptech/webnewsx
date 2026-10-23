@@ -3,6 +3,8 @@
  * Next.js rewrite proxies to the backend, so Better Auth cookies are sent automatically.
  * Types come from the generated contract copy (lib/shared/contracts.ts).
  */
+import type { MarketHistory, MarketRange, MarketResponse } from "@/lib/shared/contracts";
+import type { AdminGroupApplication, AdminGroupDetail, GroupApplication, GroupApplicationInput, GroupDetailResponse, MyGroupsResponse } from "@/lib/shared/contracts";
 import type {
   AdminPlatformFee,
   AdminPressMeetRow,
@@ -515,6 +517,12 @@ export const api = {
   trending: (limit = 5, signal?: AbortSignal) =>
     request<{ items: TrendingHeadline[] }>(`/api/feed/trending${query({ limit })}`, { signal }),
 
+  /** GET /api/market — the Market page's live quotes (indices, gold and silver, crude, the rupee, Bitcoin). */
+  market: (signal?: AbortSignal) => request<MarketResponse>("/api/market", { signal }),
+  /** GET /api/market/history?id=&range= — one quote's chart over a week or a month (today's points ride with the quote). */
+  marketHistory: (id: string, range: MarketRange, signal?: AbortSignal) =>
+    request<MarketHistory>(`/api/market/history${query({ id, range })}`, { signal }),
+
   /** GET /api/feed/headlines?limit= (ticker + Live Wire). */
   headlines: (limit = 12, signal?: AbortSignal) =>
     request<{ items: Headline[] }>(`/api/feed/headlines${query({ limit })}`, { signal }),
@@ -778,9 +786,43 @@ export const api = {
     },
   },
 
+  /* ─────────────── Group accounts (owner 2026-10-23) ─────────────── */
+
+  groups: {
+    /** GET /api/groups — your groups, invitations and applications. */
+    mine: (signal?: AbortSignal) => request<MyGroupsResponse>("/api/groups", { signal }),
+    apply: (input: GroupApplicationInput) =>
+      request<{ application: GroupApplication }>("/api/groups/applications", { method: "POST", body: input }),
+    detail: (id: string, signal?: AbortSignal) => request<GroupDetailResponse>(`/api/groups/${enc(id)}`, { signal }),
+    invite: (id: string, username: string, role: "editor" | "writer") =>
+      request<GroupDetailResponse>(`/api/groups/${enc(id)}/members`, { method: "POST", body: { username, role } }),
+    setRole: (id: string, userId: string, role: "editor" | "writer") =>
+      request<GroupDetailResponse>(`/api/groups/${enc(id)}/members/${enc(userId)}`, { method: "PATCH", body: { role } }),
+    /** Removes a member (owner) or leaves the group (yourself). */
+    remove: (id: string, userId: string) => request<unknown>(`/api/groups/${enc(id)}/members/${enc(userId)}`, { method: "DELETE" }),
+    answer: (id: string, accept: boolean) =>
+      request<MyGroupsResponse>(`/api/groups/${enc(id)}/invite/${accept ? "accept" : "decline"}`, { method: "POST" }),
+    /** "Posting as" the group / back to your own account. Reload the page data afterwards. */
+    switchTo: (id: string) => request<{ ok: true }>(`/api/groups/${enc(id)}/switch`, { method: "POST" }),
+    switchBack: () => request<{ ok: true }>("/api/groups/switch-back", { method: "POST" }),
+    /** The owner deactivates (hidden, nobody posts as it) / reactivates the group. */
+    deactivate: (id: string) => request<MyGroupsResponse>(`/api/groups/${enc(id)}/deactivate`, { method: "POST" }),
+    reactivate: (id: string) => request<MyGroupsResponse>(`/api/groups/${enc(id)}/reactivate`, { method: "POST" }),
+    /** The owner deletes the group for good (its stories too). */
+    delete: (id: string) => request<MyGroupsResponse>(`/api/groups/${enc(id)}`, { method: "DELETE" }),
+  },
+
   /* ─────────────── Editor Desk (admins only: 403 `admin_only` otherwise) ─────────────── */
 
   admin: {
+    /** Group account applications (owner 2026-10-23): pending first. */
+    groups: (signal?: AbortSignal) => request<{ items: AdminGroupApplication[] }>("/api/admin/groups", { signal }),
+    groupDetail: (applicationId: string, signal?: AbortSignal) =>
+      request<AdminGroupDetail>(`/api/admin/groups/${enc(applicationId)}/detail`, { signal }),
+    deleteGroup: (applicationId: string) =>
+      request<{ items: AdminGroupApplication[] }>(`/api/admin/groups/${enc(applicationId)}/group`, { method: "DELETE" }),
+    decideGroup: (id: string, decision: "approve" | "reject", note?: string) =>
+      request<{ items: AdminGroupApplication[] }>(`/api/admin/groups/${enc(id)}/${decision}`, { method: "POST", body: { note } }),
     /** GET /api/admin/memberships — totals, what each reporter is owed, payments, payouts (owner 2026-10-15). */
     memberships: (signal?: AbortSignal) => request<AdminMemberships>("/api/admin/memberships", { signal }),
     /** GET / PUT /api/admin/membership-rules — who may start a premium membership (owner 2026-10-16). */

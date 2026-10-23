@@ -5,6 +5,7 @@ import { PageBack } from "@/components/layout/back-button";
 import { PendingPage } from "@/components/layout/pending-page";
 import { PressPassNudge } from "@/components/layout/press-pass-nudge";
 import { PressPassWelcome } from "@/components/layout/press-pass-welcome";
+import { FirstStepsPopup } from "@/components/layout/first-steps-popup";
 import { BackToTop } from "@/components/layout/back-to-top";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { GetAppBanner } from "@/components/layout/get-app-banner";
@@ -13,6 +14,8 @@ import { RightRail } from "@/components/layout/right-rail";
 import { SideNav } from "@/components/layout/side-nav";
 import { Masthead } from "@/components/layout/top-nav";
 import { NoticeBanner } from "@/components/notices/notices";
+import { ActingBar } from "@/components/groups/acting-bar";
+import { GuidedTour } from "@/components/tour/guided-tour";
 import { FeedLayoutProvider } from "@/components/providers/feed-layout-provider";
 import { getFeedLayout } from "@/lib/feed-layout-server";
 import { redirectIfNeedsOnboarding } from "@/lib/session";
@@ -47,6 +50,8 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
             // (data-messages-page) fill the screen: chat list beside the open chat.
             className="w-full min-w-0 max-w-160 pb-tabbar outline-none has-[[data-grid-page]]:max-w-none md:pb-16 lg:has-[[data-messages-page]]:max-w-none lg:has-[[data-messages-page]]:pb-4 xl:has-[[data-wide-page]]:max-w-375"
           >
+            {/* Posting as a group account (owner 2026-10-23): always visible, with the way back. */}
+            <ActingBar />
             <NoticeBanner />
             <PageBack />
             <PendingPage>{children}</PendingPage>
@@ -63,10 +68,14 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
       <PressPassNudge />
       {/* Readers, right after signing in: "Want to publish your first article?" (owner 2026-10-08). */}
       <PressPassWelcome />
+      {/* New accounts' next step, once a day (owner 2026-10-23): a Press Pass, or the first article. */}
+      <FirstStepsPopup />
       {/* Visitors past their free stories: the Instagram-style sign-up wall (owner 2026-10-08). */}
       <ReadWallHost />
       {/* Phone browsers: "Get the WebNEWS app" (owner 2026-10-16) — never in the app, gone for good once downloaded. */}
       <GetAppBanner />
+      {/* First opening of the site or the app: "Start tour / Skip", then a hands-on walk through every feature (owner 2026-10-22). */}
+      <GuidedTour />
     </>
   );
   // Grid or reels for Home and the categories (the switch beside Home, owner 2026-10-05).

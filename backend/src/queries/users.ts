@@ -13,7 +13,7 @@ import { badgeLevelSql, beforeCursor, descNullsLast } from "./shared.js";
 
 type ViewerRecord = Pick<
   UserRecord,
-  "id" | "username" | "name" | "image" | "email" | "bio" | "onboardedAt" | "role" | "reporterLevel" | "suspendedAt" | "preferredLanguages" | "posterOverlayUrl"
+  "id" | "username" | "name" | "image" | "email" | "phoneNumber" | "bio" | "onboardedAt" | "role" | "reporterLevel" | "suspendedAt" | "preferredLanguages" | "posterOverlayUrl" | "accountType"
 >;
 
 export function toViewerUser(
@@ -29,6 +29,7 @@ export function toViewerUser(
     name: record.name ?? "",
     image: record.image ?? null,
     email: record.email,
+    phoneNumber: record.phoneNumber ?? null,
     bio: record.bio ?? null,
     onboarded: Boolean(record.onboardedAt),
     role: record.role,
@@ -40,6 +41,7 @@ export function toViewerUser(
     unreadNotices,
     unreadNotifications,
     unreadMessages,
+    accountType: record.accountType,
   };
 }
 
@@ -47,12 +49,16 @@ export function toViewerUser(
 export async function getViewerUser(id: string, executor: Executor = db): Promise<ViewerUser | null> {
   const [row] = await executor.select({ user, pass: pressPass }).from(user).leftJoin(pressPass, eq(pressPass.userId, user.id)).where(eq(user.id, id)).limit(1);
   if (!row) return null;
-  const [notices, notifications, chats] = await Promise.all([
+  const [notices, notifications, chats, published] = await Promise.all([
     countUnreadNotices(id, executor),
     countUnreadNotifications(id, executor),
     countUnreadChats(id, executor),
+    executor
+      .select({ n: sql<number>`count(*)::int` })
+      .from(article)
+      .where(and(eq(article.authorId, id), eq(article.status, "published"))),
   ]);
-  return toViewerUser(row.user, row.pass, notices, notifications, chats.unread);
+  return { ...toViewerUser(row.user, row.pass, notices, notifications, chats.unread), publishedStories: published[0]?.n ?? 0 };
 }
 
 export async function findUserById(id: string, executor: Executor = db): Promise<UserRecord | null> {
@@ -142,6 +148,7 @@ export async function getProfile(username: string, viewer: { id: string; role: s
       bio: record.bio,
       createdAt: record.createdAt.toISOString(),
       role: record.role,
+      accountType: record.accountType,
     },
     counts,
     viewer: { isSelf: viewerId === record.id, follows },

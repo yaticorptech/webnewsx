@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { MarketResponse } from "@/lib/shared/contracts";
+
 import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
 import { cache } from "react";
@@ -346,6 +348,11 @@ export const getLatestHeadlines = cache(
 /** The /trending page's list. THROWS on failure (error boundary) instead of pretending nothing is trending. */
 export async function getTrendingPage(limit: number): Promise<TrendingHeadline[]> {
   return (await serverFetch<{ items: TrendingHeadline[] }>(`/api/feed/trending${query({ limit })}`)).items ?? [];
+}
+
+/** The Market page's quotes for the first paint (fails soft to null: the page then loads them itself). */
+export async function getMarket(): Promise<MarketResponse | null> {
+  return orNull(() => serverFetch<MarketResponse>("/api/market"));
 }
 
 /** "Trending now" rail items (deduped per request). Fails soft to []. */

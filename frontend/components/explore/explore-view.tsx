@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useMetered } from "@/components/auth/read-meter";
 import { useViewer } from "@/components/providers/viewer-provider";
-import { BLURRED_CARDS, BlurredCards, FREE_CARDS } from "@/components/auth/read-wall";
+import { BlurredCards, splitForVisitor } from "@/components/auth/read-wall";
 import { useInfiniteSentinel } from "@/components/profile/use-infinite-sentinel";
 import { StoryPoster, toPosterStory } from "@/components/poster/story-poster";
 import { SearchCombobox } from "@/components/search/site-search";
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SpeedLinesLoader } from "@/components/ui/speed-lines-loader";
 import { compactNumber } from "@/lib/format";
-import { newShuffleSeed } from "@/lib/shuffle";
+import { newShuffleSeed, visitorShuffleSeed } from "@/lib/shuffle";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 import type { ArticleCard } from "@/lib/shared/contracts";
@@ -38,15 +38,16 @@ export function ExploreView() {
   const [round, setRound] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Logged out (owner 2026-10-08, as Home): FREE_CARDS stories, then BLURRED_CARDS blurred under "Sign in to read", no
-  // more pages — and newest first, never a fresh mix, so a refresh can't swap the blurred stories into view.
+  // Logged out (owner 2026-10-08 / 2026-10-22, as Home): FREE_CARDS stories of the day's mix open, then BLURRED_CARDS
+  // blurred under "Sign in to read", no more pages — one seed all day (lib/shuffle.ts), so a refresh can't swap the
+  // blurred stories into view.
   const viewer = useViewer();
   const gated = useMetered();
   const feed = useInfiniteQuery({
-    queryKey: [...qk.explore, viewer ? "mix" : "newest"],
+    queryKey: [...qk.explore, viewer ? "mix" : "day"],
     // A fresh mix on every visit (owner 2026-10-05), recent stories first; the seed rides in the next pages' cursors.
     queryFn: ({ pageParam, signal }) =>
-      api.feed({ tab: "latest", cursor: pageParam, shuffle: pageParam || !viewer ? null : newShuffleSeed() }, signal),
+      api.feed({ tab: "latest", cursor: pageParam, shuffle: pageParam ? null : viewer ? newShuffleSeed() : visitorShuffleSeed() }, signal),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
     staleTime: 60_000,
@@ -54,9 +55,8 @@ export function ExploreView() {
   // Ranked pages can overlap: each story once.
   const seen = new Set<string>();
   const all = (feed.data?.pages ?? []).flatMap((page) => page.items).filter((story) => !seen.has(story.id) && seen.add(story.id));
-  const stories = gated ? all.slice(0, FREE_CARDS) : all;
-  const blurred = gated ? all.slice(FREE_CARDS, FREE_CARDS + BLURRED_CARDS) : [];
-  const moreToLoad = Boolean(feed.hasNextPage) && (!gated || all.length < FREE_CARDS + BLURRED_CARDS);
+  const { free: stories, locked: blurred, complete } = splitForVisitor(all, gated);
+  const moreToLoad = Boolean(feed.hasNextPage) && !complete;
 
   const sentinel = useInfiniteSentinel<HTMLDivElement>({
     enabled: !searching && moreToLoad && !feed.isFetchingNextPage && !feed.isError,

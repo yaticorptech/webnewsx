@@ -210,6 +210,10 @@ export function describeAudit(entry: AuditEntry): Described {
       ),
       note: typeof meta.previous === "string" ? `Before: ${meta.previous}` : null,
     }),
+    // Group accounts (owner 2026-10-23).
+    "group.approve": () => ({ icon: BadgeCheck, tone: "live", text: <>approved the group account {who}</> }),
+    "group.reject": () => ({ icon: CircleSlash, tone: "brand", text: <>turned down the group account {who}</>, note }),
+    "group.delete": () => ({ icon: Trash2, tone: "brand", text: <>deleted the group account {who}{num(meta.stories) ? ` and its ${num(meta.stories)} stories` : ""}</> }),
   };
 
   return (table[entry.action] ?? (() => ({ icon: Flag, tone: "muted" as const, text: <>{entry.action} on {quoted}</> })))();

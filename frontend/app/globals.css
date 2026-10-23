@@ -214,6 +214,10 @@ html[data-theme="dark"] [data-poster] {
   --animate-speed-lines: speed-lines 1.2s var(--ease-in-out-quart) infinite both;
   /* News radio on air (owner 2026-10-01): sound bars rising and falling, each bar at its own pace. */
   --animate-sound-bar: sound-bar 0.9s ease-in-out infinite;
+  /* Guided tour (owner 2026-10-22): the spotlight's ring breathing around the control, and the bar that fills while the
+     person is left with a feature before the next step (its duration is set per step, inline). */
+  --animate-tour-pulse: tour-pulse 1.6s ease-out infinite;
+  --animate-tour-fill: tour-fill 2s linear forwards;
 
   @keyframes heartbeat {
     0%,
@@ -286,6 +290,22 @@ html[data-theme="dark"] [data-poster] {
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+  @keyframes tour-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgb(227 6 19 / 0.55);
+    }
+    100% {
+      box-shadow: 0 0 0 14px rgb(227 6 19 / 0);
+    }
+  }
+  @keyframes tour-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
     }
   }
   @keyframes sound-bar {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Link2, Mail, Share2, Smartphone } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { ExternalShareButton, SendSheet, type SendItem } from "@/components/messages/send-sheet";
 import { useCanMessage } from "@/components/messages/use-can-message";
@@ -16,7 +16,7 @@ import type { ArticleCard, ShareChannel } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 import { setStats, statsKey, type StatCounts } from "./live-state";
 import { useReelAutoplayController } from "./reel-autoscroll";
-import { FacebookGlyph, LinkedInGlyph, TelegramGlyph, WhatsAppGlyph, XGlyph } from "./share-glyphs";
+import { CopyLinkIcon, EmailIcon, FacebookIcon, InstagramIcon, LinkedInIcon, ShareViaIcon, TelegramIcon, WhatsAppIcon, XIcon } from "./share-glyphs";
 
 /**
  * `shortCode` is always on API cards / details; a client-built preview card may lack it (then the full URL is shared).
@@ -150,6 +150,7 @@ const APP_PACKAGES: Partial<Record<ShareChannel, readonly string[]>> = {
   telegram: ["org.telegram.messenger", "org.telegram.messenger.web"],
   x: ["com.twitter.android"],
   facebook: ["com.facebook.katana"],
+  instagram: ["com.instagram.android"],
   linkedin: ["com.linkedin.android"],
 };
 
@@ -163,6 +164,9 @@ function intentUrl(channel: Exclude<ShareChannel, "native" | "copy" | "dm">, url
       return `https://x.com/intent/post?text=${t}&url=${u}`;
     case "facebook":
       return `https://www.facebook.com/sharer/sharer.php?u=${u}`;
+    // Instagram has no web share link (owner 2026-10-22): the link is copied first, then Instagram opens to paste it.
+    case "instagram":
+      return "https://www.instagram.com/";
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
     case "telegram":
@@ -262,6 +266,13 @@ export function useStoryShare(article: ShareSource) {
       else window.open(url, "_blank", "noopener,noreferrer");
     };
     record(channel);
+    // Instagram on the web can't take a link: copy it, say so, and open Instagram to paste it into a story or post.
+    if (channel === "instagram" && !hasShareToApp()) {
+      void navigator.clipboard?.writeText(shareUrl(article)).catch(() => {});
+      toast.success("Link copied", { id: "share-instagram", description: "Paste it into your Instagram story or post." });
+      openLink();
+      return;
+    }
     const packages = APP_PACKAGES[channel];
     // The WebNEWS app (owner 2026-10-02): straight into WhatsApp / Telegram / … with the poster attached (owner
     // 2026-10-05; the cover before) and "headline + link" as its caption — a web link can't carry a picture. Not
@@ -277,7 +288,8 @@ export function useStoryShare(article: ShareSource) {
     openLink();
   };
 
-  const glyphLg = "size-5";
+  // The apps' own badges (share-glyphs.tsx), the size of the sheet's tiles.
+  const badge = 24;
   const later = (run: () => void) => () => {
     setSheetOpen(false);
     run();
@@ -289,14 +301,15 @@ export function useStoryShare(article: ShareSource) {
       item={sendItem(article)}
       external={
         <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 no-scrollbar">
-          <ExternalShareButton label="Copy link" icon={<Link2 aria-hidden />} onClick={() => void copyLink()} />
-          {native && <ExternalShareButton label="Share via…" icon={<Smartphone aria-hidden />} onClick={later(() => void shareNative())} />}
-          <ExternalShareButton label="WhatsApp" icon={<WhatsAppGlyph className={glyphLg} />} onClick={later(() => openIntent("whatsapp"))} />
-          <ExternalShareButton label="X" icon={<XGlyph className={glyphLg} />} onClick={later(() => openIntent("x"))} />
-          <ExternalShareButton label="Facebook" icon={<FacebookGlyph className={glyphLg} />} onClick={later(() => openIntent("facebook"))} />
-          <ExternalShareButton label="Telegram" icon={<TelegramGlyph className={glyphLg} />} onClick={later(() => openIntent("telegram"))} />
-          <ExternalShareButton label="LinkedIn" icon={<LinkedInGlyph className={glyphLg} />} onClick={later(() => openIntent("linkedin"))} />
-          <ExternalShareButton label="Email" icon={<Mail aria-hidden />} onClick={later(() => openIntent("email"))} />
+          <ExternalShareButton label="Copy link" icon={<CopyLinkIcon size={badge} />} onClick={() => void copyLink()} />
+          {native && <ExternalShareButton label="Share via…" icon={<ShareViaIcon size={badge} />} onClick={later(() => void shareNative())} />}
+          <ExternalShareButton label="WhatsApp" icon={<WhatsAppIcon size={badge} />} onClick={later(() => openIntent("whatsapp"))} />
+          <ExternalShareButton label="X" icon={<XIcon size={badge} />} onClick={later(() => openIntent("x"))} />
+          <ExternalShareButton label="Facebook" icon={<FacebookIcon size={badge} />} onClick={later(() => openIntent("facebook"))} />
+          <ExternalShareButton label="Instagram" icon={<InstagramIcon size={badge} />} onClick={later(() => openIntent("instagram"))} />
+          <ExternalShareButton label="Telegram" icon={<TelegramIcon size={badge} />} onClick={later(() => openIntent("telegram"))} />
+          <ExternalShareButton label="LinkedIn" icon={<LinkedInIcon size={badge} />} onClick={later(() => openIntent("linkedin"))} />
+          <ExternalShareButton label="Email" icon={<EmailIcon size={badge} />} onClick={later(() => openIntent("email"))} />
         </div>
       }
     />
@@ -366,19 +379,21 @@ export function ShareButton({ article, count, size = "sm", inert = false, classN
     );
   }
 
-  const glyph = "size-[1.05rem]";
+  // The apps' own badges in the menu (share-glyphs.tsx), a little bigger than the menu's line icons.
+  const menuBadge = 22;
   const items: DropdownItem[] = [
     ...(native
-      ? ([{ label: "Share via…", icon: <Smartphone aria-hidden />, onSelect: () => void shareNative() }] satisfies DropdownItem[])
+      ? ([{ label: "Share via…", icon: <ShareViaIcon size={menuBadge} />, onSelect: () => void shareNative() }] satisfies DropdownItem[])
       : []),
-    { label: "Copy link", icon: <Link2 aria-hidden />, onSelect: () => void copyLink() },
+    { label: "Copy link", icon: <CopyLinkIcon size={menuBadge} />, onSelect: () => void copyLink() },
     { type: "separator" },
-    { label: "WhatsApp", icon: <WhatsAppGlyph className={glyph} />, onSelect: () => openIntent("whatsapp") },
-    { label: "X", icon: <XGlyph className={glyph} />, onSelect: () => openIntent("x") },
-    { label: "Facebook", icon: <FacebookGlyph className={glyph} />, onSelect: () => openIntent("facebook") },
-    { label: "LinkedIn", icon: <LinkedInGlyph className={glyph} />, onSelect: () => openIntent("linkedin") },
-    { label: "Telegram", icon: <TelegramGlyph className={glyph} />, onSelect: () => openIntent("telegram") },
-    { label: "Email", icon: <Mail aria-hidden />, onSelect: () => openIntent("email") },
+    { label: "WhatsApp", icon: <WhatsAppIcon size={menuBadge} />, onSelect: () => openIntent("whatsapp") },
+    { label: "X", icon: <XIcon size={menuBadge} />, onSelect: () => openIntent("x") },
+    { label: "Facebook", icon: <FacebookIcon size={menuBadge} />, onSelect: () => openIntent("facebook") },
+    { label: "Instagram", icon: <InstagramIcon size={menuBadge} />, onSelect: () => openIntent("instagram") },
+    { label: "LinkedIn", icon: <LinkedInIcon size={menuBadge} />, onSelect: () => openIntent("linkedin") },
+    { label: "Telegram", icon: <TelegramIcon size={menuBadge} />, onSelect: () => openIntent("telegram") },
+    { label: "Email", icon: <EmailIcon size={menuBadge} />, onSelect: () => openIntent("email") },
   ];
 
   return (

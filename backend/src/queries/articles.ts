@@ -391,6 +391,38 @@ async function shuffledPage(conditions: SQL[], viewerId: string | null, shuffle:
   return { items, nextCursor: rows.length > limit ? `s.${shuffle.seed}.${shuffle.offset + limit}` : null };
 }
 
+/**
+ * A logged-out visitor's Home (owner 2026-10-22: "old and latest articles mixed on top, then sign in to read more"):
+ * the newest stories (the last VISITOR_RECENT_DAYS, newest first) take turns with older ones in an order fixed by the
+ * day's seed — latest, older, latest, older… — so the few cards a visitor can read are half today's news and half the
+ * archive, and the blurred ones after them the same; when one side runs out the other carries on. Offset pages over
+ * that order, `s.<seed>.<offset>` cursors like the other shuffled feeds. Editor's Picks lead page 1, Spotlights are
+ * woven in as usual.
+ */
+const VISITOR_RECENT_DAYS = 1;
+const visitorMixOrder = (seed: string) => {
+  const recent = sql`(${article.publishedAt} >= now() - make_interval(days => ${VISITOR_RECENT_DAYS}))`;
+  return sql`case when ${recent}
+    then (row_number() over (partition by ${recent} order by ${article.publishedAt} desc, ${article.id} desc) - 1) * 2
+    else (row_number() over (partition by ${recent} order by md5(${article.id}::text || ${seed})) - 1) * 2 + 1 end`;
+};
+
+export async function listVisitorMix(opts: { shuffle: Shuffle; limit: number }): Promise<Page<ArticleCard>> {
+  const { seed, offset } = opts.shuffle;
+  const spotlit = await listSpotlit(null, seed);
+  const picks = offset === 0 ? withoutSpotlit(await listEditorsPicks(null), spotlit) : [];
+  const limit = Math.max(opts.limit - picks.length, 1);
+  const rows = await selectCards(null)
+    .where(and(visibleWhere(), isNull(article.pinnedAt), notSpotlit()))
+    .orderBy(visitorMixOrder(seed))
+    .limit(limit + 1)
+    .offset(offset);
+  const items = rows.slice(0, limit).map((row) => toCard(row, null));
+  const nextCursor = rows.length > limit ? `s.${seed}.${offset + limit}` : null;
+  const woven = weaveSpotlights(items, offset, spotlit, nextCursor === null);
+  return { items: [...picks, ...woven], nextCursor };
+}
+
 export async function listFeed(opts: {
   tab: Exclude<FeedTab, "foryou">;
   viewerId: string | null;

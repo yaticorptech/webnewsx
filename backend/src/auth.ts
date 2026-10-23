@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { phoneNumber } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { eq, sql } from "drizzle-orm";
@@ -8,8 +9,9 @@ import { env } from "./env.js";
 import { claimUnverifiedAccount, promoteListedAdmin } from "./lib/admin-emails.js";
 import { ADMIN_PASSWORD_ONLY, ADMIN_PASSWORD_ONLY_MESSAGE, DESK_SIGN_IN_PATH, deskSessionExpiry, hasPasswordLogin } from "./lib/desk-sign-in.js";
 import { passwordResetMail, sendMail } from "./lib/mail.js";
+import { consumeWhatsAppCheck } from "./lib/whatsapp-check.js";
 import { isAdminEmail } from "./lib/roles.js";
-import { PASSWORD_RULES, WEAK_PASSWORD_MESSAGE, emailWords, isPasswordStrongEnough } from "./shared/contracts.js";
+import { PASSWORD_RULES, PHONE_ACCOUNT_EMAIL_DOMAIN, SELF_DEACTIVATED_REASON, WEAK_PASSWORD_MESSAGE, emailWords, isPasswordStrongEnough } from "./shared/contracts.js";
 
 /** Better Auth error code for sign-in attempts of suspended accounts (403). */
 export const ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED";
@@ -43,7 +45,10 @@ export async function beforeSessionCreate(
     .where(eq(userTable.id, session.userId))
     .limit(1);
   if (!record) return undefined;
-  if (record.suspendedAt) {
+  // Deactivated by its owner (owner 2026-10-23): logging in again brings the account back.
+  if (record.suspendedAt && record.suspendReason === SELF_DEACTIVATED_REASON) {
+    await db.update(userTable).set({ suspendedAt: null, suspendReason: null }).where(eq(userTable.id, record.id));
+  } else if (record.suspendedAt) {
     throw APIError.from("FORBIDDEN", { code: ACCOUNT_SUSPENDED, message: suspendedMessage(record.suspendReason) });
   }
   const typedPassword = ctx?.path === DESK_SIGN_IN_PATH;
@@ -67,7 +72,18 @@ const NEW_PASSWORD_FIELDS: Record<string, string> = { "/sign-up/email": "passwor
  *    doesn't slide the expiry. Decided before the password check, for every address alike (listed addresses too,
  *    since this sign-in may promote them).
  */
+/** Owner 2026-10-22: readers sign up and log in with their WhatsApp number or a social account; email + password is the Editor Desk's. */
+const EMAIL_SIGN_UP_DISABLED = "EMAIL_SIGN_UP_DISABLED";
+const EMAIL_SIGN_IN_DISABLED = "EMAIL_SIGN_IN_DISABLED";
+const EMAIL_ONLY_FOR_DESK_MESSAGE = "WebNEWS signs you in with your WhatsApp number or a social account. Email and password are for the Editor Desk.";
+
 const beforeAuthRequest = createAuthMiddleware(async (ctx) => {
+  // Email sign-up is for Editor Desk addresses only (the test suite's fixtures still use it).
+  if (ctx.path === "/sign-up/email" && !env.isTest) {
+    const body = ctx.body as Record<string, unknown> | undefined;
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    if (!isAdminEmail(email)) throw APIError.from("FORBIDDEN", { code: EMAIL_SIGN_UP_DISABLED, message: EMAIL_ONLY_FOR_DESK_MESSAGE });
+  }
   const passwordField = NEW_PASSWORD_FIELDS[ctx.path];
   if (passwordField) {
     const body = ctx.body as Record<string, unknown> | undefined;
@@ -98,7 +114,10 @@ const beforeAuthRequest = createAuthMiddleware(async (ctx) => {
       message: "This account uses Google sign-in. Continue with Google instead.",
     });
   }
-  if (record.role !== "admin" && !isAdminEmail(email)) return;
+  if (record.role !== "admin" && !isAdminEmail(email)) {
+    if (env.isTest) return;
+    throw APIError.from("FORBIDDEN", { code: EMAIL_SIGN_IN_DISABLED, message: EMAIL_ONLY_FOR_DESK_MESSAGE });
+  }
   return { context: { body: { ...body, rememberMe: false } } };
 });
 
@@ -129,7 +148,7 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema: authSchema }),
   // Profile fields (display name, photo) only change through our own validated endpoints (PATCH /api/me,
   // onboarding) — Better Auth's generic update endpoint would bypass the length and avatar rules.
-  disabledPaths: ["/update-user"],
+  disabledPaths: ["/update-user", "/phone-number/send-otp", "/phone-number/request-password-reset", "/phone-number/reset-password"],
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
@@ -148,21 +167,49 @@ export const auth = betterAuth({
       });
     },
   },
-  socialProviders: env.googleEnabled
-    ? {
-        google: {
-          clientId: env.GOOGLE_CLIENT_ID as string,
-          clientSecret: env.GOOGLE_CLIENT_SECRET as string,
-          prompt: "select_account",
-          // Runs only for a Google-authenticated profile, before Better Auth looks the address up: a verified Google
-          // address claims an unverified password account registered with it (see claimUnverifiedAccount).
-          mapProfileToUser: async (profile) => {
-            await claimUnverifiedAccount(profile.email, profile.email_verified);
-            return {};
+  // Owner 2026-10-22 ("multiple social media accounts"): each provider is offered once its keys are set — Facebook
+  // through the Meta app that also auto-posts (META_APP_ID), LinkedIn and X through their own. Google as before.
+  socialProviders: {
+    ...(env.googleEnabled
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID as string,
+            clientSecret: env.GOOGLE_CLIENT_SECRET as string,
+            prompt: "select_account" as const,
+            // Runs only for a Google-authenticated profile, before Better Auth looks the address up: a verified Google
+            // address claims an unverified password account registered with it (see claimUnverifiedAccount).
+            mapProfileToUser: async (profile: { email: string; email_verified: boolean }) => {
+              await claimUnverifiedAccount(profile.email, profile.email_verified);
+              return {};
+            },
           },
-        },
-      }
-    : {},
+        }
+      : {}),
+    ...(env.facebookEnabled ? { facebook: { clientId: env.META_APP_ID as string, clientSecret: env.META_APP_SECRET as string } } : {}),
+    ...(env.linkedinEnabled ? { linkedin: { clientId: env.LINKEDIN_CLIENT_ID as string, clientSecret: env.LINKEDIN_CLIENT_SECRET as string } } : {}),
+    // X (owner 2026-10-23) shares the email only if the app asks for it; otherwise the account gets a placeholder address.
+    ...(env.xEnabled ? { twitter: { clientId: env.X_CLIENT_ID as string, clientSecret: env.X_CLIENT_SECRET as string } } : {}),
+  },
+  // Phone sign-in (owner 2026-10-23): the number is proved once on WhatsApp — the reader sends us a code and Meta's
+  // webhook confirms who sent it (routes/phone-auth.ts); the "code" Better Auth's verify gets is that confirmed check's
+  // id. A number seen for the first time becomes a new Reader account right there (onboarding then asks for the name
+  // and username) and sets a password; after that it's number + password (/sign-in/phone-number). Nothing is ever sent
+  // as an OTP: send-otp and the OTP password reset are switched off (disabledPaths) — forgot password = verify again.
+  plugins: [
+    phoneNumber({
+      verifyOTP: ({ phoneNumber: number, code }) => consumeWhatsAppCheck(number, code),
+      // Never reached (the paths that send codes are disabled); required by the plugin.
+      sendOTP: () => {
+        throw APIError.from("FORBIDDEN", { code: "WHATSAPP_VERIFY_ONLY", message: "Verify your number on WhatsApp instead." });
+      },
+      // E.164: a "+", then 8–15 digits.
+      phoneNumberValidator: (value) => /^\+[1-9]\d{7,14}$/.test(value),
+      signUpOnVerification: {
+        getTempEmail: (value) => `${value.replace(/\D/g, "")}@${PHONE_ACCOUNT_EMAIL_DOMAIN}`,
+        getTempName: () => "",
+      },
+    }),
+  ],
   user: {
     additionalFields: {
       username: { type: "string", required: false, input: false },
@@ -192,7 +239,7 @@ export const auth = betterAuth({
   // (beforeAuthRequest, beforeSessionCreate).
   session: { expiresIn: 60 * 60 * 24 * 365, updateAge: 60 * 60 * 24 },
   account: {
-    accountLinking: { enabled: true, trustedProviders: ["google"] },
+    accountLinking: { enabled: true, trustedProviders: ["google", "facebook", "linkedin", "twitter"] },
   },
   rateLimit: {
     enabled: true,
@@ -205,6 +252,7 @@ export const auth = betterAuth({
     customRules: {
       // Reset emails: enough for a typo, never an inbox flood (per IP, in every environment).
       "/request-password-reset": { window: 60, max: 3 },
+      "/phone-number/verify": { window: 60, max: env.isProduction ? 10 : 100 },
       ...(env.isProduction ? {} : { "/sign-in/*": { window: 10, max: 100 }, "/sign-up/*": { window: 10, max: 100 } }),
     },
   },

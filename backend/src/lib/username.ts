@@ -27,6 +27,10 @@ function randomLetters(n: number): string {
  */
 export function usernameCandidates(input: string, count = 12): string[] {
   const stem = suggestionStem(input);
+  // New usernames need 4+ letters before the dot (owner 2026-10-15 / 2026-10-23): a short name ("ravi", "jane.doe") is also tried
+  // joined up ("janedoe") and with a prefix ("theravi"), so it never ends up with no suggestions at all.
+  const compact = stem.replace(/\./g, "");
+  const bases = [stem, compact, ...PREFIXES.map((p) => `${p}${compact}`)];
   const raw = [
     ...SUFFIXES.slice(0, 4).map((s) => `${stem}.${s}`),
     ...PREFIXES.slice(0, 2).map((p) => `${p}.${stem}`),
@@ -35,6 +39,7 @@ export function usernameCandidates(input: string, count = 12): string[] {
     `${stem}.${randomLetters(3)}`,
     `${stem}.${randomLetters(4)}`,
     `${stem}${randomLetters(3)}`,
+    ...bases.slice(1).flatMap((base) => [...SUFFIXES.slice(0, 4).map((s) => `${base}.${s}`), `${base}.${randomLetters(3)}`]),
   ];
   const seen = new Set<string>();
   const out: string[] = [];

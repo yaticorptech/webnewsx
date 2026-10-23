@@ -84,7 +84,7 @@ export function PressPassHolder({ pass, justIssued = false, editorDesk = false, 
 
   return (
     // The card and the right column start well below the heading (owner 2026-10-09: "make this entire part a little down").
-    <div data-grid-page="" className="flex flex-col gap-10 sm:gap-12 lg:gap-14">
+    <div data-grid-page="" data-tour="press-pass-holder" className="flex flex-col gap-10 sm:gap-12 lg:gap-14">
       <header className="relative isolate">
         {justIssued && (
           <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">

@@ -33,7 +33,7 @@ describe("health", () => {
   it("reports db ok", async () => {
     const res = await app.request("/api/health");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, db: true });
+    expect(await res.json()).toMatchObject({ ok: true, db: true });
   });
 });
 
@@ -171,13 +171,15 @@ describe("GET /api/username/check", () => {
   });
 
   it("never suggests a taken username", async () => {
+    // New usernames need a dot (owner 2026-10-15): "<9 letters>.ab" is the taken one.
     const stem = randomLetters(9);
-    await onboardedUser(app, stem);
+    const taken = `${stem}.ab`;
+    await onboardedUser(app, taken);
     await onboardedUser(app, `${stem}.news`);
-    const res = await check(stem);
+    const res = await check(taken);
     expect(res.available).toBe(false);
     expect(res.suggestions).not.toContain(`${stem}.news`);
-    expect(res.suggestions).not.toContain(stem);
+    expect(res.suggestions).not.toContain(taken);
     for (const s of res.suggestions) expect((await check(s)).available).toBe(true);
   });
 

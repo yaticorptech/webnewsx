@@ -38,6 +38,7 @@ import { listFlagGroups, listStoryFlags, resolveFlags } from "../queries/flags.j
 import { resolveTimeZone } from "../queries/newsroom.js";
 import { adminPlatformFee, listDeskPressMeets, setPlatformFee } from "../queries/press-meet-booking.js";
 import { clampLimit } from "../queries/shared.js";
+import { adminGroupDetail, approveGroupApplication, deleteGroupByDesk, listGroupApplications, rejectGroupApplication } from "../queries/groups.js";
 import { createPackage, declineOrder, deletePackage, grantOrder, listAdminOrders, listPackages, updatePackage } from "../queries/spotlight.js";
 import {
   CATEGORY_VALUES,
@@ -57,6 +58,7 @@ import {
   spotlightPackageUpdateSchema,
   suspendSchema,
   membershipRulesSchema,
+  groupDecisionSchema,
 } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 
@@ -104,6 +106,23 @@ export function adminRoutes() {
 
   /* Overview */
   app.get("/overview", async (c) => c.json(await adminOverview(resolveTimeZone(c.req.query("tz")))));
+
+  /* Group accounts (owner 2026-10-23): Press Pass holders' applications. */
+  app.get("/groups", async (c) => c.json({ items: await listGroupApplications() }));
+  app.get("/groups/:id/detail", async (c) => c.json(await adminGroupDetail(c.req.param("id"))));
+  app.delete("/groups/:id/group", async (c) => {
+    await deleteGroupByDesk(actorOf(c), c.req.param("id"));
+    return c.json({ items: await listGroupApplications() });
+  });
+  for (const decision of ["approve", "reject"] as const) {
+    app.post(`/groups/:id/${decision}`, async (c) => {
+      const input = await readJson(c, groupDecisionSchema);
+      const note = input.note?.trim() || null;
+      if (decision === "approve") await approveGroupApplication(actorOf(c), c.req.param("id"), note);
+      else await rejectGroupApplication(actorOf(c), c.req.param("id"), note);
+      return c.json({ items: await listGroupApplications() });
+    });
+  }
 
   /* Review Desk */
   app.get("/review", async (c) => c.json(await listReviewQueue({ cursor: c.req.query("cursor"), limit: limitOf(c.req.query("limit")) })));

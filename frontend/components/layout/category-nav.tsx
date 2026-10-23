@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { isFeedPath } from "@/components/feed/feed-views";
 import { ChevronDown } from "lucide-react";
-import { NAV_FOLLOWING, NAV_HOME, NAV_MAIN, NAV_MORE, type NavItem, type NavKey } from "@/lib/categories";
+import { NAV_FOLLOWING, NAV_HOME, NAV_MAIN, NAV_MARKET, NAV_MORE, type NavItem, type NavKey } from "@/lib/categories";
 import { districtFromSlug, isCategory } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 import { CategoryCircles, coverOf } from "./category-circles";
@@ -21,14 +21,15 @@ const PANEL_WIDTH: Record<Menu, number> = { more: 420, karnataka: 520 };
 export function activeSection(pathname: string, tab: string | null): Active {
   if (pathname === "/") return { key: tab === "following" ? "following" : "home", district: null };
   if (pathname === "/trending") return { key: "trending", district: null };
+  if (pathname === "/market") return { key: "market", district: null };
   const match = /^\/category\/([^/]+)(?:\/([^/]+))?\/?$/.exec(pathname);
   if (match && isCategory(match[1])) return { key: match[1], district: match[2] ? districtFromSlug(match[2]) : null };
   return { key: null, district: null };
 }
 
-/** Pages with the chip row: the feeds (Home, Following, categories, languages) and Trending. */
+/** Pages with the chip row: the feeds (Home, Following, categories, languages), Trending and Market. */
 export function showsCategoryNav(pathname: string): boolean {
-  return isFeedPath(pathname) || pathname === "/trending";
+  return isFeedPath(pathname) || pathname === "/trending" || pathname === "/market";
 }
 
 /**
@@ -254,7 +255,8 @@ function CategoryNavView({ active, className, trail }: CategoryNavProps & { acti
 /* ─────────────────────────── Desktop text menu ─────────────────────────── */
 
 /** The desktop menu's sections, in the circles' order: For you · Following · the main sections (then More ▾). */
-const TEXT_MENU: readonly NavItem[] = [{ ...NAV_HOME, label: "Home" }, NAV_FOLLOWING, ...NAV_MAIN];
+/** Market right after Home (owner 2026-10-22). */
+const TEXT_MENU: readonly NavItem[] = [{ ...NAV_HOME, label: "Home" }, NAV_MARKET, NAV_FOLLOWING, ...NAV_MAIN];
 
 /** A text menu item: bold, readable; the open one red with a thin red underline. */
 const TEXT_ITEM =

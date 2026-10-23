@@ -14,6 +14,7 @@ import { openStoryHref, storyHref, storyLinkProps } from "@/lib/story-link";
 import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
 import { SpeedBarsSvg } from "@/components/brand/speed-lines";
+import { LockedGridCard } from "@/components/auth/read-wall";
 import { CommentButton } from "./comment-button";
 import { FollowPill } from "./desktop-feed";
 import { LikeButton } from "./like-button";
@@ -75,20 +76,27 @@ const GRID_COLS: Record<number, string> = {
 
 export function FrontPage({
   items,
+  locked = [],
   justIn,
   loadingMore,
 }: {
   items: ArticleCard[];
+  /**
+   * A visitor's stories past the free ones (read-wall.tsx): the same cards, blurred under "Sign in to read", carrying
+   * straight on in the grid after `items` (owner 2026-10-22: "don't break — continue the cards till the end").
+   */
+  locked?: ArticleCard[];
   justIn: ReadonlySet<string>;
   loadingMore: boolean;
   ended?: boolean;
   sections?: boolean;
 }) {
   const [ref, columns] = useColumns();
+  const lockedIds = new Set(locked.map((article) => article.id));
   // Every story as a news card (owner 2026-10-16: the reel rows between the cards became cards too — article image,
   // headline, blurb, the reporter row), in one grid with thin lines between the columns.
-  const blocks: { kind: "grid" | "reels"; items: ArticleCard[] }[] =
-    items.length > 0 ? [{ kind: "grid", items }] : [];
+  const all = [...items, ...locked];
+  const blocks: { kind: "grid" | "reels"; items: ArticleCard[] }[] = all.length > 0 ? [{ kind: "grid", items: all }] : [];
   const reelSize = columns + 2;
   return (
     <div ref={ref} className="flex flex-col gap-12">
@@ -101,7 +109,8 @@ export function FrontPage({
             {block.items.map((article, i) => (
               <li
                 key={article.id}
-                data-feed-item={article.id}
+                // Locked cards aren't feed items: News radio and the view counter leave them alone.
+                data-feed-item={lockedIds.has(article.id) ? undefined : article.id}
                 // A thin line between the columns (owner 2026-10-16 reference), none after the last of a row.
                 className={cn(
                   // The same padding on every column (equal widths, so every photo is the same height); the row hangs
@@ -116,7 +125,7 @@ export function FrontPage({
                   justIn.has(article.id) && "animate-pop-in",
                 )}
               >
-                <GridCard article={article} priority={index === 0} />
+                {lockedIds.has(article.id) ? <LockedGridCard article={article} /> : <GridCard article={article} priority={index === 0} />}
               </li>
             ))}
           </ol>
@@ -128,14 +137,42 @@ export function FrontPage({
           />
         ),
       )}
-      {loadingMore && (
-        <div className={cn("grid gap-x-12 gap-y-14", GRID_COLS[columns])}>
-          {Array.from({ length: columns }, (_, i) => (
-            <GridCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
+      {loadingMore && <SkeletonGrid columns={columns} rows={1} />}
     </div>
+  );
+}
+
+/**
+ * The grid's own skeleton (owner 2026-10-22: "show the existing structure while loading"): the same columns, the thin
+ * lines between them and the dark rule between rows, each cell a card's outline — photo, headline, blurb, the
+ * reporter row. `FrontPageSkeleton` measures its width like the real grid; `SkeletonGrid` takes the columns it's given.
+ */
+export function FrontPageSkeleton({ rows = 2 }: { rows?: number }) {
+  const [ref, columns] = useColumns();
+  return (
+    <div ref={ref} className="flex flex-col gap-12">
+      <SkeletonGrid columns={columns} rows={rows} />
+    </div>
+  );
+}
+
+function SkeletonGrid({ columns, rows }: { columns: number; rows: number }) {
+  return (
+    <ol aria-hidden className={cn("-mx-6 grid gap-y-10", GRID_COLS[columns])}>
+      {Array.from({ length: columns * rows }, (_, i) => (
+        <li
+          key={i}
+          className={cn(
+            "relative min-w-0 px-6",
+            i % columns !== columns - 1 && "border-r border-border",
+            i >= columns && "pt-10 before:absolute before:top-0 before:h-0.5 before:bg-ink before:content-['']",
+            i >= columns && (i % columns === 0 ? "before:left-6 before:right-0" : i % columns === columns - 1 ? "before:left-0 before:right-6" : "before:inset-x-0"),
+          )}
+        >
+          <GridCardSkeleton />
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -196,15 +233,28 @@ function GridCard({ article, priority }: { article: ArticleCard; priority: boole
   );
 }
 
+/** A card's outline (GridCard's shape): the 16:9 photo, two headline lines, three blurb lines, the reporter row. */
 function GridCardSkeleton() {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="aspect-video w-full animate-pulse rounded-xl bg-surface-2" />
-      <div className="flex gap-3">
-        <div className="size-9 shrink-0 animate-pulse rounded-full bg-surface-2" />
-        <div className="flex flex-1 flex-col gap-2">
-          <div className="h-4 w-11/12 animate-pulse rounded bg-surface-2" />
-          <div className="h-3 w-1/2 animate-pulse rounded bg-surface-2" />
+    <div className="flex h-full flex-col gap-3">
+      <div className="skeleton aspect-video w-full rounded-none" />
+      <div className="mt-2 flex flex-col gap-2">
+        <div className="skeleton h-[1.125rem] w-11/12 rounded-sm" />
+        <div className="skeleton h-[1.125rem] w-3/4 rounded-sm" />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <div className="skeleton h-3.5 w-full rounded-sm" />
+        <div className="skeleton h-3.5 w-full rounded-sm" />
+        <div className="skeleton h-3.5 w-2/3 rounded-sm" />
+      </div>
+      <div className="mt-auto flex items-center gap-2 pt-1">
+        <div className="skeleton size-6.5 shrink-0 rounded-full" />
+        <div className="skeleton h-3.5 w-24 rounded-sm" />
+        <div className="skeleton h-6 w-16 rounded-full" />
+        <div className="ml-auto flex items-center gap-3">
+          <div className="skeleton size-4 rounded-full" />
+          <div className="skeleton size-4 rounded-full" />
+          <div className="skeleton size-4 rounded-full" />
         </div>
       </div>
     </div>

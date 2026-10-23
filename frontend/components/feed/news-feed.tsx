@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMetered } from "@/components/auth/read-meter";
-import { BLURRED_CARDS, BlurredFeedCards, FREE_CARDS } from "@/components/auth/read-wall";
+import { LockedPhoneCard, splitForVisitor, useMarkLocked } from "@/components/auth/read-wall";
 import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { useInfiniteSentinel } from "@/components/profile/use-infinite-sentinel";
 import { usePhoneLayout } from "@/components/providers/phone-layout-provider";
@@ -14,16 +14,15 @@ import { Button } from "@/components/ui/button";
 import { api, errorMessage } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 import { scrollToTop } from "@/lib/scroll-to-top";
-import { newShuffleSeed, shuffleSignature } from "@/lib/shuffle";
+import { newShuffleSeed, shuffleSignature, visitorShuffleSeed } from "@/lib/shuffle";
 import type { ArticleCard, Page, UserRow, ViewerUser } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 import { CategoryEmpty, FollowingEmpty, LanguageEmpty, LatestEmpty } from "./feed-empty";
 import { FOLLOWING_VIEW, isRanked, isShuffled, viewCopy, viewId, viewQuery, viewsOfCard, type FeedView } from "./feed-views";
 import { feedHas, feedItems, feedKey, prependToFeed, removeFromAllFeeds, seedStats, type FeedData } from "./live-state";
-import { DesktopFeedSkeleton } from "./desktop-feed";
 import { NewStoriesPill } from "./new-stories-pill";
 import { FollowingStoriesRow } from "@/components/layout/category-circles";
-import { FrontPage } from "./front-page";
+import { FrontPage, FrontPageSkeleton } from "./front-page";
 import { PhoneStoryCard, PhoneStoryCardSkeleton } from "./phone-story-card";
 import { NewsRadioProvider } from "./news-radio";
 import { ReelAutoplay } from "./reel-autoscroll";
@@ -71,12 +70,15 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
   const id = viewId(view);
   const key = useMemo(() => feedKey(id, viewerId), [id, viewerId]);
 
-  // Logged out: newest first, never a fresh mix (the stories blurred past the free ones mustn't change on a refresh).
-  const shuffled = isShuffled(view) && viewer !== null;
+  // Logged out: the day's mix (one seed all day, lib/shuffle.ts) — Home (For You) included, the API serves visitors
+  // the mix when sent the seed — so the stories blurred past the free ones don't change on a refresh; signed in: a
+  // fresh mix on every visit of Latest, a category or a language.
+  const shuffled = isShuffled(view) || (!viewer && isRanked(view));
+  const seed = () => (viewer ? newShuffleSeed() : visitorShuffleSeed());
   const query = useInfiniteQuery({
     queryKey: key,
     queryFn: async ({ pageParam, signal }) => {
-      const page = await api.feed({ ...viewQuery(view), cursor: pageParam, shuffle: !pageParam && shuffled ? newShuffleSeed() : null }, signal);
+      const page = await api.feed({ ...viewQuery(view), cursor: pageParam, shuffle: !pageParam && shuffled ? seed() : null }, signal);
       seedStats(queryClient, page.items);
       return page;
     },
@@ -100,12 +102,13 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
   }, [initialPage]);
   const { data, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage, error } = query;
   const all = feedItems(data);
-  // Logged out (owner 2026-10-08): FREE_CARDS stories, then BLURRED_CARDS more blurred under "Sign in to see more" —
-  // and no more pages until they sign in.
+  // Logged out (owner 2026-10-08 / 2026-10-22): FREE_CARDS of the day's mix open, then BLURRED_CARDS blurred under
+  // "Sign in to read" in the same rows, and no more pages until they sign in (read-wall.tsx).
   const gated = useMetered();
-  const items = gated ? all.slice(0, FREE_CARDS) : all;
-  const blurred = gated ? all.slice(FREE_CARDS, FREE_CARDS + BLURRED_CARDS) : [];
-  const moreToLoad = Boolean(hasNextPage) && (!gated || all.length < FREE_CARDS + BLURRED_CARDS);
+  const { free: items, locked: blurred, complete } = splitForVisitor(all, gated);
+  // Opening a blurred story directly is locked too (read-meter.ts).
+  useMarkLocked(blurred);
+  const moreToLoad = Boolean(hasNextPage) && !complete;
   // News radio (the cards' radio button) reads the stories one after another; there's no auto-scroll here to hold.
   const [autoplay] = useState(() => new ReelAutoplay());
 
@@ -220,6 +223,12 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
                 <PhoneStoryCard article={article} priority={index < 2} justIn={justIn.has(article.id)} />
               </li>
             ))}
+            {/* A visitor's stories past the free ones carry straight on in the list, blurred (owner 2026-10-22). */}
+            {blurred.map((article) => (
+              <li key={article.id} className="min-w-0 pt-1.5">
+                <LockedPhoneCard article={article} />
+              </li>
+            ))}
             {isFetchingNextPage &&
               Array.from({ length: 2 }, (_, i) => (
                 <li key={`s${i}`} className="pt-1.5">
@@ -235,6 +244,7 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
               language page (front-page.tsx); its India · World … sections only on Home. */}
           <FrontPage
             items={items}
+            locked={blurred}
             justIn={justIn}
             loadingMore={isFetchingNextPage}
             ended={!moreToLoad}
@@ -243,8 +253,6 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
           </>
         )}
       </NewsRadioProvider>
-
-      {blurred.length > 0 && <BlurredFeedCards articles={blurred} phone={phone} />}
 
       <div ref={sentinel} aria-hidden className="h-px" />
 
@@ -291,9 +299,10 @@ export function NewsFeedSkeleton({ label = "Loading stories" }: { label?: string
       </div>
     );
   }
+  // Tablets and computers: the card grid's own outline (front-page.tsx), not an older layout's.
   return (
     <div role="status" aria-label={label} data-grid-page="">
-      <DesktopFeedSkeleton />
+      <FrontPageSkeleton />
     </div>
   );
 }

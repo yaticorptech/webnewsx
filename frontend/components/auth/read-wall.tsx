@@ -83,9 +83,25 @@ function GoogleSignUp({ callbackURL }: { callbackURL: string }) {
   return google ? <GoogleButton callbackURL={callbackURL} label="Sign up with Google" /> : null;
 }
 
-/** Logged-out visitors see this many stories in a feed grid; the next BLURRED_CARDS show blurred under a sign-in box. */
+/**
+ * What a logged-out visitor gets of a feed: FREE_CARDS stories open, then BLURRED_CARDS blurred under "Sign in to read",
+ * and no more pages until they sign in. The open ones are a day's mix of recent and older stories, not the newest
+ * (owner 2026-10-22: "don't show the latest news on top — what's the use of logging in? Old and latest mixed on top,
+ * then sign in to read more"): the feeds ask the API for the shuffled order with the day's seed (lib/shuffle.ts
+ * visitorShuffleSeed). `splitForVisitor` applies the counts (Home grid, Reels, Explore).
+ */
 export const FREE_CARDS = 10;
 export const BLURRED_CARDS = 10;
+
+/** A visitor's view of `all`: the open stories, the blurred ones after them, and whether that's all they get. */
+export function splitForVisitor<T>(all: T[], gated: boolean): { free: T[]; locked: T[]; complete: boolean } {
+  if (!gated) return { free: all, locked: [], complete: false };
+  return {
+    free: all.slice(0, FREE_CARDS),
+    locked: all.slice(FREE_CARDS, FREE_CARDS + BLURRED_CARDS),
+    complete: all.length >= FREE_CARDS + BLURRED_CARDS,
+  };
+}
 
 /**
  * The grid past a visitor's free cards (owner 2026-10-08): the next stories keep their card shape — poster, views and
@@ -123,12 +139,23 @@ function useMarkLocked(articles: ArticleCard[]) {
   }, [ids]);
 }
 
-export function BlurredCards({ articles, gridClassName }: { articles: ArticleCard[]; gridClassName: string }) {
+export function BlurredCards({
+  articles,
+  gridClassName,
+  label = "More stories",
+  flush = false,
+}: {
+  articles: ArticleCard[];
+  gridClassName: string;
+  label?: string;
+  /** At the top of a feed (the locked latest): no gap above. */
+  flush?: boolean;
+}) {
   useMarkLocked(articles);
   const pathname = usePathname();
   const login = `/login?next=${encodeURIComponent(pathname)}`;
   return (
-    <ul aria-label="More stories" className={cn(gridClassName, "mt-5 md:mt-7")}>
+    <ul aria-label={label} className={cn(gridClassName, !flush && "mt-5 md:mt-7")}>
       {articles.map((article) => (
         <li key={article.id} className="min-w-0">
           <Link href={login} aria-label="Sign in to read this story" className="group block rounded-[0.875rem] outline-offset-4 md:rounded-2xl">
@@ -155,43 +182,83 @@ export function BlurredCards({ articles, gridClassName }: { articles: ArticleCar
 }
 
 /**
- * The home feed past a visitor's free stories (owner 2026-10-16: "follow the home feed's format"): the same cards as the
- * feed above — a full-width post on phones, the YouTube-style grid on bigger screens — blurred, with "Sign in to read".
+ * The home feed past a visitor's free stories (owner 2026-10-16: "follow the home feed's format"; owner 2026-10-22: "don't
+ * break — continue the cards till the end"): the feeds place these single cards inside their own grid / list, right
+ * after the free cards, so the rows run on unbroken — the same card shape, blurred, with "Sign in to read". Call
+ * `useMarkLocked` once with the locked stories so opening one directly is locked too.
+ */
+export { useMarkLocked };
+
+/** A phone post (phone-story-card.tsx's shape), blurred. */
+export function LockedPhoneCard({ article }: { article: ArticleCard }) {
+  const pathname = usePathname();
+  const login = `/login?next=${encodeURIComponent(pathname)}`;
+  return (
+    <Link href={login} aria-label="Sign in to read this story" className="group block pb-4 outline-offset-4">
+      <div aria-hidden className="flex select-none items-center gap-3 px-3 py-2.5 blur-[3px]">
+        <span className="size-10.5 shrink-0 rounded-full bg-surface-3" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[0.9375rem] font-bold text-ink">{article.author.name}</span>
+          <span className="block text-[0.8125rem] text-muted">{compactNumber(article.viewCount)} views</span>
+        </span>
+      </div>
+      <div className="relative mx-1">
+        <BlurredPhoto article={article} className="aspect-10/7 rounded-2xl" />
+        <SignInPill />
+      </div>
+      <div aria-hidden className="flex h-12 select-none items-center gap-5 px-4 text-muted blur-[3px] [&_svg]:size-6">
+        <Heart />
+        <MessageCircle />
+        <Share2 />
+      </div>
+    </Link>
+  );
+}
+
+/** A front-page news card (front-page.tsx GridCard's shape: photo, headline, blurb, the reporter row), blurred. */
+export function LockedGridCard({ article }: { article: ArticleCard }) {
+  const pathname = usePathname();
+  const login = `/login?next=${encodeURIComponent(pathname)}`;
+  return (
+    <Link href={login} aria-label="Sign in to read this story" className="group flex h-full flex-col gap-3 outline-offset-4">
+      <div className="relative">
+        <BlurredPhoto article={article} className="aspect-video rounded-none" />
+        <SignInPill />
+      </div>
+      <div aria-hidden className="mt-2 flex select-none flex-col gap-3 blur-[3px]">
+        <span className="line-clamp-2 text-[1.125rem] font-semibold leading-[1.45] text-ink">{article.title}</span>
+        {article.excerpt && <span className="line-clamp-3 text-[0.9375rem] leading-[1.7] text-muted">{article.excerpt}</span>}
+      </div>
+      <div aria-hidden className="mt-auto flex select-none items-center gap-2 pt-1 blur-[3px]">
+        <span className="size-6.5 shrink-0 rounded-full bg-surface-3" />
+        <span className="truncate text-[0.8125rem] font-semibold text-ink-2">{article.author.name}</span>
+        <span className="ml-auto flex items-center gap-3 text-muted [&_svg]:size-4">
+          <Heart />
+          <MessageCircle />
+          <Share2 />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+/**
+ * The locked cards as a block of their own, under a page that has no grid to continue (a story's "More stories",
+ * more-stories.tsx): a full-width post list on phones, the front page's grid on bigger screens.
  */
 export function BlurredFeedCards({ articles, phone }: { articles: ArticleCard[]; phone: boolean }) {
   useMarkLocked(articles);
-  const pathname = usePathname();
-  const login = `/login?next=${encodeURIComponent(pathname)}`;
   if (phone) {
     return (
       <ul aria-label="More stories" className="-mx-4 flex flex-col divide-y divide-border">
         {articles.map((article) => (
-          <li key={article.id} className="pt-1.5 pb-4">
-            <Link href={login} aria-label="Sign in to read this story" className="group block outline-offset-4">
-              <div aria-hidden className="flex select-none items-center gap-3 px-3 py-2.5 blur-[3px]">
-                <span className="size-10.5 shrink-0 rounded-full bg-surface-3" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[0.9375rem] font-bold text-ink">{article.author.name}</span>
-                  <span className="block text-[0.8125rem] text-muted">{compactNumber(article.viewCount)} views</span>
-                </span>
-              </div>
-              <div className="relative mx-1">
-                <BlurredPhoto article={article} className="aspect-10/7 rounded-2xl" />
-                <SignInPill />
-              </div>
-              <div aria-hidden className="flex h-12 select-none items-center gap-5 px-4 text-muted blur-[3px] [&_svg]:size-6">
-                <Heart />
-                <MessageCircle />
-                <Share2 />
-              </div>
-            </Link>
+          <li key={article.id} className="pt-1.5">
+            <LockedPhoneCard article={article} />
           </li>
         ))}
       </ul>
     );
   }
-  // The feed's own card look (front-page.tsx GridCard, owner 2026-10-16): square photo, headline, blurb, the reporter
-  // row at the foot, thin lines between the columns.
   return (
     <ul aria-label="More stories" className="-mx-6 mt-14 grid grid-cols-2 gap-y-14 min-[960px]:grid-cols-3 min-[1380px]:grid-cols-4">
       {articles.map((article) => (
@@ -199,25 +266,7 @@ export function BlurredFeedCards({ articles, phone }: { articles: ArticleCard[];
           key={article.id}
           className="min-w-0 border-r border-border px-6 max-[959px]:[&:nth-child(2n)]:border-r-0 min-[960px]:max-[1379px]:[&:nth-child(3n)]:border-r-0 min-[1380px]:[&:nth-child(4n)]:border-r-0"
         >
-          <Link href={login} aria-label="Sign in to read this story" className="group flex h-full flex-col gap-3 outline-offset-4">
-            <div className="relative">
-              <BlurredPhoto article={article} className="aspect-video rounded-none" />
-              <SignInPill />
-            </div>
-            <div aria-hidden className="mt-2 flex select-none flex-col gap-3 blur-[3px]">
-              <span className="line-clamp-2 text-[1.125rem] font-semibold leading-[1.45] text-ink">{article.title}</span>
-              {article.excerpt && <span className="line-clamp-3 text-[0.9375rem] leading-[1.7] text-muted">{article.excerpt}</span>}
-            </div>
-            <div aria-hidden className="mt-auto flex select-none items-center gap-2 pt-1 blur-[3px]">
-              <span className="size-6.5 shrink-0 rounded-full bg-surface-3" />
-              <span className="truncate text-[0.8125rem] font-semibold text-ink-2">{article.author.name}</span>
-              <span className="ml-auto flex items-center gap-3 text-muted [&_svg]:size-4">
-                <Heart />
-                <MessageCircle />
-                <Share2 />
-              </span>
-            </div>
-          </Link>
+          <LockedGridCard article={article} />
         </li>
       ))}
     </ul>

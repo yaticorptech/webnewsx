@@ -15,14 +15,14 @@ const search = async (q: string) => json<SearchResults>(await client(app).req(`/
 describe("instant search", () => {
   it("finds people by username or name and public stories by headline, as you type", async () => {
     const tag = randomLetters(8);
-    const reporter = await reporterUser(app, { username: `find.${tag}` });
+    const reporter = await reporterUser(app, { username: `finds.${tag}` });
     const story = await publishArticle(reporter, `Lighthouse keeper ${tag} retires after forty years`);
     const draft = await reporter.req("/api/articles", { json: { title: `Unpublished ${tag} draft`, action: "draft" } });
     expect(draft.status).toBeLessThan(300);
 
     // A few letters of the username (with or without "@") → the person, first.
-    expect((await search(`find.${tag.slice(0, 4)}`)).users[0]?.username).toBe(`find.${tag}`);
-    expect((await search(`@find.${tag}`)).users.map((u) => u.username)).toEqual([`find.${tag}`]);
+    expect((await search(`finds.${tag.slice(0, 4)}`)).users[0]?.username).toBe(`finds.${tag}`);
+    expect((await search(`@finds.${tag}`)).users.map((u) => u.username)).toEqual([`finds.${tag}`]);
     // Words of the headline → the story; drafts never show up.
     const byTitle = await search(tag);
     expect(byTitle.stories.map((s) => s.id)).toEqual([story.id]);

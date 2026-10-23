@@ -13,6 +13,7 @@ import {
   BLURB,
   DEFAULT_POSTER_TEMPLATE,
   DISTRICT_CATEGORY,
+  type GroupRole,
   subcategoryError,
   detectLanguage,
   LIMITS,
@@ -156,6 +157,7 @@ type Replaced = { replacedKeys: Array<string | null> };
 
 type WriteOutcome =
   | ({ kind: "draft"; row: ArticleRecord } & Replaced)
+  | ({ kind: "group_review"; row: ArticleRecord } & Replaced)
   | ({ kind: "sent"; row: ArticleRecord; meetId: string; organizerName: string } & Replaced)
   | ({ kind: "in_review"; row: ArticleRecord } & Replaced)
   | ({ kind: "published"; id: string } & Replaced);
@@ -180,8 +182,27 @@ type WriteOutcome =
 const reportLocked = () =>
   new ApiError(409, "report_locked", "This story was hidden after too many reader reports, so it can't be published again.");
 
-export async function saveArticle(author: { id: string; needsReview: boolean }, input: SaveArticleData): Promise<SaveArticleResponse> {
+/** Posting as a group account (owner 2026-10-23): the member really writing, and their role in the group. */
+export type GroupWriter = { id: string; role: GroupRole };
+
+export const GROUP_REVIEW_MESSAGE = "Sent to the group's editors — it goes live as soon as one of them publishes it.";
+
+/**
+ * A group Writer may only touch their own stories that aren't live yet (owner 2026-10-23); editors and the owner may
+ * touch any of the group's stories.
+ */
+function checkGroupWriter(writer: GroupWriter | undefined, existing: Pick<ArticleRecord, "status" | "postedById"> | null): void {
+  if (writer?.role !== "writer" || !existing) return;
+  if (existing.postedById !== writer.id) throw new ApiError(403, "group_role_forbidden", "This story was written by another member. Only an editor can change it.");
+  if (existing.status === "published") throw new ApiError(403, "group_role_forbidden", "This story is live. Only an editor can change it now.");
+}
+
+export async function saveArticle(
+  author: { id: string; needsReview: boolean; groupWriter?: GroupWriter },
+  input: SaveArticleData,
+): Promise<SaveArticleResponse> {
   const authorId = author.id;
+  const groupWriter = author.groupWriter;
   // Checked first so the author hears why, whatever else the form still lacks (re-checked under the row lock below).
   if (input.id && input.action !== "draft" && isUuid(input.id)) {
     const [row] = await db
@@ -286,6 +307,7 @@ export async function saveArticle(author: { id: string; needsReview: boolean }, 
   const write = (tx: Transaction): Promise<WriteOutcome> =>
     (async () => {
       const existing = input.id ? await lockOwned(tx, input.id, authorId) : null;
+      checkGroupWriter(groupWriter, existing);
       if (existing?.pressMeetId && existing.status === "published") throw pressMeetLocked();
       if (existing?.status === "published" && input.action === "draft") throw alreadyPublished();
       if (existing?.reportLockedAt && input.action !== "draft") throw reportLocked();
@@ -306,18 +328,29 @@ export async function saveArticle(author: { id: string; needsReview: boolean }, 
         return send ? { kind: "sent", row, meetId, organizerName, ...replaced } : { kind: "draft", row, ...replaced };
       }
 
+      // A group story remembers the member who first wrote it (owner 2026-10-23).
+      const postedBy = groupWriter && !existing ? { postedById: groupWriter.id } : {};
       if (input.action === "draft") {
-        // Withdrawing from the Review Desk clears the submission; a returned story keeps its feedback.
-        const withdraw = existing?.status === "in_review" ? { submittedAt: null } : {};
-        return { kind: "draft", row: await upsertDraft(tx, authorId, id, { ...fields, ...withdraw }), ...replaced };
+        // Withdrawing from the Review Desk clears the submission; a returned story keeps its feedback. A writer saving
+        // it again takes it back from the group's editors.
+        const withdraw = {
+          ...(existing?.status === "in_review" ? { submittedAt: null } : {}),
+          ...(groupWriter?.role === "writer" ? { groupSubmittedAt: null } : {}),
+        };
+        return { kind: "draft", row: await upsertDraft(tx, authorId, id, { ...fields, ...withdraw, ...postedBy }), ...replaced };
+      }
+      // A group Writer's "publish" goes to the group's editors: it stays a draft until one of them publishes it.
+      if (groupWriter?.role === "writer") {
+        return { kind: "group_review", row: await upsertDraft(tx, authorId, id, { ...fields, ...postedBy, groupSubmittedAt: new Date() }), ...replaced };
       }
       if (existing?.status === "published") {
         return { kind: "published", id: await updatePublishedInTx(tx, existing.id, { ...fields, title: title as string }), ...replaced };
       }
+      const live = { ...fields, ...postedBy, title: title as string, groupSubmittedAt: null };
       if (author.needsReview) {
-        return { kind: "in_review", row: await submitForReview(tx, authorId, id, { ...fields, title: title as string }), ...replaced };
+        return { kind: "in_review", row: await submitForReview(tx, authorId, id, live), ...replaced };
       }
-      return { kind: "published", id: await publishInTx(tx, authorId, id, { ...fields, title: title as string }), ...replaced };
+      return { kind: "published", id: await publishInTx(tx, authorId, id, live), ...replaced };
     })();
 
   let outcome: WriteOutcome | null = null;
@@ -333,6 +366,9 @@ export async function saveArticle(author: { id: string; needsReview: boolean }, 
   await deleteMediaIfUnused(...outcome.replacedKeys);
 
   if (outcome.kind === "draft") return { status: "draft", article: { ...toDraftDetail(outcome.row), status: "draft", slug: null } };
+  if (outcome.kind === "group_review") {
+    return { status: "group_review", article: { ...toDraftDetail(outcome.row), status: "draft", slug: null }, message: GROUP_REVIEW_MESSAGE };
+  }
   if (outcome.kind === "sent") {
     return {
       status: "sent",
@@ -497,9 +533,10 @@ export async function setArticleCategory(
 }
 
 /** Deletes one of the author's articles (draft or published). Returns false when not found / not theirs. */
-export async function deleteArticle(authorId: string, id: string): Promise<boolean> {
+export async function deleteArticle(authorId: string, id: string, groupWriter?: GroupWriter): Promise<boolean> {
   const existing = await findOwnedArticle(id, authorId);
   if (!existing) return false;
+  checkGroupWriter(groupWriter, existing);
   await db.transaction(async (tx) => {
     // A verified press meet story is locked; one not verified yet frees the reporter's invitation.
     if (existing.pressMeetId) {

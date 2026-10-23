@@ -8,7 +8,7 @@ import type { FeedView } from "@/components/feed/feed-views";
 import { getFeedLayout } from "@/lib/feed-layout-server";
 import { getFeedPage } from "@/lib/server-api";
 import { getSiteViewer } from "@/lib/session";
-import { newShuffleSeed } from "@/lib/shuffle";
+import { newShuffleSeed, visitorShuffleSeed } from "@/lib/shuffle";
 import { CATEGORY_LABELS, DISTRICT_CATEGORY, categoryLabel, categoryPath, districtFromSlug, isCategory } from "@/lib/shared/contracts";
 
 type Params = Promise<{ category: string; district?: string[] }>;
@@ -31,7 +31,13 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     ? `The latest stories from ${view.district}, Karnataka — live on WebNEWS.`
     : `The latest ${CATEGORY_LABELS[view.category]} stories — live on WebNEWS.`;
   const url = categoryPath(view.category, view.district);
-  return { title, description, alternates: { canonical: url }, openGraph: { title, description, url } };
+  return {
+    title,
+    description,
+    keywords: [title, `${title} news`, view.district ? "Karnataka news" : "India news", "WebNEWS"],
+    alternates: { canonical: url },
+    openGraph: { images: ["/opengraph-image"], type: "website", siteName: "WebNEWS", locale: "en_IN", title, description, url },
+  };
 }
 
 /**
@@ -44,7 +50,8 @@ export default async function CategoryPage({ params }: { params: Params }) {
   if (!view) notFound();
   // Logged out: newest first, not a fresh mix (the blurred stories past the free ones stay the same on a refresh).
   const viewer = await getSiteViewer();
-  const shuffle = viewer ? newShuffleSeed() : null;
+  // Visitors: the day's mix, the same all day (lib/shuffle.ts).
+  const shuffle = viewer ? newShuffleSeed() : visitorShuffleSeed();
   const [initialPage, layout] = await Promise.all([getFeedPage({ category: view.category, district: view.district, shuffle }), getFeedLayout()]);
   const key = `${view.category}:${view.district ?? ""}`;
   return (

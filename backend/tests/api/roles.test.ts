@@ -46,8 +46,7 @@ import {
   testMobile,
   testUsername,
   upload,
-  type Client,
-} from "../helpers.js";
+  type Client, PUBLISH_EXTRAS } from "../helpers.js";
 
 /*
  * SPEC §3.11 roles against the shared database: every assertion is about this file's own fixtures.
@@ -66,7 +65,7 @@ const latestIds = async (c: Client = client(app)) =>
 
 async function submit(c: Client, title: string): Promise<SaveArticleResponse> {
   const cover = await coverOf(c);
-  const res = await c.req("/api/articles", { json: { title, bodyHtml: LONG_BODY, cover, articleImage: cover, category: "national", action: "publish" } });
+  const res = await c.req("/api/articles", { json: { title, bodyHtml: LONG_BODY, cover, articleImage: cover, category: "national", ...PUBLISH_EXTRAS, action: "publish" } });
   expect(res.status, await res.clone().text()).toBe(201);
   return json<SaveArticleResponse>(res);
 }
@@ -79,7 +78,7 @@ describe("role guards", () => {
     const draft = await reader.req("/api/articles", { json: { title: "Can I?", action: "draft" } });
     expect(draft.status).toBe(403);
     expect(await code(draft)).toBe("press_pass_required");
-    const publish = await reader.req("/api/articles", { json: { title: "Can I?", action: "publish" } });
+    const publish = await reader.req("/api/articles", { json: { title: "Can I?", ...PUBLISH_EXTRAS, action: "publish" } });
     expect(await code(publish)).toBe("press_pass_required");
 
     const cover = await upload(reader, "cover");
@@ -114,7 +113,9 @@ describe("Press Pass", () => {
     expect(options.languages.slice(0, 3).map((l) => l.label)).toEqual(["Kannada", "English", "Hindi"]);
     expect(options.languages.map((l) => l.label)).toEqual(expect.arrayContaining(["Tulu", "Konkani", "Tamil", "Urdu", "Santali"]));
     expect(options.languages.at(-1)?.value).toBe("other");
-    expect(options.regions[0]).toMatchObject({ code: "KA", name: "Karnataka" });
+    // A–Z since 2026-10-05 (Karnataka used to come first).
+    expect(options.regions[0]).toMatchObject({ code: "AN" });
+    expect(options.regions).toEqual(expect.arrayContaining([expect.objectContaining({ code: "KA", name: "Karnataka" })]));
     expect(options.regions.length).toBe(36);
     expect(options.districts.KA).toContain("Mysuru");
     expect(options.pledge.length).toBe(5);
@@ -132,7 +133,7 @@ describe("Press Pass", () => {
     await bad({ mobile: "" }, "mobile");
     await bad({ mobile: "98450" }, "mobile");
     await bad({ mobile: "5845012345" }, "mobile");
-    await bad({ mobile: "+1 415 555 0100" }, "mobile");
+    // International numbers are accepted with their country code (the Press Pass country picker).
     await bad({ reporterType: "blogger" }, "reporterType");
     await bad({ reporterType: "staff", outlet: "  " }, "outlet");
     await bad({ experience: "forever" }, "experience");
@@ -151,7 +152,7 @@ describe("Press Pass", () => {
     await bad({ dateOfBirth: "1990-02-30" }, "dateOfBirth");
     await bad({ address: "" }, "address");
     await bad({ pincode: "012345" }, "pincode");
-    await bad({ idType: "aadhaar" }, "idType");
+    // Aadhaar is accepted, masked (only the last 4 digits are kept).
     await bad({ idType: "pan", idNumber: "1234" }, "idNumber");
 
     // Other states take a free-text district; the mobile number is stored as +91XXXXXXXXXX.
@@ -284,7 +285,7 @@ describe("Review Desk", () => {
 
     // Resubmit (clears the feedback) → approve → live.
     const cover = await coverOf(trainee);
-    const resubmit = await trainee.req("/api/articles", { json: { id: id1, title: "Trainee story one: ward budget meeting", bodyHtml: LONG_BODY, cover, articleImage: cover, category: "national", action: "publish" } });
+    const resubmit = await trainee.req("/api/articles", { json: { id: id1, title: "Trainee story one: ward budget meeting", bodyHtml: LONG_BODY, cover, articleImage: cover, category: "national", ...PUBLISH_EXTRAS, action: "publish" } });
     expect((await json<SaveArticleResponse>(resubmit)).status).toBe("in_review");
     const approve = await desk.req(`/api/admin/review/${id1}/approve`, { json: {} });
     expect(approve.status, await approve.clone().text()).toBe(200);
@@ -339,7 +340,7 @@ describe("Review Desk races", () => {
       const action = round % 2 === 0 ? "draft" : "publish";
       const [approve, save] = await Promise.all([
         desk.req(`/api/admin/review/${story.article.id}/approve`, { json: {} }),
-        trainee.req("/api/articles", { json: { id: story.article.id, title: `Race round ${round} (edited)`, bodyHtml: LONG_BODY, cover, articleImage: cover, category: "national", action } }),
+        trainee.req("/api/articles", { json: { id: story.article.id, title: `Race round ${round} (edited)`, bodyHtml: LONG_BODY, cover, articleImage: cover, category: "national", ...PUBLISH_EXTRAS, action } }),
       ]);
       const owned = (await json<{ article: OwnedArticle }>(await trainee.req(`/api/articles/${story.article.id}`))).article;
       if (approve.status === 200) {
@@ -796,23 +797,24 @@ describe("saves and flags", () => {
     expect(await json(warn)).toEqual({ resolved: 1, resolution: "warned" });
 
     const afterWarn = await notices();
-    expect(afterWarn.unread).toBe(1);
+    // Two warnings: the reader's report warns the author at once (owner 2026-09-30), then the Desk's own, newest first.
+    expect(afterWarn.unread).toBe(2);
     expect(afterWarn.items[0]).toMatchObject({
       kind: "warning",
       message: "Check your sources before publishing.",
       story: { id: story.id, slug: story.slug, title: story.title },
       read: false,
     });
-    expect(await me(author)).toMatchObject({ unreadNotices: 1 });
+    expect(await me(author)).toMatchObject({ unreadNotices: 2 });
 
     // Hiding the story tells them too (its link stays: the author can still open their hidden story).
     expect((await desk.req(`/api/admin/stories/${story.id}/hide`, { json: { reason: "Unverified claims" } })).status).toBe(200);
     const afterHide = await notices();
-    expect(afterHide.unread).toBe(2);
+    expect(afterHide.unread).toBe(3);
     expect(afterHide.items[0]).toMatchObject({ kind: "story_hidden", message: "Unverified claims", story: { slug: story.slug, title: story.title } });
 
     // "Got it" marks one read; no ids marks the rest. Nobody else can see them.
-    expect(await json(await author.req("/api/me/notices/read", { json: { ids: [afterHide.items[0]!.id] } }))).toEqual({ unread: 1 });
+    expect(await json(await author.req("/api/me/notices/read", { json: { ids: [afterHide.items[0]!.id] } }))).toEqual({ unread: 2 });
     expect(await json(await author.req("/api/me/notices/read", { json: {} }))).toEqual({ unread: 0 });
     expect(await me(author)).toMatchObject({ unreadNotices: 0 });
     expect(await json(await reader.req("/api/me/notices"))).toEqual({ items: [], unread: 0 });

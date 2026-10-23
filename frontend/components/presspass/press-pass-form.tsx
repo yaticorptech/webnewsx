@@ -273,11 +273,17 @@ export function PressPassForm({ mode, holder, options, pass, onIssued, onSaved, 
         ) : null}
         <div className="flex-1 max-sm:hidden" />
         {last ? (
-          <Button type="submit" size="lg" loading={submitting} leftIcon={mode === "edit" ? <Save aria-hidden /> : <BadgeCheck aria-hidden />}>
+          <Button
+            type="submit"
+            size="lg"
+            loading={submitting}
+            leftIcon={mode === "edit" ? <Save aria-hidden /> : <BadgeCheck aria-hidden />}
+            data-tour="press-pass-issue"
+          >
             {submitLabel}
           </Button>
         ) : (
-          <Button type="submit" size="lg" rightIcon={<ArrowRight aria-hidden />}>
+          <Button type="submit" size="lg" rightIcon={<ArrowRight aria-hidden />} data-tour="press-pass-next">
             Next
           </Button>
         )}

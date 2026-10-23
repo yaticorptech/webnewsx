@@ -7,14 +7,14 @@ import { RotateCcw } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMetered } from "@/components/auth/read-meter";
-import { BLURRED_CARDS, BlurredReels, FREE_CARDS } from "@/components/auth/read-wall";
+import { BlurredReels, splitForVisitor } from "@/components/auth/read-wall";
 import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { useRealtimeEvent, useRealtimeReconnect } from "@/components/providers/realtime-provider";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { Button } from "@/components/ui/button";
 import { api, errorMessage } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
-import { newShuffleSeed, shuffleSignature } from "@/lib/shuffle";
+import { newShuffleSeed, shuffleSignature, visitorShuffleSeed } from "@/lib/shuffle";
 import { SCROLL_TO_TOP_EVENT, scrollToTop } from "@/lib/scroll-to-top";
 import type { ArticleCard, Page, UserRow, ViewerUser } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
@@ -97,14 +97,16 @@ export function Feed({ view, initialPage, suggestions = [] }: FeedProps) {
   const reduceMotion = useReducedMotion();
   const id = viewId(view);
   const ranked = isRanked(view);
-  // Logged out: newest first, never a fresh mix (as the grid — news-feed.tsx).
-  const shuffled = isShuffled(view) && viewer !== null;
+  // Logged out: the day's mix, one seed all day, Home included (as the grid — news-feed.tsx); signed in: a fresh mix
+  // every visit of Latest, a category or a language.
+  const shuffled = isShuffled(view) || (!viewer && isRanked(view));
+  const seed = () => (viewer ? newShuffleSeed() : visitorShuffleSeed());
   const key = useMemo(() => feedKey(id, viewerId), [id, viewerId]);
 
   const query = useInfiniteQuery({
     queryKey: key,
     queryFn: async ({ pageParam, signal }) => {
-      const page = await api.feed({ ...viewQuery(view), cursor: pageParam, shuffle: !pageParam && shuffled ? newShuffleSeed() : null }, signal);
+      const page = await api.feed({ ...viewQuery(view), cursor: pageParam, shuffle: !pageParam && shuffled ? seed() : null }, signal);
       seedStats(queryClient, page.items);
       return page;
     },
@@ -118,12 +120,11 @@ export function Feed({ view, initialPage, suggestions = [] }: FeedProps) {
   });
   const { data, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage, error } = query;
   const all = feedItems(data);
-  // Logged out (owner 2026-10-08, as the grid): FREE_CARDS reels, then BLURRED_CARDS more blurred with "Sign in to
-  // read" — and no more pages until they sign in.
+  // Logged out (owner 2026-10-08, as the grid): FREE_CARDS reels of the day's mix, then BLURRED_CARDS more blurred
+  // with "Sign in to read" — and no more pages until they sign in (read-wall.tsx).
   const gated = useMetered();
-  const items = gated ? all.slice(0, FREE_CARDS) : all;
-  const blurred = gated ? all.slice(FREE_CARDS, FREE_CARDS + BLURRED_CARDS) : [];
-  const moreToLoad = Boolean(hasNextPage) && (!gated || all.length < FREE_CARDS + BLURRED_CARDS);
+  const { free: items, locked: blurred, complete } = splitForVisitor(all, gated);
+  const moreToLoad = Boolean(hasNextPage) && !complete;
   // Reels of the first render (the SSR page, or the cached feed on Back) don't fade in: the page's own fade covers them
   // (app/(main)/template.tsx), and a staggered delay would leave the reel Back restores blank. Appended pages cascade in.
   const [firstIds] = useState(() => new Set(items.map((item) => item.id)));

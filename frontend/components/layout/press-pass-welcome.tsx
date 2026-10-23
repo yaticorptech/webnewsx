@@ -4,8 +4,10 @@ import { BadgeCheck, PenLine } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clearSignedInMark, hasSignedInMark, takeWelcomeBack } from "@/components/auth/signed-in-flag";
+import { FIRST_STEPS_SESSION_KEY } from "@/components/layout/first-steps-popup";
 import { showPendingPage } from "@/components/layout/pending-page";
 import { useViewer } from "@/components/providers/viewer-provider";
+import { basicsTourPendingOn } from "@/components/tour/guided-tour";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "@/components/ui/toast";
@@ -36,7 +38,9 @@ export function PressPassWelcome() {
 
   useEffect(() => {
     if (!signedIn || !hasSignedInMark()) return;
-    if (!reader || quiet) {
+    // The guided tour's first welcome is about to show here (owner 2026-10-22): no second popup on top of it; its
+    // closing card offers the Press Pass instead.
+    if (!reader || quiet || basicsTourPendingOn(pathname)) {
       clearSignedInMark();
       return;
     }
@@ -44,9 +48,14 @@ export function PressPassWelcome() {
     const timer = setTimeout(() => {
       clearSignedInMark();
       setOpen(true);
+      try {
+        sessionStorage.setItem(FIRST_STEPS_SESSION_KEY, "1");
+      } catch {
+        // Then the daily popup may follow later in this visit.
+      }
     }, 800);
     return () => clearTimeout(timer);
-  }, [signedIn, reader, quiet]);
+  }, [signedIn, reader, quiet, pathname]);
 
   return (
     <Modal

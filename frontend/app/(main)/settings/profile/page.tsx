@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SpeedLines } from "@/components/brand/speed-lines";
 import { BackButton } from "@/components/layout/back-button";
+import { LeaveAccount } from "@/components/settings/leave-account";
 import { ProfileSettingsForm } from "@/components/settings/profile-settings-form";
 import { requireOnboardedViewer } from "@/lib/session";
 
@@ -19,7 +20,8 @@ export default async function SettingsProfilePage() {
   const viewer = await requireOnboardedViewer("/settings/profile");
 
   return (
-    <div className="flex flex-col gap-8">
+    // Full screen (owner 2026-10-23): `data-grid-page` lifts the shell's column limit.
+    <div data-grid-page="" className="flex flex-col gap-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <div data-own-back="" className="flex items-center gap-3">
@@ -45,6 +47,9 @@ export default async function SettingsProfilePage() {
         </Link>
         .
       </p>
+
+      {/* Deactivate or delete (owner 2026-10-23); while posting as a group, its owner deletes the group. */}
+      <LeaveAccount />
     </div>
   );
 }

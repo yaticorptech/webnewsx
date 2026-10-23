@@ -1,8 +1,12 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/client.js";
-import { pressPass, user } from "../db/schema.js";
+import { groupMember, pressPass, session as sessionTable, user } from "../db/schema.js";
+import { purgeAccount } from "../db/purge.js";
+import { deleteCookie } from "hono/cookie";
+import { ACT_AS_COOKIE } from "../lib/acting.js";
 import { resolveAvatarImage } from "../lib/avatar.js";
+import { listMemberGroups } from "../queries/groups.js";
 import { ApiError, isUniqueViolation, notFound, validationError } from "../lib/errors.js";
 import { RATE_LIMITS } from "../lib/rate-limit.js";
 import { deleteQuietly, storage } from "../lib/storage.js";
@@ -31,6 +35,8 @@ import {
   updateMeSchema,
   type AccountSettings,
   type ViewerUser,
+  SELF_DEACTIVATED_REASON,
+  leaveAccountSchema,
 } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 import type { RouteDeps } from "./deps.js";
@@ -55,21 +61,33 @@ export function meRoutes({ limiter }: RouteDeps) {
   const app = new Hono<AppEnv>();
 
   // GET /api/me — always 200. Includes role, reporterLevel, pressPass and suspended (SPEC §3.11).
+  // Posting as a group (owner 2026-10-23): the group's account, `actingAs` naming the member really signed in; `groups`
+  // are always the member's own (the account switcher).
   app.get("/", async (c) => {
     const viewer = c.get("viewer");
-    return c.json({ viewer: viewer ? await getViewerUser(viewer.id) : null });
+    if (!viewer) return c.json({ viewer: null });
+    const [me, groups] = await Promise.all([getViewerUser(viewer.id), listMemberGroups(viewer.actor?.id ?? viewer.id)]);
+    if (!me) return c.json({ viewer: null });
+    const actingAs = viewer.actor ? { groupId: viewer.id, role: viewer.actor.role, member: { id: viewer.actor.id, username: viewer.actor.username, name: viewer.actor.name, image: viewer.actor.image } } : null;
+    return c.json({ viewer: { ...me, actingAs, groups } });
   });
 
   // GET /api/me/account — the Settings page (owner 2026-10-01): email, password login or not, advertorial price.
   app.get("/account", requireOnboarded, async (c) => {
     const viewer = mustViewer(c);
     const [row] = await db
-      .select({ pressMeetPrice: user.pressMeetPrice, membershipPrice: user.membershipPrice, pushNotifications: user.pushNotifications })
+      .select({
+        pressMeetPrice: user.pressMeetPrice,
+        membershipPrice: user.membershipPrice,
+        pushNotifications: user.pushNotifications,
+        phoneNumber: user.phoneNumber,
+      })
       .from(user)
       .where(eq(user.id, viewer.id))
       .limit(1);
     const body: AccountSettings = {
       email: viewer.email,
+      phoneNumber: row?.phoneNumber ?? null,
       hasPassword: await hasPasswordLogin(db, viewer.id),
       pressMeetPrice: row?.pressMeetPrice ?? null,
       canSetPressMeetPrice: viewer.role !== "reader",
@@ -169,6 +187,44 @@ export function meRoutes({ limiter }: RouteDeps) {
   app.get("/reported-stories", requireOnboarded, async (c) => c.json(await listReportedStories(mustViewer(c).id)));
 
   // PATCH /api/me — edit profile (onboarded users).
+  /*
+   * Leaving WebNEWS (owner 2026-10-23), from Edit profile — always your own account (a group is deleted from Groups).
+   * Type your @username to confirm. Deactivate hides you until you log in again; Delete removes everything for good.
+   */
+  const leaving = async (c: Parameters<typeof mustViewer>[0]) => {
+    const viewer = mustViewer(c);
+    if (viewer.actor) throw new ApiError(403, "switch_back_first", "Switch back to your own account first. A group is deleted from Group accounts.");
+    if (viewer.role === "admin") throw new ApiError(403, "cannot_leave_desk", "Editor Desk accounts can't be closed here.");
+    const { confirm } = await readJson(c, leaveAccountSchema);
+    if (confirm.replace(/^@/, "").toLowerCase() !== (viewer.username ?? "").toLowerCase()) {
+      throw validationError({ confirm: "Type your username exactly to confirm" });
+    }
+    return viewer;
+  };
+
+  app.post("/deactivate", requireOnboarded, async (c) => {
+    const viewer = await leaving(c);
+    await db.transaction(async (tx) => {
+      await tx.update(user).set({ suspendedAt: new Date(), suspendReason: SELF_DEACTIVATED_REASON }).where(eq(user.id, viewer.id));
+      await tx.delete(sessionTable).where(eq(sessionTable.userId, viewer.id));
+    });
+    deleteCookie(c, ACT_AS_COOKIE, { path: "/" });
+    return c.json({ ok: true });
+  });
+
+  app.post("/delete", requireOnboarded, async (c) => {
+    const viewer = await leaving(c);
+    const [owned] = await db
+      .select({ id: groupMember.groupId })
+      .from(groupMember)
+      .where(and(eq(groupMember.userId, viewer.id), eq(groupMember.role, "owner")))
+      .limit(1);
+    if (owned) throw new ApiError(409, "owns_group", "You own a group account. Delete the group first (Group accounts), then your account.");
+    await purgeAccount(viewer.id);
+    deleteCookie(c, ACT_AS_COOKIE, { path: "/" });
+    return c.json({ ok: true });
+  });
+
   app.patch("/", requireOnboarded, rateLimit(limiter, "profile", RATE_LIMITS.onboarding, "user"), async (c) => {
     const viewer = mustViewer(c);
     const input = await readJson(c, updateMeSchema);

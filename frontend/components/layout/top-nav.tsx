@@ -90,6 +90,7 @@ export function Masthead({ viewer, adminVisit = false }: MastheadProps) {
                     href="/publish"
                     aria-label="Publish a new story"
                     title="New story"
+                    data-tour="publish"
                     // In line with the other icons (owner 2026-10-10: the solid red, glowing circle "looks odd"): a soft pink
                     // circle with a red "+", solid red on hover.
                     className="hidden size-10 items-center justify-center rounded-full bg-tint text-brand transition-colors hover:bg-brand hover:text-brand-contrast md:inline-flex"

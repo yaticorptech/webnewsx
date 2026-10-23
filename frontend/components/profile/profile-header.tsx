@@ -74,8 +74,12 @@ export function ProfileHeader({
 
         <ProfileStats counts={counts} onOpenList={onOpenList} onShowArticles={onShowArticles} className="self-center [grid-area:stats]" />
 
-        <p className="flex min-w-0 max-w-full text-[0.9375rem] font-bold text-brand [grid-area:handle]">
+        <p className="flex min-w-0 max-w-full items-center gap-2 text-[0.9375rem] font-bold text-brand [grid-area:handle]">
           <UserHandle username={user.username} truncate />
+          {/* A group account (owner 2026-10-23): one outlet, several members — readers see only its name. */}
+          {user.accountType === "group" && (
+            <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2">News outlet</span>
+          )}
         </p>
 
         {user.bio && (
