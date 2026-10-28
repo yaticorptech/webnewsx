@@ -113,62 +113,60 @@ export function UserMenu({
           priority
         />
       </Link>
-      {/* The menu (hamburger) only on your own profile, Settings and Press Pass pages (owner 2026-10-09, like
-          Instagram); elsewhere the photo alone, which opens the profile. */}
-      {onProfile && (
-        <DropdownMenu
-          label={
-            unreadNotices > 0
-              ? `Account menu, ${unreadNotices} unread notice${unreadNotices === 1 ? "" : "s"}`
-              : "Account menu"
-          }
-          align="end"
-          triggerClassName="group relative inline-flex size-8 items-center justify-center rounded-full text-muted max-sm:size-10 transition-colors hover:bg-tint-2 hover:text-brand aria-expanded:bg-tint-2 aria-expanded:text-brand max-md:after:absolute max-md:after:-inset-y-1.5 max-md:after:-left-0.5 max-md:after:-right-2.5 max-md:after:content-['']"
-          trigger={
-            <>
-              {/* A hamburger (owner 2026-10-09; before: a chevron). */}
-              <Menu aria-hidden className="size-5 max-sm:size-6" strokeWidth={2.25} />
-              {unreadNotices > 0 && (
-                <span
-                  aria-hidden
-                  className="absolute right-0.5 top-0.5 size-2.5 rounded-full bg-brand ring-2 ring-surface"
-                />
-              )}
-            </>
-          }
-          headerHref={`/${username}`}
-          header={
-            <div className="flex items-center gap-3">
-              <Avatar src={image} name={name} size="md" decorative />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-ink">{name}</p>
-                <UserHandle
-                  username={username}
-                  truncate
-                  className="flex text-xs text-muted"
-                />
-                <p className="mt-0.5 truncate text-xs font-semibold text-ink-2">
-                  {viewer?.actingAs
-                    ? `Group · you're ${GROUP_ROLE_LABELS[viewer.actingAs.role].toLowerCase()}`
-                    : ROLE_LINE[
-                        role === "reporter" ? (reporterLevel ?? "trainee") : role
-                      ]}
-                </p>
-              </div>
+      {/* The menu (hamburger) on every page on computers (owner 2026-10-28); phones show it only on your own
+          profile, Settings and Press Pass pages (the wrapper above hides it elsewhere). */}
+      <DropdownMenu
+        label={
+          unreadNotices > 0
+            ? `Account menu, ${unreadNotices} unread notice${unreadNotices === 1 ? "" : "s"}`
+            : "Account menu"
+        }
+        align="end"
+        triggerClassName="group relative inline-flex size-8 items-center justify-center rounded-full text-muted max-sm:size-10 transition-colors hover:bg-tint-2 hover:text-brand aria-expanded:bg-tint-2 aria-expanded:text-brand max-md:after:absolute max-md:after:-inset-y-1.5 max-md:after:-left-0.5 max-md:after:-right-2.5 max-md:after:content-['']"
+        trigger={
+          <>
+            {/* A hamburger (owner 2026-10-09; before: a chevron). */}
+            <Menu aria-hidden className="size-5 max-sm:size-6" strokeWidth={2.25} />
+            {unreadNotices > 0 && (
+              <span
+                aria-hidden
+                className="absolute right-0.5 top-0.5 size-2.5 rounded-full bg-brand ring-2 ring-surface"
+              />
+            )}
+          </>
+        }
+        headerHref={`/${username}`}
+        header={
+          <div className="flex items-center gap-3">
+            <Avatar src={image} name={name} size="md" decorative />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-ink">{name}</p>
+              <UserHandle
+                username={username}
+                truncate
+                className="flex text-xs text-muted"
+              />
+              <p className="mt-0.5 truncate text-xs font-semibold text-ink-2">
+                {viewer?.actingAs
+                  ? `Group · you're ${GROUP_ROLE_LABELS[viewer.actingAs.role].toLowerCase()}`
+                  : ROLE_LINE[
+                      role === "reporter" ? (reporterLevel ?? "trainee") : role
+                    ]}
+              </p>
             </div>
-          }
-          items={[
-            ...switchItems(viewer, switchTo),
-            ...menuItems({
-              username,
-              role,
-              reporterLevel,
-              unreadNotices,
-              logOut,
-            }),
-          ]}
-        />
-      )}
+          </div>
+        }
+        items={[
+          ...switchItems(viewer, switchTo),
+          ...menuItems({
+            username,
+            role,
+            reporterLevel,
+            unreadNotices,
+            logOut,
+          }),
+        ]}
+      />
     </div>
   );
 }

@@ -484,6 +484,13 @@
       "when": 1792748073190,
       "tag": "0068_group_application_drop_proof",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1793172523057,
+      "tag": "0069_press_pass_domain",
+      "breakpoints": true
     }
   ]
 }

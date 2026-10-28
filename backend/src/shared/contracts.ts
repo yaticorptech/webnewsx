@@ -1455,9 +1455,24 @@ export type PressPass = PressPassSummary & {
   pledgeSignedAt: string | null;
   pledgeSignature: string | null;
   approvalsToVerify: number;
+  /** The holder's own website, proven with a DNS TXT record (owner 2026-10-28) — null until they add one. */
+  domain: PressDomain | null;
   issuedAt: string;
   revokedAt: string | null;
   holder: AuthorSummary;
+};
+
+/**
+ * A Press Pass holder's domain (e.g. an outlet's site). Verified once a TXT record `value` is published at `host`
+ * (the domain itself, or `_webnews.<domain>`).
+ */
+export type PressDomain = {
+  name: string;
+  /** The TXT record's Host in a DNS panel: `@` for a root domain, the subdomain part otherwise (`learn`). */
+  host: string;
+  /** The TXT record's value: `webnews-verification=<token>`. */
+  value: string;
+  verifiedAt: string | null;
 };
 
 /** `GET /api/press-pass/options` — every list the application form needs. */
@@ -2127,6 +2142,18 @@ export function publishesToReview(viewer: RoleHolder): boolean {
 }
 
 /* ─────────────── Response shapes (roles endpoints) ─────────────── */
+
+/** `PUT /api/press-pass/domain` — a bare host name like `vkmangalore.com` (scheme, `www.` and paths are stripped). */
+export const pressDomainSchema = z.object({
+  domain: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(253)
+    .transform((value) => value.replace(/^[a-z]+:\/\//, "").replace(/^www\./, "").replace(/[/?#].*$/, "").replace(/\.$/, ""))
+    .pipe(z.string().regex(/^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/, "Enter a domain like yoursite.com")),
+});
+export type PressDomainInput = z.input<typeof pressDomainSchema>;
 
 /** `GET /api/press-pass` · `PATCH /api/press-pass`. */
 export type PressPassResponse = { pressPass: PressPass | null };

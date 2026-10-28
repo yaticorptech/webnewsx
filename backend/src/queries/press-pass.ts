@@ -1,4 +1,5 @@
-import { randomInt } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
+import { resolveTxt } from "node:dns/promises";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, type Executor } from "../db/client.js";
 import { pressPass, user, type PressPassRecord, type UserRecord } from "../db/schema.js";
@@ -20,6 +21,7 @@ import {
   REPORTER_TYPE_VALUES,
   TRAINEE_APPROVALS_TO_VERIFY,
   regionName,
+  type PressDomain,
   type PressPass,
   type PressPassOptions,
   type PressLanguage,
@@ -91,6 +93,7 @@ export function toPressPass(pass: PressPassRecord, holder: HolderFields): PressP
     pledgeSignedAt: pass.pledgeSignedAt?.toISOString() ?? null,
     pledgeSignature: pass.pledgeSignature,
     approvalsToVerify: TRAINEE_APPROVALS_TO_VERIFY,
+    domain: toPressDomain(pass),
     issuedAt: pass.issuedAt.toISOString(),
     revokedAt: pass.revokedAt?.toISOString() ?? null,
     holder: { id: holder.id, username: holder.username ?? "", name: holder.name, image: holder.image },
@@ -253,4 +256,84 @@ export async function setPassLevel(executor: Executor, userId: string, level: Re
     .set({ level, updatedAt: new Date(), ...(resetApprovals ? { approvedCount: 0 } : {}) })
     .where(eq(pressPass.userId, userId));
   await executor.update(user).set({ reporterLevel: level }).where(eq(user.id, userId));
+}
+
+/* ─────────────── Domain verification (owner 2026-10-28) ─────────────── */
+
+const TXT_PREFIX = "webnews-verification=";
+
+/** Two-part suffixes common here (`yoursite.co.in`), so their registrable domain keeps three labels. */
+const TWO_PART_SUFFIXES = new Set(["co.in", "org.in", "net.in", "gov.in", "ac.in", "edu.in", "res.in", "firm.in", "gen.in", "ind.in", "co.uk", "org.uk", "com.au", "net.au"]);
+
+/**
+ * The TXT record's Host as DNS panels ask for it: `@` for the root domain, the subdomain part otherwise
+ * (`learn.yaticorp.com` → `learn`).
+ */
+export function dnsHost(domain: string): string {
+  const labels = domain.split(".");
+  const rootLabels = TWO_PART_SUFFIXES.has(labels.slice(-2).join(".")) ? 3 : 2;
+  return labels.length > rootLabels ? labels.slice(0, -rootLabels).join(".") : "@";
+}
+
+function toPressDomain(pass: PressPassRecord): PressDomain | null {
+  if (!pass.domain || !pass.domainToken) return null;
+  return {
+    name: pass.domain,
+    host: dnsHost(pass.domain),
+    value: `${TXT_PREFIX}${pass.domainToken}`,
+    verifiedAt: pass.domainVerifiedAt?.toISOString() ?? null,
+  };
+}
+
+async function activePassOrThrow(userId: string): Promise<PressPassRecord> {
+  const pass = await findActivePass(userId);
+  if (!pass) throw new ApiError(404, "not_found", "You don't have an active Press Pass");
+  return pass;
+}
+
+async function setDomainColumns(userId: string, changes: Pick<Partial<PressPassRecord>, "domain" | "domainToken" | "domainVerifiedAt">) {
+  const [row] = await db
+    .update(pressPass)
+    .set({ ...changes, updatedAt: new Date() })
+    .where(and(eq(pressPass.userId, userId), isNull(pressPass.revokedAt)))
+    .returning();
+  if (!row) throw new ApiError(404, "not_found", "You don't have an active Press Pass");
+  return row;
+}
+
+/** Adds (or replaces) the holder's domain with a fresh token; same domain again keeps its token and verification. */
+export async function setPressDomain(userId: string, domain: string): Promise<PressPassRecord> {
+  const pass = await activePassOrThrow(userId);
+  if (pass.domain === domain && pass.domainToken) return pass;
+  return setDomainColumns(userId, { domain, domainToken: randomBytes(16).toString("hex"), domainVerifiedAt: null });
+}
+
+export async function removePressDomain(userId: string): Promise<PressPassRecord> {
+  await activePassOrThrow(userId);
+  return setDomainColumns(userId, { domain: null, domainToken: null, domainVerifiedAt: null });
+}
+
+/** TXT strings at `host` (chunks joined); none when the name has no TXT records or doesn't resolve. */
+async function txtRecords(host: string): Promise<string[]> {
+  try {
+    return (await resolveTxt(host)).map((chunks) => chunks.join("").trim());
+  } catch {
+    return [];
+  }
+}
+
+/** Looks for the TXT record on the domain or `_webnews.<domain>`; 400 `domain_not_verified` while it isn't there. */
+export async function verifyPressDomain(userId: string): Promise<PressPassRecord> {
+  const pass = await activePassOrThrow(userId);
+  if (!pass.domain || !pass.domainToken) throw validationError({ domain: "Add your domain first" });
+  const expected = `${TXT_PREFIX}${pass.domainToken}`;
+  const records = (await Promise.all([txtRecords(pass.domain), txtRecords(`_webnews.${pass.domain}`)])).flat();
+  if (!records.includes(expected)) {
+    throw new ApiError(
+      400,
+      "domain_not_verified",
+      `We couldn't find the TXT record on ${pass.domain} yet. DNS changes can take up to a few hours — try again later.`,
+    );
+  }
+  return pass.domainVerifiedAt ? pass : setDomainColumns(userId, { domainVerifiedAt: new Date() });
 }

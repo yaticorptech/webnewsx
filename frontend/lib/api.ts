@@ -107,6 +107,7 @@ import type {
   OwnedArticle,
   Page,
   PressLanguage,
+  PressDomainInput,
   PressPassApplyInput,
   PressPassApplyResponse,
   PressPassOptions,
@@ -645,6 +646,13 @@ export const api = {
   /** PATCH /api/press-pass — complete / update your active pass (verification, region, languages, about, links; pledge once). */
   updatePressPass: (input: PressPassUpdateInput) =>
     request<PressPassResponse>("/api/press-pass", { method: "PATCH", body: input }),
+  /** PUT /api/press-pass/domain — add / change your domain; the pass carries the TXT record to publish. */
+  setPressDomain: (input: PressDomainInput) =>
+    request<PressPassResponse>("/api/press-pass/domain", { method: "PUT", body: input }),
+  /** POST /api/press-pass/domain/verify — checks DNS; 400 `domain_not_verified` until the TXT record is live. */
+  verifyPressDomain: () => request<PressPassResponse>("/api/press-pass/domain/verify", { method: "POST" }),
+  /** DELETE /api/press-pass/domain. */
+  removePressDomain: () => request<PressPassResponse>("/api/press-pass/domain", { method: "DELETE" }),
 
   /** Newsroom analytics (reporters + Editor Desk; readers get 403 `press_pass_required`). `tz` = IANA zone (default the browser's). */
   newsroom: {

@@ -21,6 +21,7 @@ import {
   BadgeCheck,
   Check,
   Lock,
+  Globe,
 } from "lucide-react";
 import { AI_STATUS_KEY, GeminiKeyGuide } from "@/components/composer/ai-writer";
 import Link from "next/link";
@@ -64,12 +65,13 @@ import {
 import { EarningsDashboard } from "@/components/memberships/earnings-dashboard";
 import { MyMembershipsCard } from "@/components/memberships/my-memberships";
 import { ConnectedAccounts } from "./connected-accounts";
+import { DomainSettings } from "./domain-settings";
 import { DraftsCard } from "./drafts-card";
 import { NewsroomCard } from "./newsroom-card";
 import { NotificationsCard } from "./notifications-card";
 import { SpotlightCard } from "./spotlight-card";
 
-type SectionKey = "drafts" | "my-memberships" | "newsroom" | "spotlight" | "press-meet" | "membership" | "ai" | "notifications" | "connected" | "password" | "help";
+type SectionKey = "drafts" | "my-memberships" | "newsroom" | "spotlight" | "press-meet" | "membership" | "ai" | "domain" | "notifications" | "connected" | "password" | "help";
 /** `href`: an option that opens its own page (Newsroom — owner 2026-10-09, moved here from the account menu). */
 type Section = { key: SectionKey; label: string; hint: string; icon: LucideIcon; href?: string };
 
@@ -83,6 +85,7 @@ const SECTIONS: Record<SectionKey, Section> = {
   "press-meet": { key: "press-meet", label: "Advertorial price", hint: "What you charge to cover a press meet", icon: IndianRupee },
   membership: { key: "membership", label: "Premium membership", hint: "Your price, members and earnings", icon: Crown },
   ai: { key: "ai", label: "Gemini AI key", hint: "Your key for “Generate with AI”", icon: Bot },
+  domain: { key: "domain", label: "Your domain", hint: "Verify your website with DNS", icon: Globe },
   notifications: { key: "notifications", label: "Notifications", hint: "Push on this phone, on or off", icon: BellRing },
   connected: { key: "connected", label: "Connected accounts", hint: "Instagram, Facebook, log out", icon: Link2 },
   password: { key: "password", label: "Reset password", hint: "Change your login password", icon: KeyRound },
@@ -114,6 +117,8 @@ export function SettingsView({ verifiedReporter }: { verifiedReporter: boolean }
     SECTIONS["my-memberships"],
     ...(writer ? [SECTIONS.newsroom, SECTIONS.spotlight] : []),
     ...(account.data?.canSetPressMeetPrice ? [SECTIONS["press-meet"], SECTIONS.membership, SECTIONS.ai] : []),
+    // Press Pass holders (owner 2026-10-28).
+    ...(viewer?.role === "reporter" ? [SECTIONS.domain] : []),
     ...(inApp ? [SECTIONS.notifications] : []),
     SECTIONS.connected,
     SECTIONS.password,
@@ -240,6 +245,8 @@ export function SettingsView({ verifiedReporter }: { verifiedReporter: boolean }
           <NewsroomCard viewer={viewer} />
         ) : current.key === "spotlight" ? (
           <SpotlightCard />
+        ) : current.key === "domain" ? (
+          <DomainSettings />
         ) : account.isPending ? (
           <SettingsSkeleton />
         ) : account.isError ? (

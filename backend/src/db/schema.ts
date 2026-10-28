@@ -470,6 +470,10 @@ export const pressPass = pgTable(
     level: text("level", { enum: REPORTER_LEVEL_VALUES }).notNull().default("trainee"),
     /** Stories approved by the Review Desk (3 → Verified). */
     approvedCount: integer("approved_count").notNull().default(0),
+    /** The holder's website (owner 2026-10-28), proven by a DNS TXT record `webnews-verification=<domainToken>`. */
+    domain: text("domain"),
+    domainToken: text("domain_token"),
+    domainVerifiedAt: ts("domain_verified_at"),
     issuedAt: tsMs("issued_at").notNull().defaultNow(),
     revokedAt: ts("revoked_at"),
     updatedAt: ts("updated_at").notNull().defaultNow(),
