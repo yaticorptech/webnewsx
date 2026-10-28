@@ -74,16 +74,15 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next({ request: { headers } });
 }
 
-const CRAWLER_HEADER = { type: "header" as const, key: "user-agent", value: ".*([Bb]ot|[Cc]rawl|[Ss]pider|Slurp|facebookexternalhit|WhatsApp|LinkedIn|[Ee]mbedly|[Pp]review).*" };
-
+// Next.js reads `config` statically, so the matcher must be inline literals (no shared constants).
 export const config = {
   matcher: [
     { source: "/:path*", has: [{ type: "header", key: "x-forwarded-for" }] },
     { source: "/:path*", has: [{ type: "header", key: "x-real-ip" }] },
     { source: "/:path*", has: [{ type: "header", key: "forwarded" }] },
     // Crawlers on stories, sections and profiles (the real-404 check above).
-    { source: "/a/:slug", has: [CRAWLER_HEADER] },
-    { source: "/category/:path*", has: [CRAWLER_HEADER] },
-    { source: "/:username", has: [CRAWLER_HEADER] },
+    { source: "/a/:slug", has: [{ type: "header", key: "user-agent", value: ".*([Bb]ot|[Cc]rawl|[Ss]pider|Slurp|facebookexternalhit|WhatsApp|LinkedIn|[Ee]mbedly|[Pp]review).*" }] },
+    { source: "/category/:path*", has: [{ type: "header", key: "user-agent", value: ".*([Bb]ot|[Cc]rawl|[Ss]pider|Slurp|facebookexternalhit|WhatsApp|LinkedIn|[Ee]mbedly|[Pp]review).*" }] },
+    { source: "/:username", has: [{ type: "header", key: "user-agent", value: ".*([Bb]ot|[Cc]rawl|[Ss]pider|Slurp|facebookexternalhit|WhatsApp|LinkedIn|[Ee]mbedly|[Pp]review).*" }] },
   ],
 };
