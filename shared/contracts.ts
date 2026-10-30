@@ -1469,7 +1469,7 @@ export type PressPass = PressPassSummary & {
  */
 export type PressDomain = {
   name: string;
-  /** The TXT record's Host in a DNS panel: `@` for a root domain, the subdomain part otherwise (`learn`). */
+  /** The TXT record's Host in a DNS panel: `_webnews` for a root domain, `_webnews.<subdomain part>` otherwise (`_webnews.learn`). */
   host: string;
   /** The TXT record's value: `webnews-verification=<token>`. */
   value: string;

@@ -266,10 +266,6 @@ const TXT_PREFIX = "webnews-verification=";
 /** Two-part suffixes common here (`yoursite.co.in`), so their registrable domain keeps three labels. */
 const TWO_PART_SUFFIXES = new Set(["co.in", "org.in", "net.in", "gov.in", "ac.in", "edu.in", "res.in", "firm.in", "gen.in", "ind.in", "co.uk", "org.uk", "com.au", "net.au"]);
 
-/**
- * The TXT record's Host as DNS panels ask for it: `@` for the root domain, the subdomain part otherwise
- * (`learn.yaticorp.com` → `learn`).
- */
 /** Vercel's address for a root domain (A) and a subdomain (CNAME): the frontend project serves the webnewsin sites. */
 const VERCEL_A = "76.76.21.21";
 const VERCEL_CNAME = "cname.vercel-dns.com";
@@ -285,17 +281,30 @@ export function pointingRecords(domain: string): SiteDnsRecord[] {
     : [{ type: "CNAME", host, value: VERCEL_CNAME }];
 }
 
+/**
+ * A host as DNS panels ask for it: `@` for the root domain, the subdomain part otherwise
+ * (`learn.yaticorp.com` → `learn`).
+ */
 export function dnsHost(domain: string): string {
   const labels = domain.split(".");
   const rootLabels = TWO_PART_SUFFIXES.has(labels.slice(-2).join(".")) ? 3 : 2;
   return labels.length > rootLabels ? labels.slice(0, -rootLabels).join(".") : "@";
 }
 
+/**
+ * The TXT record goes on `_webnews.<domain>`, never the domain itself: a subdomain's host also carries the CNAME, and
+ * DNS providers refuse any other record beside a CNAME (`_webnews` for a root domain, `_webnews.learn` for learn.…).
+ */
+function txtHost(domain: string): string {
+  const host = dnsHost(domain);
+  return host === "@" ? "_webnews" : `_webnews.${host}`;
+}
+
 function toPressDomain(pass: PressPassRecord): PressDomain | null {
   if (!pass.domain || !pass.domainToken) return null;
   return {
     name: pass.domain,
-    host: dnsHost(pass.domain),
+    host: txtHost(pass.domain),
     value: `${TXT_PREFIX}${pass.domainToken}`,
     verifiedAt: pass.domainVerifiedAt?.toISOString() ?? null,
     pointing: pointingRecords(pass.domain),
