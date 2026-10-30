@@ -293,8 +293,9 @@ export function SiteChrome({
       </nav>
 
       {ticker.length > 0 && (
+        // webnews.in's BreakingTicker: a flat pink band with a bottom rule, inside the page column.
         <div className="pub-container mt-4">
-          <div className="flex items-center gap-3 rounded-md border border-red-100 bg-red-50 px-3 py-2">
+          <div className="flex items-center gap-3 border-b border-gray-200 bg-red-50 px-4 py-2 sm:px-6">
             <span className="z-10 shrink-0 rounded bg-pub px-2 py-0.5 text-xs font-bold text-white">{tr(lang, "breaking")}</span>
             <div className="relative flex-1 overflow-hidden text-sm">
               <div className="pub-marquee">
