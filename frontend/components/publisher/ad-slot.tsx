@@ -26,6 +26,79 @@ const BANNERS: Partial<Record<SiteAdPosition, string>> = {
  * setup preview it only shows where ads go.
  */
 export function AdSlot({ position, ads, preview = false, className }: { position: SiteAdPosition; ads: SiteAdsByPosition; preview?: boolean; className?: string }) {
+  if (position === "logo-left" || position === "logo-right") {
+    return <LogoBanners side={position === "logo-left" ? "left" : "right"} ads={ads} className={className} />;
+  }
+  return <AdRotation position={position} ads={ads} preview={preview} className={className} />;
+}
+
+/**
+ * webnews.in's banners beside the logo (its LogoPSA, owner 2026-10-30): government / public-service banners rotating
+ * on each side, with any ads booked on the two logo positions merged in. The sides run on different clocks and start
+ * on different banners, so they never show the same one or change at the same moment.
+ */
+const PSA: { src: string; url: string }[] = [
+  { src: "/pub-ads/psa/psa-voter.svg", url: "https://voters.eci.gov.in" },
+  { src: "/pub-ads/psa/psa-ayushman.svg", url: "https://pmjay.gov.in" },
+  { src: "/pub-ads/psa/psa-aadhaar.svg", url: "https://uidai.gov.in" },
+  { src: "/pub-ads/psa/psa-pmkisan.svg", url: "https://pmkisan.gov.in" },
+  { src: "/pub-ads/psa/psa-itr.svg", url: "https://www.incometax.gov.in" },
+  { src: "/pub-ads/psa/psa-digilocker.svg", url: "https://www.digilocker.gov.in" },
+  { src: "/pub-ads/psa/psa-scholarship.svg", url: "https://scholarships.gov.in" },
+  { src: "/pub-ads/psa/psa-sevasindhu.svg", url: "https://sevasindhu.karnataka.gov.in" },
+  { src: "/pub-ads/psa/psa-sakala.svg", url: "https://sakala.kar.nic.in" },
+  { src: "/pub-ads/psa/psa-shakti.svg", url: "https://ksrtc.karnataka.gov.in" },
+  { src: "/pub-ads/psa/psa-kaveri.svg", url: "https://kaveri.karnataka.gov.in" },
+  { src: "/pub-ads/psa/psa-bhoomi.svg", url: "https://landrecords.karnataka.gov.in" },
+  { src: "/pub-ads/psa/psa-nadakacheri.svg", url: "https://nadakacheri.karnataka.gov.in" },
+];
+const PSA_PERIOD = { left: 5000, right: 6800 };
+const PSA_START = { left: 0, right: 2600 };
+
+function LogoBanners({ side, ads, className }: { side: "left" | "right"; ads: SiteAdsByPosition; className?: string }) {
+  const booked = [...(ads["logo-left"] ?? []), ...(ads["logo-right"] ?? [])]
+    .filter((ad) => ad.creativeUrl && !ad.video)
+    .map((ad) => ({ src: ad.creativeUrl!, url: ad.targetUrl ?? "" }));
+  const items = [...booked, ...PSA];
+  const [idx, setIdx] = useState(() => (side === "right" ? Math.floor(items.length / 2) : 0));
+  const [prevIdx, setPrevIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    let timer: number | undefined;
+    const advance = () =>
+      setIdx((i) => {
+        setPrevIdx(i);
+        return (i + 1) % items.length;
+      });
+    const start = window.setTimeout(() => {
+      advance();
+      timer = window.setInterval(advance, PSA_PERIOD[side]);
+    }, PSA_START[side]);
+    return () => {
+      window.clearTimeout(start);
+      if (timer) window.clearInterval(timer);
+    };
+  }, [side, items.length]);
+
+  const cur = items[idx % items.length]!;
+  const prev = prevIdx !== null ? items[prevIdx % items.length] : null;
+  return (
+    <a
+      href={cur.url || undefined}
+      target={cur.url ? "_blank" : undefined}
+      rel="noopener noreferrer sponsored"
+      aria-label="Public service banner"
+      className={`block overflow-hidden rounded-lg ${className ?? ""}`}
+    >
+      <div className="relative w-full overflow-hidden rounded-lg" style={{ aspectRatio: "4 / 1" }}>
+        {prev && <img key={`p-${prevIdx}`} src={prev.src} alt="" aria-hidden className="pub-imgout absolute inset-0 size-full object-cover" />}
+        <img key={`c-${idx}`} src={cur.src} alt="Public service announcement" className="pub-imgin absolute inset-0 size-full object-cover" />
+      </div>
+    </a>
+  );
+}
+
+function AdRotation({ position, ads, preview, className }: { position: SiteAdPosition; ads: SiteAdsByPosition; preview: boolean; className?: string }) {
   const list = ads[position] ?? [];
   const spec = SITE_AD_POSITIONS.find((p) => p.key === position)!;
   const bookHref = useContext(AdBookingContext);

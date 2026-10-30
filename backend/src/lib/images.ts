@@ -6,7 +6,8 @@ import { ApiError } from "./errors.js";
  * `frame`: a reporter's own poster frame (owner 2026-10-08) — processed like a cover; any image is allowed (owner: no
  * transparency required), and see-through parts, when it has them, are kept (webp keeps the alpha channel).
  */
-export type ImageKind = "avatar" | "cover" | "article" | "frame";
+/** `logo`: a publisher site's logo (owner 2026-10-30) — its empty / transparent border is trimmed, any shape allowed. */
+export type ImageKind = "avatar" | "cover" | "article" | "frame" | "logo";
 
 export type ProcessedImage = {
   buffer: Buffer;
@@ -37,6 +38,18 @@ sharp.cache(false);
  * plus a 16px-wide blurred webp data URL placeholder. Inputs over 25 MP, or avatars / covers longer than 4:1, are refused.
  * Article images (`article`) are processed like covers but may be any shape.
  */
+/**
+ * A logo's empty margin — transparent, or the plain colour of its corner — cut away, so the masthead shows the mark
+ * itself at full size (a 612×408 upload held a 508×59 wordmark). Nothing to trim (or a blank image): unchanged.
+ */
+async function trimBorder(input: Buffer): Promise<Buffer> {
+  try {
+    return await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, animated: false }).rotate().trim({ threshold: 12 }).png().toBuffer();
+  } catch {
+    return input;
+  }
+}
+
 export async function processImage(input: Buffer, kind: ImageKind): Promise<ProcessedImage> {
   let format: string | undefined;
   let size: { width: number; height: number };
@@ -51,13 +64,14 @@ export async function processImage(input: Buffer, kind: ImageKind): Promise<Proc
   if (!format || !ACCEPTED_FORMATS.has(format)) {
     throw new ApiError(415, "unsupported_image", "That file isn't a supported image (JPEG, PNG, WebP, GIF or AVIF)");
   }
-  if (kind !== "article" && Math.max(size.width, size.height) / Math.min(size.width, size.height) > MAX_ASPECT_RATIO) {
+  if (kind !== "article" && kind !== "logo" && Math.max(size.width, size.height) / Math.min(size.width, size.height) > MAX_ASPECT_RATIO) {
     throw new ApiError(422, "image_aspect_ratio", "That image is too long and thin. Use a regular photo (at most 4:1).");
   }
 
   try {
     // animated: false → first frame only for GIF/animated WebP.
-    const base = sharp(input, { limitInputPixels: MAX_INPUT_PIXELS, animated: false }).rotate();
+    const source = kind === "logo" ? await trimBorder(input) : input;
+    const base = sharp(source, { limitInputPixels: MAX_INPUT_PIXELS, animated: false }).rotate();
     const pipeline =
       kind === "avatar"
         ? base.resize(AVATAR_SIZE, AVATAR_SIZE, { fit: "cover", position: "attention" })

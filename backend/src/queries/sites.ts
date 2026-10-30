@@ -519,6 +519,8 @@ export async function siteAdminData(site: PublisherSiteRecord): Promise<SiteAdmi
   return {
     site: toPublicSite(site),
     adminEmail: site.adminEmail,
+    navCategories: site.navCategories?.filter(isCategory) ?? null,
+    postedCategories: await sourceCategories(site.sourceId, site.hiddenArticleIds),
     stats: {
       stories: totals?.stories ?? 0,
       views: Number(totals?.views ?? 0),
@@ -540,6 +542,8 @@ export async function updateSiteSettings(site: PublisherSiteRecord, input: z.out
       contactEmail: input.contactEmail ?? null,
       contactPhone: input.contactPhone ?? null,
       address: input.address ?? null,
+      navCategories: input.navCategories ?? null,
+      language: input.language,
       updatedAt: new Date(),
     })
     .where(eq(publisherSite.id, site.id));

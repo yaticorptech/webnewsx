@@ -143,7 +143,8 @@ export function siteRoutes({ limiter }: RouteDeps) {
       return c.json({ url, key, video: true }, 201);
     }
     if (file.size > IMAGE_MAX_BYTES) throw new ApiError(413, "file_too_large", "Images must be 8 MB or smaller");
-    const processed = await processImage(Buffer.from(await file.arrayBuffer()), "article");
+    // `purpose=logo`: the site's logo, its empty border trimmed (Site settings); otherwise an ad creative.
+    const processed = await processImage(Buffer.from(await file.arrayBuffer()), form.purpose === "logo" ? "logo" : "article");
     const key = `covers/${site.id}/${crypto.randomUUID()}.webp`;
     const url = await storage.put(key, processed.buffer, processed.contentType);
     return c.json({ url, key, video: false }, 201);

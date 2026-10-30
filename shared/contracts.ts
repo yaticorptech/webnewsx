@@ -3833,7 +3833,18 @@ export type SiteAdminLoginInput = z.input<typeof siteAdminLoginSchema>;
 export type SiteAdminLoginResponse = { token: string; expiresAt: string };
 
 /** `PATCH /api/sites/d/:domain/admin/settings` — what the site's admin may change (not the domain or the source). */
-export const siteSettingsSchema = siteSetupSchema.pick({ title: true, tagline: true, logoUrl: true, logoKey: true, city: true, contactEmail: true, contactPhone: true, address: true });
+export const siteSettingsSchema = siteSetupSchema.pick({
+  title: true,
+  tagline: true,
+  logoUrl: true,
+  logoKey: true,
+  city: true,
+  contactEmail: true,
+  contactPhone: true,
+  address: true,
+  navCategories: true,
+  language: true,
+});
 export type SiteSettingsInput = z.input<typeof siteSettingsSchema>;
 
 /** `PUT /api/sites/d/:domain/admin/password`. */
@@ -3862,6 +3873,10 @@ export type SiteAdInput = z.input<typeof siteAdSchema>;
 export type SiteAdminData = {
   site: PublicSite;
   adminEmail: string;
+  /** The menu's categories in order; null = automatic (every category with stories). */
+  navCategories: Category[] | null;
+  /** The categories the site has stories in, most first (the menu picker marks them). */
+  postedCategories: Category[];
   stats: { stories: number; views: number; activeAds: number };
   ads: SiteAd[];
 };

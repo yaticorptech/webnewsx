@@ -150,7 +150,7 @@ export function SiteChrome({
                 aria-label={site.logoUrl ? "Change your logo" : "Add your logo"}
               >
                 {site.logoUrl ? (
-                  <img src={site.logoUrl} alt={site.title} className="h-14 w-auto max-w-[280px] object-contain sm:h-16" />
+                  <img src={site.logoUrl} alt={site.title} className="h-12 w-auto max-w-[80vw] object-contain sm:h-[4.5rem] sm:max-w-[600px]" />
                 ) : (
                   <span
                     className={`flex h-14 items-center gap-2 rounded-lg border-2 border-dashed px-5 text-sm font-bold text-pub ${
@@ -169,7 +169,7 @@ export function SiteChrome({
             ) : site.logoUrl ? (
               // webnews.in's masthead (owner 2026-10-30): the logo and the tagline only — no title beside a logo.
               <a href={homeHref} aria-label={`${site.title} home`}>
-                <img src={site.logoUrl} alt={site.title} className="h-16 w-auto max-w-[420px] object-contain sm:h-20" />
+                <img src={site.logoUrl} alt={site.title} className="h-12 w-auto max-w-[80vw] object-contain sm:h-[4.5rem] sm:max-w-[600px]" />
               </a>
             ) : null}
 

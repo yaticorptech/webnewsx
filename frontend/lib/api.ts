@@ -303,7 +303,7 @@ const enc = encodeURIComponent;
 
 /** `article`: the full article's image — stored like a cover, any shape. */
 /** `frame`: the reporter's own poster frame (owner 2026-10-08) — saved to their account as it uploads. */
-export type UploadKind = "avatar" | "cover" | "article" | "frame";
+export type UploadKind = "avatar" | "cover" | "article" | "frame" | "logo";
 
 /**
  * Multipart upload with progress. `onProgress` receives a fraction 0..1.
@@ -346,9 +346,16 @@ export function uploadPressMeetReport(file: File, onProgress?: (fraction: number
 }
 
 /** A publisher site admin's upload (owner 2026-10-29): an image (→ webp) or an MP4 ad. */
-export function uploadSiteFile(domain: string, token: string, file: File, onProgress?: (fraction: number) => void): Promise<SiteUpload> {
+export function uploadSiteFile(
+  domain: string,
+  token: string,
+  file: File,
+  onProgress?: (fraction: number) => void,
+  purpose?: "logo",
+): Promise<SiteUpload> {
   const form = new FormData();
   form.append("file", file, file.name);
+  if (purpose) form.append("purpose", purpose);
   return sendUpload<SiteUpload>(form, onProgress, undefined, `/api/sites/d/${encodeURIComponent(domain)}/admin/upload`, token);
 }
 export type SiteUpload = { url: string; key: string; video: boolean };

@@ -1461,6 +1461,20 @@ html:has([data-pending-page]) {
 }
 
 /* ─── Publisher websites (webnews.in layout) ─── */
+/* webnews.in's banner crossfade beside the logo (its wn-imgin / wn-imgout). */
+@keyframes pub-imgin {
+  from { opacity: 0; transform: translateX(9%) scale(1.03); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pub-imgout {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(-9%) scale(0.98); }
+}
+.pub-imgin { animation: pub-imgin 0.8s ease; }
+.pub-imgout { animation: pub-imgout 0.8s ease forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .pub-imgin, .pub-imgout { animation-duration: 1ms; }
+}
 /* webnews.in's container-wn: full width, its side padding. */
 .pub-container {
   margin-inline: auto;

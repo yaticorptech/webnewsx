@@ -15,7 +15,7 @@ import { LIMITS, type UploadedImage, type UploadedVideo } from "../shared/contra
 import type { AppEnv } from "../types.js";
 import type { RouteDeps } from "./deps.js";
 
-const kindSchema = z.enum(["avatar", "cover", "article", "frame", "video"]);
+const kindSchema = z.enum(["avatar", "cover", "article", "frame", "logo", "video"]);
 const VIDEO_MB = Math.round(LIMITS.videoUploadMaxBytes / (1024 * 1024));
 
 export function uploadRoutes({ limiter }: RouteDeps) {
@@ -39,7 +39,7 @@ export function uploadRoutes({ limiter }: RouteDeps) {
     }
 
     const kind = kindSchema.safeParse(form.kind);
-    if (!kind.success) throw validationError({ kind: "kind must be 'avatar', 'cover', 'article', 'frame' or 'video'" });
+    if (!kind.success) throw validationError({ kind: "kind must be 'avatar', 'cover', 'article', 'frame', 'logo' or 'video'" });
     if (kind.data !== "avatar" && !viewer.onboarded) {
       throw new ApiError(403, "onboarding_required", "Finish setting up your profile first");
     }

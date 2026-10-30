@@ -12,9 +12,12 @@ import {
   type SiteAdPosition,
   type SiteAdminData,
   type SiteAdminStory,
+  type Category,
+  type SiteLanguage,
 } from "@/lib/shared/contracts";
 import { siteUrl } from "@/lib/config";
 import { PUB_FONTS } from "./fonts";
+import { MenuCard } from "./site-menu-card";
 import { CountrySelect, PasswordChecklist, cleanDigits, joinPhone, splitPhone } from "./site-fields";
 import { relativeTime } from "./site-parts";
 
@@ -597,6 +600,8 @@ function SettingsPanel({
     address: data.site.address ?? "",
   });
   const [logo, setLogo] = useState<{ url: string | null; key: string | null }>({ url: data.site.logoUrl, key: null });
+  const [navCategories, setNavCategories] = useState<Category[] | null>(data.navCategories);
+  const [language, setLanguage] = useState<SiteLanguage>(data.site.language);
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -606,7 +611,7 @@ function SettingsPanel({
   const uploadLogo = async (file: File) => {
     setUploading(true);
     try {
-      const up = await uploadSiteFile(domain, token, file);
+      const up = await uploadSiteFile(domain, token, file, undefined, "logo");
       setLogo({ url: up.url, key: up.key });
     } catch (err) {
       setMessage(errorMessage(err));
@@ -629,7 +634,7 @@ function SettingsPanel({
     setBusy(true);
     setMessage(null);
     try {
-      onSaved(await api.sites.saveSettings(domain, token, { ...rest, contactPhone, logoUrl: logo.url ?? "", logoKey: logo.key }));
+      onSaved(await api.sites.saveSettings(domain, token, { ...rest, contactPhone, logoUrl: logo.url ?? "", logoKey: logo.key, navCategories, language }));
       setMessage("Saved");
     } catch (err) {
       setMessage(isApiError(err) && err.fields ? Object.values(err.fields)[0]! : errorMessage(err));
@@ -706,6 +711,16 @@ function SettingsPanel({
             Address
             <textarea maxLength={SITE_LIMITS.addressMax} rows={3} value={form.address} onChange={set("address")} className={`${input} mt-1.5 h-auto py-2`} />
           </label>
+        </div>
+        {/* The menu and language (owner 2026-10-30: "choose categories to display in navbar" here too). */}
+        <div className="mt-6">
+          <MenuCard
+            posted={data.postedCategories}
+            chosen={navCategories}
+            onChosen={setNavCategories}
+            language={language}
+            onLanguage={setLanguage}
+          />
         </div>
         <div className="mt-5 flex items-center gap-3">
           <button type="submit" disabled={busy || uploading} className={primary}>
