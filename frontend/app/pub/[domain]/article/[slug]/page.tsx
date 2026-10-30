@@ -88,7 +88,6 @@ export default async function PublisherArticle({ params }: Props) {
               <img src={image} alt="" className="aspect-video w-full bg-gray-100 object-cover" />
             ) : null}
           </figure>
-          <AdSlot position="article-strip" ads={ads} className="mx-auto mt-3 max-w-sm" />
 
           <div className="pub-body mt-6 font-pub-sans text-[1.0625rem] leading-[1.8] text-gray-800" dangerouslySetInnerHTML={{ __html: before }} />
           <AdSlot position="in-article" ads={ads} className="mx-auto my-8 w-full max-w-[480px]" />
@@ -100,7 +99,6 @@ export default async function PublisherArticle({ params }: Props) {
         </article>
 
         <aside className="flex flex-col gap-6 lg:col-span-4 lg:border-l lg:border-gray-200 lg:pl-8">
-          <AdSlot position="trending-sidebar" ads={ads} className="mx-auto w-full max-w-[380px]" />
           {more.length > 0 && (
             <div>
               <h2 className="pub-section-head">More Stories</h2>
@@ -115,7 +113,6 @@ export default async function PublisherArticle({ params }: Props) {
         </aside>
       </div>
 
-      <AdSlot position="mid-page" ads={ads} className="mx-auto mt-12 w-full max-w-[640px]" />
 
       {more.length > 5 && (
         <section className="mt-12 border-t border-gray-200 pt-6">
