@@ -13,6 +13,7 @@ import {
   type SiteAdminData,
   type SiteAdminStory,
 } from "@/lib/shared/contracts";
+import { siteUrl } from "@/lib/config";
 import { PUB_FONTS } from "./fonts";
 import { CountrySelect, PasswordChecklist, cleanDigits, joinPhone, splitPhone } from "./site-fields";
 import { relativeTime } from "./site-parts";
@@ -508,10 +509,27 @@ function StoriesPanel({ domain, token }: { domain: string; token: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="font-pub-head text-3xl font-extrabold">Stories</h1>
-        <p className="mt-1 text-sm text-gray-500">Published on WebNEWS. Breaking stories lead your home page and the ticker; hidden ones stay on WebNEWS only.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="font-pub-head text-3xl font-extrabold">Stories</h1>
+          <p className="mt-1 text-sm text-gray-500">Published on WebNEWS. Breaking stories lead your home page and the ticker; hidden ones stay on WebNEWS only.</p>
+        </div>
+        {/* Owner 2026-10-30: write in the WebNEWS composer (signed in as the site's WebNEWS account); the story then shows
+            on WebNEWS and on this site at once. */}
+        <a
+          href={`${siteUrl}/publish`}
+          target="_blank"
+          rel="noopener"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-pub px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-pub-dark max-sm:w-full max-sm:justify-center"
+        >
+          <Plus aria-hidden className="size-4" strokeWidth={2.5} />
+          Post a new story
+        </a>
       </div>
+      <p className="-mt-1 text-xs text-gray-500">
+        Opens the WebNEWS composer in a new tab — sign in there with the WebNEWS account behind this site. Published stories appear here and on your
+        site automatically.
+      </p>
       {error && <p className="text-sm font-semibold text-pub">{error}</p>}
       {!stories ? (
         <div className="h-48 animate-pulse rounded-xl bg-white" />
