@@ -146,11 +146,18 @@ function seeStory(id: string): void {
 
 /* ─────────── Who and what counts ─────────── */
 
-/** A visitor the meter applies to: logged out, and not an admin browsing as a visitor. */
+/**
+ * The free-story limit is switched off at launch (owner 2026-10-30: "show all articles without login for now; after
+ * some days we will lock that"): every story, reel and page is open to visitors — no wall, no blurred cards, no
+ * page limit. Turn it back on with NEXT_PUBLIC_READ_WALL=1 on Vercel (then redeploy); nothing else changes.
+ */
+export const READ_WALL_ON = process.env.NEXT_PUBLIC_READ_WALL === "1";
+
+/** A visitor the meter applies to: logged out, and not an admin browsing as a visitor (and the limit is on). */
 export function useMetered(): boolean {
   const viewer = useViewer();
   const adminVisit = useAdminVisit();
-  return viewer === null && !adminVisit;
+  return READ_WALL_ON && viewer === null && !adminVisit;
 }
 
 /** A story page: opening it is seeing the story. */
