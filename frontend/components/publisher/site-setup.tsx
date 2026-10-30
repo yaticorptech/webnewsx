@@ -175,7 +175,8 @@ export function SiteSetup() {
         adminEmail: form.adminEmail,
         adminPassword: form.adminPassword || undefined,
         navCategories: form.navCategories,
-        language: form.language,
+        // Every site opens in English (owner 2026-10-30); visitors switch with the site's toggle.
+        language: "en",
       });
       setData(next);
       setForm((f) => (f ? { ...f, adminPassword: "", logoKey: null } : f));
@@ -288,8 +289,6 @@ export function SiteSetup() {
             posted={data.postedCategories}
             chosen={form.navCategories}
             onChosen={(navCategories) => setForm((f) => (f ? { ...f, navCategories } : f))}
-            language={form.language}
-            onLanguage={(language) => set("language", language)}
           />
 
           <section className="card flex flex-col gap-4 p-5">
@@ -379,7 +378,7 @@ export function SiteSetup() {
           articleBase={null}
           ads={{}}
           categories={menu.categories}
-          lang={form.language}
+          lang="en"
           preview
           editor={{
             onLogo: () => setLogoOpen(true),
@@ -405,7 +404,7 @@ export function SiteSetup() {
               href={() => "#"}
               categoryHref={null}
               bookHref={null}
-              lang={form.language}
+              lang="en"
               preview
             />
           </div>

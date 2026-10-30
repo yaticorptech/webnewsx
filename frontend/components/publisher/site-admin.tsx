@@ -13,7 +13,6 @@ import {
   type SiteAdminData,
   type SiteAdminStory,
   type Category,
-  type SiteLanguage,
 } from "@/lib/shared/contracts";
 import { siteUrl } from "@/lib/config";
 import { PUB_FONTS } from "./fonts";
@@ -602,7 +601,6 @@ function SettingsPanel({
   });
   const [logo, setLogo] = useState<{ url: string | null; key: string | null }>({ url: data.site.logoUrl, key: null });
   const [navCategories, setNavCategories] = useState<Category[] | null>(data.navCategories);
-  const [language, setLanguage] = useState<SiteLanguage>(data.site.language);
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -635,7 +633,7 @@ function SettingsPanel({
     setBusy(true);
     setMessage(null);
     try {
-      onSaved(await api.sites.saveSettings(domain, token, { ...rest, contactPhone, logoUrl: logo.url ?? "", logoKey: logo.key, navCategories, language }));
+      onSaved(await api.sites.saveSettings(domain, token, { ...rest, contactPhone, logoUrl: logo.url ?? "", logoKey: logo.key, navCategories, language: "en" }));
       setMessage("Saved");
     } catch (err) {
       setMessage(isApiError(err) && err.fields ? Object.values(err.fields)[0]! : errorMessage(err));
@@ -733,14 +731,12 @@ function SettingsPanel({
             <textarea maxLength={SITE_LIMITS.addressMax} rows={3} value={form.address} onChange={set("address")} className={`${input} mt-1.5 h-auto py-2`} />
           </label>
         </div>
-        {/* The menu and language (owner 2026-10-30: "choose categories to display in navbar" here too). */}
+        {/* The menu (owner 2026-10-30: "choose categories to display in navbar" here too). */}
         <div className="mt-6">
           <MenuCard
             posted={data.postedCategories}
             chosen={navCategories}
             onChosen={setNavCategories}
-            language={language}
-            onLanguage={setLanguage}
           />
         </div>
         <div className="mt-5 flex items-center gap-3">
