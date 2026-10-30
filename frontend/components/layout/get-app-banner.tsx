@@ -3,7 +3,7 @@
 import { Bell, Download, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { isTourActive } from "@/components/tour/guided-tour";
 import { isNativeApp } from "@/lib/native-app";
 import { track } from "@/lib/track";
@@ -128,4 +128,39 @@ export function GetAppBanner() {
       )}
     </AnimatePresence>
   );
+}
+
+const noopSubscribe = () => () => {};
+/** An Android phone's browser (not the app, not a computer): where the app can be downloaded. */
+const canGetApp = () =>
+  HAS_APP_LINK && !isNativeApp() && /Android/i.test(navigator.userAgent) && window.matchMedia("(max-width: 767.98px)").matches;
+
+/**
+ * "Download app" in the phone's top bar (owner 2026-10-30): always there in an Android phone's browser, beside the
+ * card above (which comes and goes). Downloads the app file straight away.
+ */
+export function GetAppButton({ className }: { className?: string }) {
+  const shown = useCanGetApp();
+  if (!shown) return null;
+  return (
+    <a
+      href={APP_URL}
+      download
+      onClick={() => track("get_app_nav")}
+      aria-label="Download the WebNEWS app"
+      className={`inline-flex h-10 shrink-0 flex-col items-center justify-center rounded-full bg-tint px-2.5 text-brand transition-colors active:bg-brand active:text-brand-contrast ${className ?? ""}`}
+    >
+      <Download aria-hidden className="size-4" strokeWidth={2.4} />
+      <span className="text-[9px] font-bold uppercase leading-none tracking-wide">App</span>
+    </a>
+  );
+}
+
+/** Whether this browser can take the app (Android phone, not the app) — after hydration; false on the server. */
+export const useCanGetApp = () => useSyncExternalStore(noopSubscribe, canGetApp, () => false);
+
+/** The menus' "Download app" (owner 2026-10-30: in the hamburger too): starts the app file's download. */
+export function downloadApp(from: string) {
+  track(from);
+  window.location.href = APP_URL;
 }

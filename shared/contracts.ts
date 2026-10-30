@@ -3351,6 +3351,8 @@ export const TRACKED_FEATURES = {
   page_view: "Opened a page",
   get_app: "Tapped “Get the app”",
   get_app_dismissed: "Dismissed “Get the app”",
+  get_app_nav: "Downloaded the app from the top bar",
+  get_app_menu: "Downloaded the app from the menu",
   tour_start: "Started the guided tour",
   tour_step_done: "Did a tour step",
   tour_step_skipped: "Skipped a tour step",

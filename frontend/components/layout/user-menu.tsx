@@ -1,20 +1,12 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  BadgeCheck,
-  Bookmark,
-  Building2,
-  ChevronDown,
-  Info,
-  LogOut,
-  Settings,
-  ShieldAlert,
-} from "lucide-react";
+import { BadgeCheck, Bookmark, Building2, ChevronDown, Download, Info, LogOut, Settings, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserHandle, handleText } from "@/components/brand/user-handle";
 import { useSwitchAccount } from "@/components/groups/use-switch-account";
+import { downloadApp, useCanGetApp } from "./get-app-banner";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { DropdownMenu, type DropdownItem } from "@/components/ui/dropdown-menu";
@@ -71,6 +63,7 @@ export function UserMenu({
   const queryClient = useQueryClient();
   const viewer = useViewer();
   const { switchTo } = useSwitchAccount();
+  const canGetApp = useCanGetApp();
   const onProfile =
     pathname === `/${username}` ||
     pathname.startsWith("/settings") ||
@@ -161,6 +154,9 @@ export function UserMenu({
           </div>
         }
         items={[
+          ...(canGetApp
+            ? [{ label: <span className="font-bold text-brand">Download app</span>, onSelect: () => downloadApp("get_app_menu"), icon: <Download aria-hidden /> }]
+            : []),
           ...switchItems(viewer, switchTo),
           ...menuItems({
             username,
