@@ -29,19 +29,24 @@ export function parseRange(header: string | undefined, size: number): ByteRange 
 }
 
 /**
- * GET /media/<key> — serves uploads for the local storage driver (dev). 404 when R2 is in use.
- * Streams from disk and honours byte ranges, which video players need (Safari won't play a video without them).
+ * GET /media/<key> — serves uploads for the local storage driver (dev). With R2 in use it sends the browser on to the
+ * same key on R2 (owner 2026-10-30: uploads from before the switch were copied there at the same keys, and their saved
+ * links still say /media/…). Streams from disk and honours byte ranges, which video players need (Safari won't play a
+ * video without them).
  */
 export function mediaRoutes() {
   const app = new Hono<AppEnv>();
 
   app.get("/*", async (c) => {
-    if (!(storage instanceof LocalStorage)) throw notFound();
     let key: string;
     try {
       key = decodeURIComponent(c.req.path.replace(/^\/media\//, ""));
     } catch {
       throw notFound();
+    }
+    if (!(storage instanceof LocalStorage)) {
+      if (!KEY_PATTERN.test(key)) throw notFound();
+      return c.redirect(storage.urlFor(key), 301);
     }
     // Only well-formed keys we create, and the resolved path must stay inside the upload dir.
     const path = KEY_PATTERN.test(key) ? storage.resolvePath(key) : null;
