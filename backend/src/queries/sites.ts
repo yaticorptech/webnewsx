@@ -101,9 +101,18 @@ export async function siteAdminLogin(domain: string, email: string, password: st
 /** Lower-cased, without `www.` (the www address redirects to the bare domain). */
 export const normalizeDomain = (domain: string) => domain.trim().toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
 
+/**
+ * The site served on `domain`. Offline while its owner has no domain on their Press Pass (owner 2026-10-30: Remove
+ * takes the site down, settings kept); during a change to a new domain the old one keeps serving until it's verified.
+ */
 export async function findSiteByDomain(domain: string): Promise<PublisherSiteRecord | null> {
-  const [row] = await db.select().from(publisherSite).where(eq(publisherSite.domain, normalizeDomain(domain))).limit(1);
-  return row ?? null;
+  const [row] = await db
+    .select({ site: publisherSite })
+    .from(publisherSite)
+    .innerJoin(pressPass, and(eq(pressPass.userId, publisherSite.ownerId), isNull(pressPass.revokedAt), isNotNull(pressPass.domain)))
+    .where(eq(publisherSite.domain, normalizeDomain(domain)))
+    .limit(1);
+  return row?.site ?? null;
 }
 
 function toPublicSite(site: PublisherSiteRecord): PublicSite {
@@ -340,6 +349,60 @@ async function connectSite(site: PublisherSiteRecord): Promise<void> {
   await addVercelDomain(site.domain);
   if (dnsHost(site.domain) === "@") await addVercelDomain(`www.${site.domain}`, site.domain);
   await db.update(publisherSite).set({ connectedAt: new Date(), updatedAt: new Date() }).where(eq(publisherSite.id, site.id));
+}
+
+async function removeVercelDomain(name: string): Promise<void> {
+  const { status, data } = await vercel<VercelDomain>("DELETE", `/v9/projects/${encodeURIComponent(env.VERCEL_PROJECT_ID)}/domains/${encodeURIComponent(name)}`);
+  if (status < 300 || status === 404) return;
+  throw new ApiError(502, "domain_disconnect_failed", data.error?.message ?? `Vercel couldn't remove ${name}`);
+}
+
+/** Takes the domain (and its www redirect, first) off the Vercel project; a Vercel failure is logged, not thrown. */
+async function disconnectSite(site: PublisherSiteRecord): Promise<void> {
+  if (site.connectedAt && env.vercelEnabled) {
+    try {
+      if (dnsHost(site.domain) === "@") await removeVercelDomain(`www.${site.domain}`);
+      await removeVercelDomain(site.domain);
+    } catch (error) {
+      console.warn(`[sites] could not disconnect ${site.domain}:`, error instanceof Error ? error.message : error);
+    }
+  }
+  await db.update(publisherSite).set({ connectedAt: null, updatedAt: new Date() }).where(eq(publisherSite.id, site.id));
+}
+
+/** The Press Pass domain was removed: the site goes offline (findSiteByDomain) and its domain leaves Vercel. */
+export async function takeSiteOffline(ownerId: string): Promise<void> {
+  const site = await ownSite(ownerId);
+  if (site) await disconnectSite(site);
+}
+
+/**
+ * A domain was verified on the Press Pass: an existing site moves onto it (the old domain leaves Vercel) and is
+ * connected again — also when the same domain comes back after a Remove. Failures are logged; the setup page retries.
+ */
+export async function moveSiteToVerifiedDomain(ownerId: string): Promise<void> {
+  const [site, domain] = await Promise.all([ownSite(ownerId), verifiedDomain(ownerId)]);
+  if (!site || !domain) return;
+  if (site.domain !== domain) {
+    await disconnectSite(site);
+    try {
+      await db.update(publisherSite).set({ domain, connectedAt: null, updatedAt: new Date() }).where(eq(publisherSite.id, site.id));
+    } catch (error) {
+      if (isUniqueViolation(error, "publisher_site_domain_unique")) {
+        console.warn(`[sites] ${domain} already has another site; ${site.domain}'s site not moved`);
+        return;
+      }
+      throw error;
+    }
+  }
+  const current = await ownSite(ownerId);
+  if (current && !current.connectedAt && env.vercelEnabled) {
+    try {
+      await connectSite(current);
+    } catch (error) {
+      console.warn(`[sites] could not connect ${current.domain}:`, error instanceof Error ? error.message : error);
+    }
+  }
 }
 
 /** TXT records Vercel asks for when the domain is also on another Vercel account. */

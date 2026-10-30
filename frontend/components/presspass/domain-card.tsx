@@ -4,6 +4,7 @@ import { BadgeCheck, Copy, Globe, LayoutTemplate, RefreshCw, Trash2 } from "luci
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import { toast } from "@/components/ui/toast";
 import { api, errorMessage, isApiError } from "@/lib/api";
 import type { PressDomain, PressPass } from "@/lib/shared/contracts";
@@ -18,6 +19,7 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"save" | "verify" | "remove" | null>(null);
   const [changing, setChanging] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const run = async (kind: NonNullable<typeof busy>, call: () => Promise<{ pressPass: PressPass | null }>, done?: string) => {
     setBusy(kind);
@@ -94,6 +96,12 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
             </div>
           </div>
           {error && <p className="text-sm font-semibold text-brand">{error}</p>}
+          {changing && domain?.verifiedAt && (
+            <p className="text-sm leading-relaxed text-muted">
+              Your website stays on <strong className="font-semibold text-ink-2">{domain.name}</strong> until the new domain is
+              verified, then moves over with its logo, ads and admin login.
+            </p>
+          )}
         </form>
       ) : verified ? (
         // Verified (owner 2026-10-29): "DNS verified" with Set up website next to it — the publisher's own news site.
@@ -173,11 +181,43 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
             size="sm"
             loading={busy === "remove"}
             leftIcon={<Trash2 aria-hidden />}
-            onClick={() => void run("remove", api.removePressDomain, "Domain removed")}
+            onClick={() => setConfirmRemove(true)}
           >
             Remove
           </Button>
         </div>
+      )}
+
+      {domain && (
+        <Modal
+          open={confirmRemove}
+          onOpenChange={setConfirmRemove}
+          title={`Remove ${domain.name}?`}
+          description={
+            verified
+              ? `If your website runs on ${domain.name}, it goes offline. Its settings, ads and admin login are kept: verify a domain again to bring it back.`
+              : "You can add a domain again any time."
+          }
+          size="sm"
+          dismissible={busy !== "remove"}
+          footer={
+            <div className="flex w-full gap-2">
+              <Button variant="ghost" fullWidth onClick={() => setConfirmRemove(false)} disabled={busy === "remove"}>
+                Keep it
+              </Button>
+              <Button
+                fullWidth
+                loading={busy === "remove"}
+                leftIcon={<Trash2 aria-hidden />}
+                onClick={() =>
+                  void run("remove", api.removePressDomain, verified ? "Domain removed, website offline" : "Domain removed").then((ok) => ok && setConfirmRemove(false))
+                }
+              >
+                Remove
+              </Button>
+            </div>
+          }
+        />
       )}
     </section>
   );

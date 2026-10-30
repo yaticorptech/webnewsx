@@ -13,6 +13,7 @@ import {
   updatePressPass,
   verifyPressDomain,
 } from "../queries/press-pass.js";
+import { moveSiteToVerifiedDomain, takeSiteOffline } from "../queries/sites.js";
 import { getViewerUser } from "../queries/users.js";
 import { pressDomainSchema, pressPassApplySchema, pressPassUpdateSchema } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
@@ -58,15 +59,20 @@ export function pressPassRoutes({ limiter }: RouteDeps) {
   });
 
   // POST /api/press-pass/domain/verify — checks DNS for the TXT record; 400 `domain_not_verified` until it's there.
+  // A website on an earlier domain moves onto the verified one.
   app.post("/domain/verify", requireOnboarded, rateLimit(limiter, "domain-verify", RATE_LIMITS.domainVerify, "user"), async (c) => {
     const viewer = mustViewer(c);
-    return c.json({ pressPass: toPressPass(await verifyPressDomain(viewer.id), viewer) });
+    const pass = await verifyPressDomain(viewer.id);
+    await moveSiteToVerifiedDomain(viewer.id);
+    return c.json({ pressPass: toPressPass(pass, viewer) });
   });
 
-  // DELETE /api/press-pass/domain — removes your domain (and its verification).
+  // DELETE /api/press-pass/domain — removes your domain (and its verification); a website on it goes offline.
   app.delete("/domain", requireOnboarded, async (c) => {
     const viewer = mustViewer(c);
-    return c.json({ pressPass: toPressPass(await removePressDomain(viewer.id), viewer) });
+    const pass = await removePressDomain(viewer.id);
+    await takeSiteOffline(viewer.id);
+    return c.json({ pressPass: toPressPass(pass, viewer) });
   });
 
   return app;
