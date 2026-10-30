@@ -1,7 +1,7 @@
 "use client";
 
-import { BadgeCheck, Copy, Globe, LayoutTemplate, RefreshCw, Trash2 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { BadgeCheck, Copy, ExternalLink, Globe, LayoutTemplate, RefreshCw, Trash2 } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -52,6 +52,18 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
   };
 
   const verified = Boolean(domain?.verifiedAt);
+
+  // Whether their website is set up (and live), for the verified card's buttons; null = not set up / unknown.
+  const [site, setSite] = useState<"live" | "pending" | null>(null);
+  useEffect(() => {
+    if (!verified) return;
+    const controller = new AbortController();
+    api.sites
+      .mine(null, controller.signal)
+      .then((mine) => setSite(mine.site ? (mine.site.connection === "live" ? "live" : "pending") : null))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [verified, domain?.name]);
 
   return (
     <section aria-labelledby="pass-domain" className="card px-5 py-5 sm:px-6 sm:py-6">
@@ -105,14 +117,34 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
         </form>
       ) : verified ? (
         // Verified (owner 2026-10-29): "DNS verified" with Set up website next to it — the publisher's own news site.
+        // Once it's set up (owner 2026-10-30): Visit site, with Edit website beside it.
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <p className="min-w-0 flex-1 text-[0.9375rem] leading-relaxed text-ink-2">
-            <strong className="font-bold text-ink">{domain.name}</strong> is verified as yours since{" "}
-            <span className="tabular-nums">{passDate(domain.verifiedAt!)}</span>.
-          </p>
-          <Button href="/site-setup" leftIcon={<LayoutTemplate aria-hidden />} className="rounded-2xl px-6 max-sm:w-full">
-            Set up website
-          </Button>
+          <div className="min-w-0 flex-1 text-[0.9375rem] leading-relaxed text-ink-2">
+            <p>
+              <strong className="font-bold text-ink">{domain.name}</strong> is verified as yours since{" "}
+              <span className="tabular-nums">{passDate(domain.verifiedAt!)}</span>.
+            </p>
+            {site && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm">
+                <span aria-hidden className={`size-2 rounded-full ${site === "live" ? "bg-success" : "bg-muted-2"}`} />
+                {site === "live" ? "Your website is live." : "Your website is saved — it opens once your DNS points to WebNEWS (Set up website shows the records)."}
+              </p>
+            )}
+          </div>
+          {site === "live" ? (
+            <div className="flex gap-2 max-sm:w-full">
+              <Button variant="ghost" href="/site-setup" leftIcon={<LayoutTemplate aria-hidden />} className="max-sm:flex-1">
+                Edit website
+              </Button>
+              <Button href={`https://${domain.name}`} external leftIcon={<ExternalLink aria-hidden />} className="rounded-2xl px-6 max-sm:flex-1">
+                Visit site
+              </Button>
+            </div>
+          ) : (
+            <Button href="/site-setup" leftIcon={<LayoutTemplate aria-hidden />} className="rounded-2xl px-6 max-sm:w-full">
+              {site ? "Edit website" : "Set up website"}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="mt-3 flex flex-col gap-3">
