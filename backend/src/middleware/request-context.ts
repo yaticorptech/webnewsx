@@ -17,8 +17,11 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * header that isn't FRONTEND_URL. Requests without Origin (server-to-server, curl) are allowed —
  * they can't ride on a victim's cookies. Better Auth does its own origin checks.
  */
+/** A publisher site's admin (owner 2026-10-29) calls from its own domain with a Bearer token — no cookies, so no CSRF. */
+const SITE_ADMIN_PATH = /^\/api\/sites\/d\/[^/]+\/admin(\/|$)/;
+
 export const originGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
-  if (UNSAFE_METHODS.has(c.req.method)) {
+  if (UNSAFE_METHODS.has(c.req.method) && !SITE_ADMIN_PATH.test(c.req.path)) {
     const origin = c.req.header("origin");
     if (origin && origin !== env.FRONTEND_URL && origin !== new URL(c.req.url).origin) {
       throw new ApiError(403, "forbidden_origin", "Cross-site request blocked");

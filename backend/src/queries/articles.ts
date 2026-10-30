@@ -245,7 +245,7 @@ function toVideo(row: VideoColumns): ArticleVideo | null {
   return { url: row.videoUrl, width: row.videoWidth, height: row.videoHeight, durationMs: row.videoDurationMs };
 }
 
-function selectCards(viewerId: string | null, executor: Executor = db) {
+export function selectCards(viewerId: string | null, executor: Executor = db) {
   return executor.select(cardColumns(viewerId)).from(article).innerJoin(user, eq(user.id, article.authorId));
 }
 
@@ -638,7 +638,7 @@ export type DetailViewer = { id: string; role: string } | null;
  * Published article + body. Hidden stories and stories of suspended authors are returned only to
  * their author and the Editor Desk (with `hidden: true` when the desk hid it).
  */
-async function getDetail(where: SQL, viewer: DetailViewer, executor: Executor = db): Promise<ArticleDetail | null> {
+async function getDetail(where: SQL, viewer: DetailViewer, executor: Executor = db, unlocked = false): Promise<ArticleDetail | null> {
   const viewerId = viewer?.id ?? null;
   const [row] = await executor
     .select({
@@ -666,7 +666,8 @@ async function getDetail(where: SQL, viewer: DetailViewer, executor: Executor = 
   if (!row) return null;
   const privileged = viewer !== null && (viewer.id === row.authorId || viewer.role === "admin");
   if ((row.hidden || row.authorSuspended) && !privileged) return null;
-  const card = toCard(row, viewerId);
+  // `unlocked` (a publisher site): read as the author would, so a premium story keeps its text.
+  const card = toCard(row, unlocked ? row.authorId : viewerId);
   // Premium (owner 2026-10-14): the body only for the author, members and the Editor Desk.
   if (card.locked && viewer?.role === "admin") card.locked = false;
   return {
@@ -709,6 +710,11 @@ function toArticleMedia(row: ArticleMediaColumns): ArticleMedia | null {
 
 export function getPublishedDetailBySlug(slug: string, viewer: DetailViewer): Promise<ArticleDetail | null> {
   return getDetail(eq(article.slug, slug), viewer);
+}
+
+/** A publisher site's story (owner 2026-10-29): only `authorId`'s, and premium ones open in full there. */
+export function getSiteStoryDetail(slug: string, authorId: string): Promise<ArticleDetail | null> {
+  return getDetail(and(eq(article.slug, slug), eq(article.authorId, authorId)) as SQL, null, db, true);
 }
 
 /**

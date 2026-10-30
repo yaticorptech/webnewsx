@@ -18,6 +18,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import {
+  SITE_AD_POSITION_KEYS,
   ACCOUNT_TYPE_VALUES,
   GROUP_APPLICATION_STATUS_VALUES,
   GROUP_MEMBER_STATUS_VALUES,
@@ -1419,6 +1420,70 @@ export const schema = {
   groupApplication,
   groupMember,
 };
+
+/**
+ * A Press Pass holder's news website on their verified domain (owner 2026-10-29, the webnews.in layout). One per
+ * domain; `sourceId` is whose stories it shows — the owner's own account or a group they own.
+ */
+export const publisherSite = pgTable(
+  "publisher_site",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: text("owner_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    domain: text("domain").notNull().unique(),
+    sourceId: text("source_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    tagline: text("tagline"),
+    logoUrl: text("logo_url"),
+    logoKey: text("logo_key"),
+    city: text("city"),
+    contactEmail: text("contact_email"),
+    contactPhone: text("contact_phone"),
+    address: text("address"),
+    /** The site admin's own login (`<domain>/admin`), separate from WebNEWS accounts. scrypt `salt:hash`. */
+    adminEmail: text("admin_email").notNull(),
+    adminPasswordHash: text("admin_password_hash").notNull(),
+    /** Bumped on a password change: older admin tokens stop working. */
+    adminTokenVersion: integer("admin_token_version").notNull().default(0),
+    /** Stories the admin took off the site / marked Breaking (they stay on WebNEWS). */
+    hiddenArticleIds: uuid("hidden_article_ids").array().notNull().default(sql`'{}'::uuid[]`),
+    breakingArticleIds: uuid("breaking_article_ids").array().notNull().default(sql`'{}'::uuid[]`),
+    /** Added to the Vercel project (the domain then serves the site once its DNS points at Vercel). */
+    connectedAt: ts("connected_at"),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+    updatedAt: tsMs("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("publisher_site_source_idx").on(t.sourceId)],
+);
+
+/** An ad on a publisher site (the webnews.in positions; several at one position rotate). */
+export const siteAd = pgTable(
+  "site_ad",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => publisherSite.id, { onDelete: "cascade" }),
+    position: text("position", { enum: SITE_AD_POSITION_KEYS }).notNull(),
+    title: text("title").notNull(),
+    creativeUrl: text("creative_url"),
+    creativeKey: text("creative_key"),
+    video: boolean("video").notNull().default(false),
+    targetUrl: text("target_url"),
+    startsAt: tsMs("starts_at").notNull().defaultNow(),
+    endsAt: tsMs("ends_at"),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("site_ad_site_idx").on(t.siteId, t.position)],
+);
+
+export type PublisherSiteRecord = typeof publisherSite.$inferSelect;
+export type SiteAdRecord = typeof siteAd.$inferSelect;
 
 export type UserRecord = typeof user.$inferSelect;
 export type ArticleRecord = typeof article.$inferSelect;

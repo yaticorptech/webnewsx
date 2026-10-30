@@ -67,6 +67,10 @@ export const RATE_LIMITS = {
    * per minute per address (generous because offices / campuses / carriers share addresses).
    */
   viewerMint: { limit: 300, windowMs: 10 * 60_000 },
+  /** Publisher site admin logins (owner 2026-10-29), per address. */
+  siteLogin: { limit: 10, windowMs: 10 * 60_000 },
+  /** Publisher site setup saves / domain connects. */
+  siteSetup: { limit: 30, windowMs: 60 * 60_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 /**

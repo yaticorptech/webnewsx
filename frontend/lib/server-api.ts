@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { MarketResponse } from "@/lib/shared/contracts";
+import type { MarketResponse, SiteArticle, SiteHome } from "@/lib/shared/contracts";
 
 import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
@@ -489,4 +489,24 @@ export async function getAdminSpotlightPackages(): Promise<SpotlightPackage[]> {
 
 export function getAdminAudit(params: AdminAuditQuery = {}): Promise<Page<AuditEntry>> {
   return serverFetch<Page<AuditEntry>>(`/api/admin/audit${query(params)}`);
+}
+
+/** A publisher site's home page (owner 2026-10-29); null when no site is on that domain. */
+export async function getSiteHome(domain: string): Promise<SiteHome | null> {
+  try {
+    return await serverFetch<SiteHome>(`/api/sites/d/${encodeURIComponent(domain)}`, { forwardRequestHeaders: false });
+  } catch (error) {
+    if (error instanceof ServerApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/** A story on a publisher site's layout; null when it isn't that site's. */
+export async function getSiteArticle(domain: string, slug: string): Promise<SiteArticle | null> {
+  try {
+    return await serverFetch<SiteArticle>(`/api/sites/d/${encodeURIComponent(domain)}/articles/${encodeURIComponent(slug)}`, { forwardRequestHeaders: false });
+  } catch (error) {
+    if (error instanceof ServerApiError && error.status === 404) return null;
+    throw error;
+  }
 }

@@ -5,9 +5,9 @@ import {
   BadgeCheck,
   Bookmark,
   Building2,
+  ChevronDown,
   Info,
   LogOut,
-  Menu,
   Settings,
   ShieldAlert,
 } from "lucide-react";
@@ -113,7 +113,7 @@ export function UserMenu({
           priority
         />
       </Link>
-      {/* The menu (hamburger) on every page on computers (owner 2026-10-28); phones show it only on your own
+      {/* The menu (dropdown) on every page on computers (owner 2026-10-28); phones show it only on your own
           profile, Settings and Press Pass pages (the wrapper above hides it elsewhere). */}
       <DropdownMenu
         label={
@@ -125,8 +125,12 @@ export function UserMenu({
         triggerClassName="group relative inline-flex size-8 items-center justify-center rounded-full text-muted max-sm:size-10 transition-colors hover:bg-tint-2 hover:text-brand aria-expanded:bg-tint-2 aria-expanded:text-brand max-md:after:absolute max-md:after:-inset-y-1.5 max-md:after:-left-0.5 max-md:after:-right-2.5 max-md:after:content-['']"
         trigger={
           <>
-            {/* A hamburger (owner 2026-10-09; before: a chevron). */}
-            <Menu aria-hidden className="size-5 max-sm:size-6" strokeWidth={2.25} />
+            {/* A dropdown chevron (owner 2026-10-29; before: a hamburger). */}
+            <ChevronDown
+              aria-hidden
+              className="size-5 transition-transform duration-200 group-aria-expanded:rotate-180 max-sm:size-6 motion-reduce:transition-none"
+              strokeWidth={2.25}
+            />
             {unreadNotices > 0 && (
               <span
                 aria-hidden

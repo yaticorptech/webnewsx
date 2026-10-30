@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Copy, Globe, RefreshCw, Trash2 } from "lucide-react";
+import { BadgeCheck, Copy, Globe, LayoutTemplate, RefreshCw, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { passDate } from "./press-format";
 
 /**
  * "Your domain" (owner 2026-10-28): a holder adds their site (e.g. an outlet like VK Mangalore's), publishes the TXT
- * record we show at their DNS provider, then taps Verify. What a verified domain unlocks comes later.
+ * record we show at their DNS provider, then taps Verify. A verified domain can run their website (/site-setup).
  */
 export function DomainCard({ domain, onChange }: { domain: PressDomain | null; onChange: (pass: PressPass) => void }) {
   const [value, setValue] = useState("");
@@ -60,7 +60,7 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
         </h2>
         {verified && (
           <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-tint-3/70 px-2.5 py-1 text-xs font-bold text-brand">
-            <BadgeCheck aria-hidden className="size-4" /> Verified
+            <BadgeCheck aria-hidden className="size-4" /> DNS verified
           </span>
         )}
       </div>
@@ -96,26 +96,59 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
           {error && <p className="text-sm font-semibold text-brand">{error}</p>}
         </form>
       ) : verified ? (
-        <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-2">
-          <strong className="font-bold text-ink">{domain.name}</strong> is verified as yours since{" "}
-          <span className="tabular-nums">{passDate(domain.verifiedAt!)}</span>.
-        </p>
+        // Verified (owner 2026-10-29): "DNS verified" with Set up website next to it — the publisher's own news site.
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <p className="min-w-0 flex-1 text-[0.9375rem] leading-relaxed text-ink-2">
+            <strong className="font-bold text-ink">{domain.name}</strong> is verified as yours since{" "}
+            <span className="tabular-nums">{passDate(domain.verifiedAt!)}</span>.
+          </p>
+          <Button href="/site-setup" leftIcon={<LayoutTemplate aria-hidden />} className="rounded-2xl px-6 max-sm:w-full">
+            Set up website
+          </Button>
+        </div>
       ) : (
         <div className="mt-3 flex flex-col gap-3">
           <p className="text-sm leading-relaxed text-muted">
             Sign in to where you manage DNS for <strong className="text-ink">{domain.name}</strong> (GoDaddy, Cloudflare,
-            Hostinger…) and add this TXT record, then tap Verify. DNS changes can take a few minutes to a few hours.
+            Hostinger…) and add {domain.pointing.length === 1 ? "both" : "these"} records, then tap Verify. The TXT proves the domain is
+            yours; the {domain.pointing[0]?.type} opens your website on it. DNS changes can take a few minutes to a few hours.
           </p>
-          <dl className="grid gap-2 rounded-xl border border-border bg-surface p-3 text-sm">
-            <RecordRow label="Type" value="TXT" />
-            <RecordRow
-              label="Host / Name"
-              value={domain.host}
-              hint={`(${domain.name})`}
-              onCopy={() => copy(domain.host)}
-            />
-            <RecordRow label="Value" value={domain.value} onCopy={() => copy(domain.value)} />
-          </dl>
+          <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-2 text-left text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-muted">
+                <tr>
+                  <th className="px-3 py-2">Type</th>
+                  <th className="px-3 py-2">Host / Name</th>
+                  <th className="px-3 py-2">Value</th>
+                  <th className="px-3 py-2">
+                    <span className="sr-only">Copy</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {[{ type: "TXT", host: domain.host, value: domain.value }, ...domain.pointing].map((record) => (
+                  <tr key={`${record.type}-${record.host}`}>
+                    <td className="px-3 py-2.5 font-mono text-[0.8125rem] text-ink">{record.type}</td>
+                    <td className="px-3 py-2.5 font-mono text-[0.8125rem] text-ink">{record.host}</td>
+                    <td className="break-all px-3 py-2.5 font-mono text-[0.8125rem] text-ink">{record.value}</td>
+                    <td className="px-2 py-2.5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => copy(record.value)}
+                        aria-label={`Copy the ${record.type} value`}
+                        className="rounded-md p-1.5 text-muted hover:bg-tint-3/60 hover:text-brand"
+                      >
+                        <Copy aria-hidden className="size-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-muted">
+            Host <span className="font-mono">@</span> means {domain.name.replace(/^www\./, "")} itself. Remove any other A / CNAME record on the same host.
+          </p>
           {error && <p className="text-sm font-semibold text-brand">{error}</p>}
         </div>
       )}
@@ -147,23 +180,5 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
         </div>
       )}
     </section>
-  );
-}
-
-function RecordRow({ label, value, hint, onCopy }: { label: string; value: string; hint?: string; onCopy?: () => void }) {
-  return (
-    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-2">
-      <dt className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-muted">{label}</dt>
-      <dd className="min-w-0 break-all font-mono text-[0.8125rem] text-ink">
-        {value} {hint && <span className="font-sans text-xs text-muted">{hint}</span>}
-      </dd>
-      {onCopy ? (
-        <button type="button" onClick={onCopy} aria-label={`Copy ${label}`} className="rounded-md p-1.5 text-muted hover:bg-tint-3/60 hover:text-brand">
-          <Copy aria-hidden className="size-4" />
-        </button>
-      ) : (
-        <span />
-      )}
-    </div>
   );
 }

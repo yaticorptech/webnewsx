@@ -108,6 +108,17 @@ import type {
   Page,
   PressLanguage,
   PressDomainInput,
+  MySiteResponse,
+  SiteAd,
+  SiteAdInput,
+  SiteAdminData,
+  SiteAdminLoginInput,
+  SiteAdminLoginResponse,
+  SiteAdminStory,
+  SitePasswordInput,
+  SiteSettingsInput,
+  SiteSetupInput,
+  SiteStoryFlagsInput,
   PressPassApplyInput,
   PressPassApplyResponse,
   PressPassOptions,
@@ -227,11 +238,14 @@ type RequestOptions = {
   signal?: AbortSignal;
   /** Let the request outlive the page (view beacons on visibilitychange). */
   keepalive?: boolean;
+  /** A publisher site admin's token (`<domain>/admin`, owner 2026-10-29). */
+  bearer?: string;
 };
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", body, signal, keepalive } = options;
+  const { method = "GET", body, signal, keepalive, bearer } = options;
   const headers: Record<string, string> = { accept: "application/json", ...visitorHeader(path) };
+  if (bearer) headers.authorization = `Bearer ${bearer}`;
   if (body !== undefined) headers["content-type"] = "application/json";
 
   let res: Response;
@@ -331,7 +345,15 @@ export function uploadPressMeetReport(file: File, onProgress?: (fraction: number
   return sendUpload<{ report: PressMeetReportFile }>(form, onProgress, signal, "/api/press-meets/report");
 }
 
-function sendUpload<T>(form: FormData, onProgress?: (fraction: number) => void, signal?: AbortSignal, url = "/api/upload"): Promise<T> {
+/** A publisher site admin's upload (owner 2026-10-29): an image (→ webp) or an MP4 ad. */
+export function uploadSiteFile(domain: string, token: string, file: File, onProgress?: (fraction: number) => void): Promise<SiteUpload> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  return sendUpload<SiteUpload>(form, onProgress, undefined, `/api/sites/d/${encodeURIComponent(domain)}/admin/upload`, token);
+}
+export type SiteUpload = { url: string; key: string; video: boolean };
+
+function sendUpload<T>(form: FormData, onProgress?: (fraction: number) => void, signal?: AbortSignal, url = "/api/upload", bearer?: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     if (signal?.aborted) {
       reject(new DOMException("Upload aborted", "AbortError"));
@@ -342,6 +364,7 @@ function sendUpload<T>(form: FormData, onProgress?: (fraction: number) => void, 
     xhr.open("POST", url);
     xhr.responseType = "text";
     xhr.setRequestHeader("accept", "application/json");
+    if (bearer) xhr.setRequestHeader("authorization", `Bearer ${bearer}`);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && onProgress) onProgress(Math.min(1, event.loaded / event.total));
@@ -646,6 +669,26 @@ export const api = {
   /** PATCH /api/press-pass — complete / update your active pass (verification, region, languages, about, links; pledge once). */
   updatePressPass: (input: PressPassUpdateInput) =>
     request<PressPassResponse>("/api/press-pass", { method: "PATCH", body: input }),
+  /** Publisher websites (owner 2026-10-29). */
+  sites: {
+    mine: (source?: string | null, signal?: AbortSignal) => request<MySiteResponse>(`/api/sites/mine${query({ source })}`, { signal }),
+    save: (input: SiteSetupInput) => request<MySiteResponse>("/api/sites/mine", { method: "PUT", body: input }),
+    connect: () => request<MySiteResponse>("/api/sites/mine/connect", { method: "POST" }),
+    login: (domain: string, input: SiteAdminLoginInput) =>
+      request<SiteAdminLoginResponse>(`/api/sites/d/${enc(domain)}/admin/login`, { method: "POST", body: input }),
+    admin: (domain: string, token: string, signal?: AbortSignal) => request<SiteAdminData>(`/api/sites/d/${enc(domain)}/admin`, { bearer: token, signal }),
+    saveSettings: (domain: string, token: string, input: SiteSettingsInput) =>
+      request<SiteAdminData>(`/api/sites/d/${enc(domain)}/admin/settings`, { method: "PATCH", body: input, bearer: token }),
+    changePassword: (domain: string, token: string, input: SitePasswordInput) =>
+      request<SiteAdminLoginResponse>(`/api/sites/d/${enc(domain)}/admin/password`, { method: "PUT", body: input, bearer: token }),
+    stories: (domain: string, token: string) => request<{ stories: SiteAdminStory[] }>(`/api/sites/d/${enc(domain)}/admin/stories`, { bearer: token }),
+    setStory: (domain: string, token: string, id: string, input: SiteStoryFlagsInput) =>
+      request<{ stories: SiteAdminStory[] }>(`/api/sites/d/${enc(domain)}/admin/stories/${enc(id)}`, { method: "PATCH", body: input, bearer: token }),
+    addAd: (domain: string, token: string, input: SiteAdInput) =>
+      request<{ ad: SiteAd }>(`/api/sites/d/${enc(domain)}/admin/ads`, { method: "POST", body: input, bearer: token }),
+    removeAd: (domain: string, token: string, id: string) =>
+      request<{ ok: true }>(`/api/sites/d/${enc(domain)}/admin/ads/${enc(id)}`, { method: "DELETE", bearer: token }),
+  },
   /** PUT /api/press-pass/domain — add / change your domain; the pass carries the TXT record to publish. */
   setPressDomain: (input: PressDomainInput) =>
     request<PressPassResponse>("/api/press-pass/domain", { method: "PUT", body: input }),

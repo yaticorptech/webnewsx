@@ -22,6 +22,7 @@ import {
   TRAINEE_APPROVALS_TO_VERIFY,
   regionName,
   type PressDomain,
+  type SiteDnsRecord,
   type PressPass,
   type PressPassOptions,
   type PressLanguage,
@@ -269,6 +270,21 @@ const TWO_PART_SUFFIXES = new Set(["co.in", "org.in", "net.in", "gov.in", "ac.in
  * The TXT record's Host as DNS panels ask for it: `@` for the root domain, the subdomain part otherwise
  * (`learn.yaticorp.com` → `learn`).
  */
+/** Vercel's address for a root domain (A) and a subdomain (CNAME): the frontend project serves the webnewsin sites. */
+const VERCEL_A = "76.76.21.21";
+const VERCEL_CNAME = "cname.vercel-dns.com";
+
+/** The records that send a domain's visitors to its webnewsin site (www → the bare domain for a root domain). */
+export function pointingRecords(domain: string): SiteDnsRecord[] {
+  const host = dnsHost(domain);
+  return host === "@"
+    ? [
+        { type: "A", host: "@", value: VERCEL_A },
+        { type: "CNAME", host: "www", value: VERCEL_CNAME },
+      ]
+    : [{ type: "CNAME", host, value: VERCEL_CNAME }];
+}
+
 export function dnsHost(domain: string): string {
   const labels = domain.split(".");
   const rootLabels = TWO_PART_SUFFIXES.has(labels.slice(-2).join(".")) ? 3 : 2;
@@ -282,6 +298,7 @@ function toPressDomain(pass: PressPassRecord): PressDomain | null {
     host: dnsHost(pass.domain),
     value: `${TXT_PREFIX}${pass.domainToken}`,
     verifiedAt: pass.domainVerifiedAt?.toISOString() ?? null,
+    pointing: pointingRecords(pass.domain),
   };
 }
 

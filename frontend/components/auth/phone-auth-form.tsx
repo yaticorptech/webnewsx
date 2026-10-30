@@ -34,7 +34,7 @@ import { markSignedIn, markWelcomeBack } from "./signed-in-flag";
  *     go through onboarding (name, username).
  */
 
-const COUNTRIES: { code: string; name: string; flag: string }[] = [
+export const COUNTRIES: { code: string; name: string; flag: string }[] = [
   { code: "+91", name: "India", flag: "🇮🇳" },
   { code: "+1", name: "USA / Canada", flag: "🇺🇸" },
   { code: "+44", name: "United Kingdom", flag: "🇬🇧" },

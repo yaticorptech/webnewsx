@@ -28,7 +28,7 @@ const BACKEND_URL = (process.env.BACKEND_URL || "http://127.0.0.1:4000").replace
 const TOP_LEVEL = new Set([
   "about", "communities", "contact", "explore", "language", "market", "membership", "messages", "newsroom", "newsy",
   "notifications", "press-meet", "press-pass", "privacy", "publish", "reels", "settings", "terms", "trending", "login",
-  "signup", "forgot-password", "reset-password", "onboarding", "admin", "dev", "s", "a", "category", "api", "media",
+  "signup", "forgot-password", "reset-password", "onboarding", "admin", "dev", "s", "a", "category", "api", "media", "pub", "site-setup",
 ]);
 const FILE = /\.(txt|xml|png|jpe?g|webp|gif|svg|ico|apk|json|webmanifest|js|css|map|woff2?)$/i;
 
@@ -64,19 +64,65 @@ async function missingForCrawler(pathname: string): Promise<boolean> {
 
 const NOT_FOUND_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Not found · WebNEWS</title></head><body><h1>Not found</h1><p>This page doesn't exist on WebNEWS. <a href="/">Go to the latest news</a>.</p></body></html>`;
 
+/*
+ * Publisher websites (owner 2026-10-29): a request on a publisher's own domain (added to this Vercel project, DNS
+ * pointed here) is served from /pub/<domain> — `/` their home, `/admin` their admin. /api, /media and Next's own
+ * files pass through untouched. Every host that isn't WebNEWS itself counts as a publisher's.
+ */
+const OWN_HOSTS = new Set(
+  [process.env.NEXT_PUBLIC_SITE_URL, ...(process.env.OWN_HOSTS ?? "").split(",")]
+    .map((value) => {
+      try {
+        return value ? new URL(value.includes("://") ? value : `https://${value}`).hostname : "";
+      } catch {
+        return "";
+      }
+    })
+    .filter(Boolean)
+    .flatMap((host) => [host, host.replace(/^www\./, ""), `www.${host.replace(/^www\./, "")}`]),
+);
+const DEV_HOST = /^(localhost|[\d.]+|\[[\da-f:]+\])$|\.(local|localhost|vercel\.app|trycloudflare\.com|ngrok-free\.app|ngrok\.io|loca\.lt)$/i;
+const PASS_THROUGH = /^\/(api|media|_next)\//;
+
+function publisherHost(request: NextRequest): string | null {
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0]!.trim().toLowerCase().replace(/:\d+$/, "");
+  if (!host || !host.includes(".") || DEV_HOST.test(host) || OWN_HOSTS.has(host)) return null;
+  return host.replace(/^www\./, "");
+}
+
+/** Client-address headers dropped unless an edge proxy we trust set them (see FORWARDING_HEADERS). */
+function forwardedHeaders(request: NextRequest): Headers | null {
+  if (trustsUpstreamProxy()) return null;
+  const headers = new Headers(request.headers);
+  for (const name of FORWARDING_HEADERS) headers.delete(name);
+  return headers;
+}
+
 export async function proxy(request: NextRequest) {
+  const publisher = publisherHost(request);
+  if (publisher) {
+    const path = request.nextUrl.pathname;
+    const headers = forwardedHeaders(request);
+    // Already rewritten (the proxy can see the request again after its own rewrite).
+    if (PASS_THROUGH.test(path) || path.startsWith(`/pub/${publisher}`) || (FILE.test(path) && !path.startsWith("/admin"))) {
+      return headers ? NextResponse.next({ request: { headers } }) : NextResponse.next();
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = `/pub/${publisher}${path === "/" ? "" : path}`;
+    return headers ? NextResponse.rewrite(url, { request: { headers } }) : NextResponse.rewrite(url);
+  }
   if (request.method === "GET" && CRAWLER.test(request.headers.get("user-agent") ?? "") && (await missingForCrawler(request.nextUrl.pathname))) {
     return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" } });
   }
-  if (trustsUpstreamProxy()) return NextResponse.next();
-  const headers = new Headers(request.headers);
-  for (const name of FORWARDING_HEADERS) headers.delete(name);
-  return NextResponse.next({ request: { headers } });
+  const headers = forwardedHeaders(request);
+  return headers ? NextResponse.next({ request: { headers } }) : NextResponse.next();
 }
 
 // Next.js reads `config` statically, so the matcher must be inline literals (no shared constants).
 export const config = {
   matcher: [
+    // Every page (publisher domains are told apart by their host); Next's static files skip the proxy.
+    "/((?!_next/static|_next/image).*)",
     { source: "/:path*", has: [{ type: "header", key: "x-forwarded-for" }] },
     { source: "/:path*", has: [{ type: "header", key: "x-real-ip" }] },
     { source: "/:path*", has: [{ type: "header", key: "forwarded" }] },

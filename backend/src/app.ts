@@ -36,6 +36,7 @@ import { onboardingRoutes } from "./routes/onboarding.js";
 import { phoneAuthRoutes, whatsAppWebhookRoutes } from "./routes/phone-auth.js";
 import { pressMeetRoutes } from "./routes/press-meets.js";
 import { placeRoutes } from "./routes/places.js";
+import { siteRoutes } from "./routes/sites.js";
 import { pressPassRoutes } from "./routes/press-pass.js";
 import { spotlightRoutes } from "./routes/spotlight.js";
 import { streamRoutes } from "./routes/stream.js";
@@ -164,6 +165,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route("/api/communities", communityRoutes(deps));
   app.route("/api/social", socialRoutes());
   app.route("/api/press-pass", pressPassRoutes(deps));
+  app.route("/api/sites", siteRoutes(deps));
   app.route("/api/press-meets", pressMeetRoutes(deps));
   app.route("/api/places", placeRoutes());
   app.route("/api/newsroom", newsroomRoutes());

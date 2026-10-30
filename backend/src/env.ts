@@ -110,6 +110,14 @@ const schema = z.object({
    * Ignored in production.
    */
   INSTAGRAM_TUNNEL_URL: z.preprocess(blankToUndefined, z.url().transform((u) => u.replace(/\/+$/, "")).optional()),
+  /**
+   * Publisher websites (owner 2026-10-29): a site's domain is added to the frontend's Vercel project through the
+   * Vercel API. Without a token the owner adds domains by hand in the Vercel dashboard.
+   */
+  VERCEL_TOKEN: optionalString,
+  VERCEL_PROJECT_ID: z.preprocess(blankToUndefined, z.string().default("prj_ZzVMaYiXGeGyDBAls4HvgfmW9I20")),
+  /** The team's id (`team_…`) or slug. */
+  VERCEL_TEAM: z.preprocess(blankToUndefined, z.string().default("yaticorptechs-projects")),
   LOG_REQUESTS: z.preprocess(blankToUndefined, z.enum(["0", "1"]).default("1")).transform((v) => v === "1"),
 });
 
@@ -149,6 +157,7 @@ export const env = {
   pushEnabled: Boolean(raw.FIREBASE_SERVICE_ACCOUNT_FILE || raw.FIREBASE_SERVICE_ACCOUNT_JSON),
   /** Images go to Cloudflare R2 only when ALL five R2 variables are set; otherwise to LOCAL_UPLOAD_DIR. */
   r2Enabled: Boolean(raw.R2_ACCOUNT_ID && raw.R2_ACCESS_KEY_ID && raw.R2_SECRET_ACCESS_KEY && raw.R2_BUCKET && raw.R2_PUBLIC_BASE_URL),
+  vercelEnabled: Boolean(raw.VERCEL_TOKEN),
   secureCookies: raw.FRONTEND_URL.startsWith("https://"),
   /** Lower-cased ADMIN_EMAILS entries. */
   adminEmails: raw.ADMIN_EMAILS.split(",")

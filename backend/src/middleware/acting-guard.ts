@@ -15,7 +15,7 @@ import type { AppEnv } from "../types.js";
 const UNSAFE = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /** Never while switched, whatever the role. */
-const PERSON_ONLY = [/^\/api\/onboarding/, /^\/api\/press-pass/, /^\/api\/me\/push-devices/];
+const PERSON_ONLY = [/^\/api\/onboarding/, /^\/api\/press-pass/, /^\/api\/sites\/mine/, /^\/api\/me\/push-devices/];
 
 /** Changes a writer may make. */
 const WRITER_WRITES = [

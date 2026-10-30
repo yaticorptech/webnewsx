@@ -369,6 +369,13 @@ html[data-theme="dark"] [data-poster] {
 
   --shadow-pop: var(--elev-pop);
   --shadow-card: var(--elev-card);
+
+  /* Publisher websites (owner 2026-10-29): the webnews.in palette and type, fixed for every publisher. */
+  --color-pub: #d81f2a;
+  --color-pub-dark: #a8141b;
+  --color-pub-ink: #1a1714;
+  --font-pub-head: var(--font-newsreader), var(--font-noto-serif-kannada), Georgia, serif;
+  --font-pub-sans: var(--font-plex), var(--font-noto-kannada), system-ui, sans-serif;
 }
 
 /* ─────────────────────────── Base ─────────────────────────── */
@@ -1451,4 +1458,62 @@ html:has([data-pending-page]) {
   to {
     transform: scaleX(1);
   }
+}
+
+/* ─── Publisher websites (webnews.in layout) ─── */
+.pub-kicker {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-pub);
+}
+.pub-section-head {
+  margin-bottom: 1rem;
+  border-top: 2px solid var(--color-pub-ink);
+  padding-top: 0.75rem;
+  font-family: var(--font-pub-head);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--color-pub-ink);
+}
+.pub-marquee {
+  display: flex;
+  width: max-content;
+  animation: pub-marquee 40s linear infinite;
+}
+.pub-marquee:hover {
+  animation-play-state: paused;
+}
+@keyframes pub-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pub-marquee {
+    animation: none;
+  }
+}
+.pub-body p {
+  margin: 0 0 1.1em;
+}
+.pub-body h2,
+.pub-body h3 {
+  margin: 1.4em 0 0.5em;
+  font-family: var(--font-pub-head);
+  font-weight: 800;
+  color: var(--color-pub-ink);
+}
+.pub-body a {
+  color: var(--color-pub);
+  text-decoration: underline;
+}
+.pub-body img {
+  max-width: 100%;
+  height: auto;
 }

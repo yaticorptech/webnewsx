@@ -33,6 +33,8 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "chat", "chats", "communities", "community", "direct", "group", "groups", "inbox", "invites",
   // Newsy — the 9:16 feed, first called Reels (owner 2026-09-30).
   "newsy", "reel", "reels",
+  // Publisher websites (owner 2026-10-29).
+  "pub", "site-setup",
 ]);
 
 export type UsernameIssue =
@@ -1473,6 +1475,11 @@ export type PressDomain = {
   /** The TXT record's value: `webnews-verification=<token>`. */
   value: string;
   verifiedAt: string | null;
+  /**
+   * The records that send visitors to the publisher's webnewsin site (owner 2026-10-30: added in the same visit to
+   * the DNS provider as the TXT record) — A for a root domain (+ www CNAME), CNAME for a subdomain.
+   */
+  pointing: SiteDnsRecord[];
 };
 
 /** `GET /api/press-pass/options` — every list the application form needs. */
@@ -3585,3 +3592,230 @@ export const SELF_DEACTIVATED_REASON = "Deactivated by its owner";
 
 /** `POST /api/me/deactivate` and `POST /api/me/delete`: type your @username to confirm. */
 export const leaveAccountSchema = z.object({ confirm: z.string().trim().min(1).max(64) });
+
+/* ─────────────── Publisher websites (owner 2026-10-29) ─────────────── */
+/*
+ * A Press Pass holder with a verified domain runs a news site on it in the webnews.in layout: their logo, title and
+ * tagline, only their stories (or their group's), the webnews.in ad positions managed from `<domain>/admin` with a
+ * separate email + password. A story opens on WebNEWS itself (`/pub/<domain>/article/<slug>`) in the same layout, so
+ * its views count on WebNEWS.
+ */
+
+export const SITE_LIMITS = {
+  titleMax: 60,
+  taglineMax: 120,
+  cityMax: 60,
+  addressMax: 300,
+  phoneMax: 20,
+  passwordMin: 8,
+  passwordMax: 128,
+  adTitleMax: 120,
+  adsPerSite: 60,
+} as const;
+
+/** The webnews.in ad positions (its lib/adPositions.ts): key, label, display ratio, recommended size, video allowed. */
+export const SITE_AD_POSITIONS = [
+  { key: "logo-left", label: "Logo Left — header, beside logo", ratio: "4 / 1", recW: 320, recH: 80, video: false },
+  { key: "logo-right", label: "Logo Right — header, beside logo", ratio: "4 / 1", recW: 320, recH: 80, video: false },
+  { key: "hero-left", label: "Hero Left — homepage left column", ratio: "1 / 1", recW: 300, recH: 300, video: false },
+  { key: "hero-right", label: "Hero Right — homepage right column", ratio: "1 / 1", recW: 300, recH: 300, video: false },
+  { key: "mid-page", label: "Mid-Page Banner — full width", ratio: "16 / 9", recW: 1280, recH: 720, video: true },
+  { key: "trending-sidebar", label: "Trending Sidebar — beside the trending list", ratio: "3 / 5", recW: 300, recH: 500, video: true },
+  { key: "newsletter-left", label: "Wide Banner — below trending", ratio: "16 / 9", recW: 640, recH: 360, video: true },
+  { key: "in-article", label: "In-Article Poster — inside every story", ratio: "3 / 4", recW: 600, recH: 800, video: true },
+  { key: "article-strip", label: "Article Logo Strip — under every story image", ratio: "4 / 1", recW: 320, recH: 80, video: false },
+] as const;
+export type SiteAdPosition = (typeof SITE_AD_POSITIONS)[number]["key"];
+export const SITE_AD_POSITION_KEYS = SITE_AD_POSITIONS.map((p) => p.key) as [SiteAdPosition, ...SiteAdPosition[]];
+/** Each ad holds its position this long before the next one in the rotation (webnews.in AD_CARD_MS). */
+export const SITE_AD_ROTATE_MS = 5000;
+
+/** Where a site's domain stands on Vercel: not added yet / DNS not pointed yet / live. */
+export type SiteConnection = "not_connected" | "pending_dns" | "live";
+
+/** The records the publisher adds so the domain reaches WebNEWS (A for a root domain, CNAME for a subdomain). */
+export type SiteDnsRecord = { type: "A" | "CNAME" | "TXT"; host: string; value: string };
+
+/** One ad as the site's admin manages it. */
+export type SiteAd = {
+  id: string;
+  position: SiteAdPosition;
+  title: string;
+  creativeUrl: string | null;
+  /** The creative is a video (mp4). */
+  video: boolean;
+  targetUrl: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  createdAt: string;
+};
+
+/** Live ads for the public site, grouped by position (each rotates). */
+export type SiteAdsByPosition = Partial<Record<SiteAdPosition, Pick<SiteAd, "id" | "title" | "creativeUrl" | "video" | "targetUrl">[]>>;
+
+/** What the public site shows about itself. */
+export type PublicSite = {
+  domain: string;
+  title: string;
+  tagline: string | null;
+  logoUrl: string | null;
+  city: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  address: string | null;
+  /** Where its stories open: `<WebNEWS>/pub/<domain>/article/<slug>`. */
+  articleBase: string;
+};
+
+/** `GET /api/sites/d/:domain` — the home page: the site, its stories (newest first), trending, breaking and live ads. */
+export type SiteHome = {
+  site: PublicSite;
+  latest: ArticleCard[];
+  trending: ArticleCard[];
+  breaking: ArticleCard[];
+  ads: SiteAdsByPosition;
+};
+
+/** `GET /api/sites/d/:domain/articles/:slug` — a story on the site's layout (premium stories open in full). */
+export type SiteArticle = {
+  site: PublicSite;
+  article: ArticleDetail;
+  more: ArticleCard[];
+  breaking: ArticleCard[];
+  ads: SiteAdsByPosition;
+};
+
+/** A story source the owner may pick: their own account or a group they own. */
+export type SiteSource = { id: string; name: string; username: string; image: string | null; kind: "person" | "group" };
+
+/** `GET /api/sites/mine` — the owner's site (null until saved once) and what setup needs. */
+export type MySiteResponse = {
+  /** The verified domain on their Press Pass (null = verify one first). */
+  domain: string | null;
+  site: {
+    title: string;
+    tagline: string | null;
+    logoUrl: string | null;
+    city: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+    address: string | null;
+    sourceId: string;
+    adminEmail: string;
+    connection: SiteConnection;
+  } | null;
+  sources: SiteSource[];
+  /** Records to add at their DNS provider so the domain opens the site. */
+  dns: SiteDnsRecord[];
+  /** Stories of the chosen source (default: the person's own) for the live preview. */
+  preview: { latest: ArticleCard[]; trending: ArticleCard[] };
+};
+
+/**
+ * Site admin passwords (owner 2026-10-30): 8+ characters with a capital, a small letter, a number and a symbol. The
+ * setup page ticks each rule off as they type.
+ */
+export const SITE_PASSWORD_RULES = [
+  { id: "length", label: `${SITE_LIMITS.passwordMin}+ characters`, test: (v: string) => v.length >= SITE_LIMITS.passwordMin },
+  { id: "upper", label: "A capital letter (A–Z)", test: (v: string) => /[A-Z]/.test(v) },
+  { id: "lower", label: "A small letter (a–z)", test: (v: string) => /[a-z]/.test(v) },
+  { id: "digit", label: "A number (0–9)", test: (v: string) => /\d/.test(v) },
+  { id: "symbol", label: "A symbol (! @ # $ …)", test: (v: string) => /[^A-Za-z0-9\s]/.test(v) },
+] as const;
+export const sitePasswordOk = (value: string) => SITE_PASSWORD_RULES.every((rule) => rule.test(value));
+const SITE_PASSWORD_MESSAGE = "Use 8+ characters with a capital letter, a small letter, a number and a symbol";
+const sitePassword = z.string().max(SITE_LIMITS.passwordMax).refine(sitePasswordOk, SITE_PASSWORD_MESSAGE);
+
+/**
+ * A site's contact phone (owner 2026-10-30): `+<country code> <number>` — India (+91) exactly 10 digits starting 6–9,
+ * elsewhere 6–14 digits. Null = none.
+ */
+export function sitePhoneProblem(value: string): string | null {
+  const match = /^(\+\d{1,4}) (\d+)$/.exec(value);
+  if (!match) return "Enter the mobile number";
+  const [, code, digits] = match as unknown as [string, string, string];
+  if (code === "+91") return /^[6-9]\d{9}$/.test(digits) ? null : "Enter a 10-digit mobile number";
+  return digits.length >= 6 && digits.length <= 14 ? null : "Enter a valid mobile number";
+}
+
+/** An uploaded file's address: absolute (R2 / CDN) or this API's own `/media/…` path (local storage). */
+const uploadUrl = z
+  .string()
+  .trim()
+  .max(1000)
+  .refine((v) => v.startsWith("/media/") || /^https?:\/\/\S+$/.test(v), "That upload didn't work — upload it again");
+
+const optionalTrimmed = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => (v === "" ? null : v))
+    .nullable()
+    .optional();
+
+/** `PUT /api/sites/mine` — create / update the site. `adminPassword` is required the first time only. */
+export const siteSetupSchema = z.object({
+  // Logo, title and tagline are all required (owner 2026-10-30).
+  title: z.string().trim().min(2, "Add your site's title").max(SITE_LIMITS.titleMax),
+  tagline: z.string().trim().min(2, "Add your tagline").max(SITE_LIMITS.taglineMax),
+  logoUrl: z.string({ error: "Add your logo" }).min(1, "Add your logo").pipe(uploadUrl),
+  logoKey: z.string().trim().max(300).nullable().optional(),
+  city: optionalTrimmed(SITE_LIMITS.cityMax),
+  contactEmail: z.union([z.literal(""), z.email()]).transform((v) => (v === "" ? null : v.toLowerCase())).nullable().optional(),
+  contactPhone: optionalTrimmed(SITE_LIMITS.phoneMax).refine((v) => !v || !sitePhoneProblem(v), { message: "Enter a valid mobile number" }),
+  address: optionalTrimmed(SITE_LIMITS.addressMax),
+  sourceId: z.string().trim().min(1),
+  adminEmail: z.email("Enter the admin email").transform((v) => v.toLowerCase()),
+  adminPassword: sitePassword.optional(),
+});
+export type SiteSetupInput = z.input<typeof siteSetupSchema>;
+
+/** `POST /api/sites/d/:domain/admin/login`. */
+export const siteAdminLoginSchema = z.object({
+  email: z.email().transform((v) => v.toLowerCase()),
+  password: z.string().min(1).max(SITE_LIMITS.passwordMax),
+});
+export type SiteAdminLoginInput = z.input<typeof siteAdminLoginSchema>;
+export type SiteAdminLoginResponse = { token: string; expiresAt: string };
+
+/** `PATCH /api/sites/d/:domain/admin/settings` — what the site's admin may change (not the domain or the source). */
+export const siteSettingsSchema = siteSetupSchema.pick({ title: true, tagline: true, logoUrl: true, logoKey: true, city: true, contactEmail: true, contactPhone: true, address: true });
+export type SiteSettingsInput = z.input<typeof siteSettingsSchema>;
+
+/** `PUT /api/sites/d/:domain/admin/password`. */
+export const sitePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(SITE_LIMITS.passwordMax),
+  newPassword: sitePassword,
+});
+export type SitePasswordInput = z.input<typeof sitePasswordSchema>;
+
+/** `POST /api/sites/d/:domain/admin/ads` — an image / video creative, or text only (title). */
+export const siteAdSchema = z
+  .object({
+    position: z.enum(SITE_AD_POSITION_KEYS),
+    title: z.string().trim().min(1, "Give the ad a name").max(SITE_LIMITS.adTitleMax),
+    creativeUrl: uploadUrl.nullable().optional(),
+    creativeKey: z.string().trim().max(300).nullable().optional(),
+    video: z.boolean().optional(),
+    targetUrl: z.union([z.literal(""), z.url()]).transform((v) => (v === "" ? null : v)).nullable().optional(),
+    startsAt: z.iso.datetime({ offset: true }).optional(),
+    endsAt: z.iso.datetime({ offset: true }).nullable().optional(),
+  })
+  .refine((v) => !v.endsAt || !v.startsAt || new Date(v.endsAt) > new Date(v.startsAt), { path: ["endsAt"], message: "End after the start" });
+export type SiteAdInput = z.input<typeof siteAdSchema>;
+
+/** `GET /api/sites/d/:domain/admin` — the admin panel's data. */
+export type SiteAdminData = {
+  site: PublicSite;
+  adminEmail: string;
+  stats: { stories: number; views: number; activeAds: number };
+  ads: SiteAd[];
+};
+
+/** A story in the admin's list (hide it from the site, or mark it Breaking). */
+export type SiteAdminStory = { id: string; slug: string; title: string; coverUrl: string; publishedAt: string; viewCount: number; hidden: boolean; breaking: boolean };
+
+/** `PATCH /api/sites/d/:domain/admin/stories/:id`. */
+export const siteStoryFlagsSchema = z.object({ hidden: z.boolean().optional(), breaking: z.boolean().optional() });
+export type SiteStoryFlagsInput = z.input<typeof siteStoryFlagsSchema>;
