@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketView } from "@/components/market/market-view";
 import { getMarket } from "@/lib/server-api";
 
@@ -14,14 +13,13 @@ export const metadata: Metadata = {
 /**
  * /market (owner 2026-10-22): the live market numbers next to Home — indices, gold and silver, crude, the rupee,
  * Bitcoin — server-rendered from `GET /api/market`, then refreshed on the client every minute. Full width like the
- * grids (data-grid-page). Ends with the site footer.
+ * grids (data-grid-page). No footer box at the end (owner 2026-10-30).
  */
 export default async function MarketPage() {
   const initial = await getMarket();
   return (
     <section aria-labelledby="market-heading" data-grid-page="">
       <MarketView initial={initial} />
-      <SiteFooter className="mt-10 rounded-2xl border" />
     </section>
   );
 }
