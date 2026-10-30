@@ -163,7 +163,7 @@ async function qrCard(name: string, username: string, image?: string | null): Pr
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unavailable");
   const font = getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
-  const [logo, photo] = await Promise.all([loadImage("/brand/logo-light.svg"), loadImage(image)]);
+  const [logo, photo] = await Promise.all([loadImage("/brand/logo-light.png"), loadImage(image)]);
 
   // Background: white, a soft brand fade at the top, faint big bars in the corner.
   ctx.fillStyle = "#ffffff";
@@ -180,27 +180,21 @@ async function qrCard(name: string, username: string, image?: string | null): Pr
   ctx.fillStyle = BRAND;
   ctx.fillRect(0, 0, W, 12);
 
-  // The logo and "• PULSE OF THE PUBLIC".
+  // The logo (it carries its own "PULSE OF PEOPLE" line); the words alone if it didn't load.
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   if (logo) {
-    const lw = 430;
-    const lh = (lw * 148.5) / 1276.8;
-    ctx.drawImage(logo, (W - lw) / 2, 62, lw, lh);
+    const lw = 460;
+    const lh = (lw * 427) / 2124;
+    ctx.drawImage(logo, (W - lw) / 2, 58, lw, lh);
   } else {
     ctx.fillStyle = INK;
     ctx.font = `900 64px ${font}`;
     ctx.fillText("WebNEWS", W / 2, 92);
+    ctx.font = `800 20px ${font}`;
+    ctx.fillStyle = "#3a3f4b";
+    ctx.fillText("P U L S E   O F   P E O P L E", W / 2, 148);
   }
-  ctx.font = `800 20px ${font}`;
-  ctx.fillStyle = "#3a3f4b";
-  const tagline = "P U L S E   O F   T H E   P U B L I C";
-  const tw = ctx.measureText(tagline).width;
-  ctx.fillText(tagline, W / 2 + 10, 148);
-  ctx.fillStyle = BRAND;
-  ctx.beginPath();
-  ctx.arc(W / 2 - tw / 2 - 8, 148, 6, 0, Math.PI * 2);
-  ctx.fill();
 
   // The person: photo in a red ring (initial when there's none), name, @handle.
   const cx = W / 2;

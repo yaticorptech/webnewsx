@@ -35,40 +35,34 @@ const SIZE_CLASS: Record<LockupSize, string> = {
 };
 
 /**
- * The lockup from the owner's reference: wordmark with the live-text tagline "• PULSE OF THE PUBLIC"
+ * The lockup from the owner's reference: wordmark with the live-text tagline "• PULSE OF PEOPLE"
  * ALWAYS directly under it (owner rule, SPEC §2.1) — black weight, extra-wide, uppercase, letter-spaced, centred,
  * with the webnews.in red shine sweeping across the letters.
  * The dot beats like a heart. Sizing is pure CSS (`lockup-*` utilities), so it can change per breakpoint.
  */
-export function BrandLockup({ size = "md", align = "center", pulse = true, priority, fit = false, className }: BrandLockupProps) {
+export function BrandLockup({ size = "md", align = "center", priority, fit = false, className }: BrandLockupProps) {
   const height = HEIGHTS[size];
   return (
     <span
       className={cn(
-        "inline-flex max-w-full shrink-0 flex-col",
+        // The owner's logo (2026-10-30) carries its own "PULSE OF PEOPLE" line, so it fills the box the wordmark +
+        // live tagline used to: --lockup-h + --tag-gap + --tag-size (the size presets and every override still apply).
+        "inline-flex max-w-full shrink-0 flex-col [--lockup-total:calc(var(--lockup-h)+var(--tag-gap,0px)+var(--tag-size,0px))]",
         align === "center" ? "items-center" : "items-start",
         SIZE_CLASS[size],
-        fit && "w-[calc(var(--lockup-h)*8.598)] [container-type:inline-size]",
+        fit && "w-[calc(var(--lockup-total)*4.974)]",
         className,
       )}
     >
       <img
-        src="/brand/logo-light.svg"
+        src="/brand/logo-light.png"
         alt="WebNEWS"
         width={Math.round(height * LOGO_ASPECT)}
         height={height}
         decoding="async"
         fetchPriority={priority ? "high" : undefined}
         draggable={false}
-        className={fit ? "block h-auto w-full" : "block h-(--lockup-h) w-auto max-w-full"}
-      />
-      <TaglineText
-        pulse={pulse}
-        // fit: never wider than the wordmark (5.6% of its width ≈ the tagline's own width at 0.07em tracking).
-        className={cn(
-          "mt-(--tag-gap) [--tagline-track:var(--tag-track)]",
-          fit ? "text-[length:min(var(--tag-size),5.6cqi)]" : "text-(length:--tag-size)",
-        )}
+        className={fit ? "block h-auto w-full" : "block h-(--lockup-total) w-auto max-w-full"}
       />
     </span>
   );

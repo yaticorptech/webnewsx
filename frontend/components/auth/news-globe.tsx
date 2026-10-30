@@ -37,7 +37,7 @@ const CITIES = [
   { lat: -1.3, lon: 36.8 }, // Nairobi
 ];
 
-/** The "WebNEWS ● PULSE OF THE PUBLIC" band, repeated around a wide strip (wrapped onto a ring). */
+/** The "WebNEWS ● PULSE OF PEOPLE" band, repeated around a wide strip (wrapped onto a ring). */
 function bandCanvas(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = 2048;
@@ -60,7 +60,7 @@ function bandCanvas(): HTMLCanvasElement {
     x += 28;
     g.font = "800 30px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
     g.fillStyle = "#3a3f47";
-    g.fillText("PULSE OF THE PUBLIC", x, 51);
+    g.fillText("PULSE OF PEOPLE", x, 51);
   }
   return canvas;
 }

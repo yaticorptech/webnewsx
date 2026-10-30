@@ -421,7 +421,7 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>
           The Service, including its software, design, the {COMPANY.brand} name and wordmark, the speed-lines mark and the
-          tagline &ldquo;Pulse of the Public&rdquo;, belongs to {COMPANY.legalName} or its licensors. These Terms do not give
+          tagline &ldquo;Pulse of People&rdquo;, belongs to {COMPANY.legalName} or its licensors. These Terms do not give
           you any right to use our brand without written permission.
         </p>
         <p>

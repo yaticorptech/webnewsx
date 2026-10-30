@@ -19,7 +19,7 @@ export const googleWebClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 export const streamUrl = process.env.NEXT_PUBLIC_STREAM_URL || "/api/stream";
 
 export const SITE_NAME = "WebNEWS";
-export const TAGLINE = "Pulse of the Public";
+export const TAGLINE = "Pulse of People";
 export const SITE_DESCRIPTION =
   "A live, endlessly scrolling feed of news stories published by the public. Read what's breaking, follow publishers, and get your Press Pass to report.";
 

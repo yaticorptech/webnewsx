@@ -482,7 +482,7 @@ function SiteFooter({ site, homeHref, lang }: { site: SiteChromeProps["site"]; h
           <a href={siteUrl} className="group inline-flex items-center gap-2" aria-label={`Powered by ${SITE_NAME} — ${TAGLINE}`}>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">{tr(lang, "poweredBy")}</span>
             {/* Same deployment on every domain: a relative path works on the publisher's own domain too. */}
-            <img src="/brand/logo-light.svg" alt={SITE_NAME} className="h-4 w-auto transition group-hover:opacity-80" />
+            <img src="/brand/logo-light.png" alt={SITE_NAME} className="h-6 w-auto transition group-hover:opacity-80" />
           </a>
           <div>
             © {new Date().getFullYear()} {site.title} ·{" "}

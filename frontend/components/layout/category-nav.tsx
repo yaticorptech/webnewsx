@@ -200,7 +200,7 @@ function CategoryNavView({ active, className, trail }: CategoryNavProps & { acti
           aria-label="WebNEWS home"
           className="hidden shrink-0 animate-fade-up items-center rounded-md outline-offset-2 in-data-compact:flex"
         >
-          <img src="/brand/logo-light.svg" alt="" width={120} height={14} decoding="async" draggable={false} className="block h-5 w-auto" />
+          <img src="/brand/logo-light.png" alt="" width={139} height={28} decoding="async" draggable={false} className="block h-7 w-auto" />
         </Link>
         <ul className="no-scrollbar flex min-w-0 flex-1 items-stretch justify-center gap-3 self-stretch overflow-x-auto">
           {TEXT_MENU.map((item) => {

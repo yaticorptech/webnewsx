@@ -4,7 +4,7 @@
  */
 
 const ICON_SRC = "/brand/icon.svg";
-const WORDMARK_SRC = "/brand/logo-dark.svg";
+const WORDMARK_SRC = "/brand/logo-dark.png";
 const WORDMARK_ASPECT = 1276.8 / 148.5;
 
 type Images = { icon: HTMLImageElement; wordmark: HTMLImageElement };

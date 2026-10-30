@@ -47,7 +47,7 @@ export function Masthead({ viewer, adminVisit = false }: MastheadProps) {
               weather on the left; the icons on the right as before — then the logo centred.
               Phones unchanged. */}
           <MastheadUtility />
-          {/* The lockup — wordmark with "• PULSE OF THE PUBLIC" under it (owner 2026-10-08: "where is the tagline?") — in
+          {/* The lockup — wordmark with "• PULSE OF PEOPLE" under it (owner 2026-10-08: "where is the tagline?") — in
               the left corner at every width, set a little in (it shrinks with the screen on phones). Owner 2026-10-08:
               tried centred on the screen, then put back here ("where it was before"). */}
           <Link

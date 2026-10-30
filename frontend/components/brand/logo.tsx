@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
-/** Intrinsic ratio of the wordmark SVG (viewBox 1276.8 × 148.5). */
-export const LOGO_ASPECT = 1276.8 / 148.5;
+/** Intrinsic ratio of the owner's logo (2026-10-30, logo-light.png: wordmark + "PULSE OF PEOPLE"). */
+export const LOGO_ASPECT = 2124 / 427;
 
 export type LogoProps = {
   /** Rendered height in px (width follows the aspect ratio). Override responsively with className (e.g. "h-5 sm:h-6"). */
@@ -13,7 +13,7 @@ export type LogoProps = {
   alt?: string;
 };
 
-/** The WebNEWS wordmark (`logo-light.svg`, the only logo used — SPEC §2.1). */
+/** The WebNEWS wordmark (`logo-light.png`, the only logo used — SPEC §2.1). */
 export function Logo({ height = 24, priority = false, className, alt = "WebNEWS" }: LogoProps) {
   const width = Math.round(height * LOGO_ASPECT);
   return (
@@ -22,7 +22,7 @@ export function Logo({ height = 24, priority = false, className, alt = "WebNEWS"
       style={{ "--logo-h": `${height}px` } as CSSProperties}
     >
       <img
-        src="/brand/logo-light.svg"
+        src="/brand/logo-light.png"
         alt={alt}
         width={width}
         height={height}
@@ -31,9 +31,9 @@ export function Logo({ height = 24, priority = false, className, alt = "WebNEWS"
         draggable={false}
         className="block dark:hidden"
       />
-      {/* Dark mode: "Web" in white (logo-dark.svg), NEWS stays red. */}
+      {/* Dark mode: "Web" in white (logo-dark.png), News stays red. */}
       <img
-        src="/brand/logo-dark.svg"
+        src="/brand/logo-dark.png"
         alt={alt}
         width={width}
         height={height}

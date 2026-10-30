@@ -6,7 +6,7 @@ import { redirectIfLoggedIn } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Create account",
-  description: "Join WebNEWS — publish news stories, follow publishers and be part of the Pulse of the Public.",
+  description: "Join WebNEWS — publish news stories, follow publishers and be part of the Pulse of People.",
   robots: { index: false },
 };
 
