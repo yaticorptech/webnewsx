@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { ADMIN_HOME } from "@/lib/admin-home";
 import type { ViewerUser } from "@/lib/shared/contracts";
 import { CategoryNav } from "./category-nav";
-import { GetAppButton } from "./get-app-banner";
 import { LanguageButton } from "./language-button";
 import { LayoutSwitch } from "./layout-switch";
 import { MoreMenu } from "./more-menu";
@@ -101,7 +100,6 @@ export function Masthead({ viewer, adminVisit = false }: MastheadProps) {
                 )}
                 {/* Hidden on profile pages on phones (owner 2026-10-09; globals.css [data-profile-hide]). */}
                 <span data-profile-hide="" className="contents">
-                  <GetAppButton />
                   <LanguageButton className="max-[339px]:hidden" />
                 </span>
                 {/* Not on profile pages on phones (owner 2026-10-16; globals.css [data-profile-hide-phone]). */}
@@ -130,7 +128,6 @@ export function Masthead({ viewer, adminVisit = false }: MastheadProps) {
               </>
             ) : (
               <>
-                <GetAppButton />
                 <LanguageButton className="max-[339px]:hidden" />
                 {/* Logged out, phones and the app (owner 2026-10-16): no chat icon; computers keep it (asks to log in). */}
                 <MessagesButton className="max-md:hidden" />
