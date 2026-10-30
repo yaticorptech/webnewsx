@@ -1,6 +1,5 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { CATEGORY_VALUES, type Category } from "@/lib/shared/contracts";
 import { categoryName } from "./site-i18n";
 
@@ -44,7 +43,9 @@ export function MenuCard({
           </span>
         </div>
         <p className="mt-0.5 text-xs text-muted">Shown after Home in the order you tick them; untick all to show Home only. Visitors switch the site between English and ಕನ್ನಡ with the (EN) / (ಕನ್ನಡ) button — the menu names switch with it.</p>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+        {/* As many columns as fit (the setup page's column is narrow, the site admin's wide); the badge sits beside
+            the name, never on it. */}
+        <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2">
           {tiles.map((category) => {
             const position = ticked.indexOf(category);
             const on = position >= 0;
@@ -56,19 +57,21 @@ export function MenuCard({
                 role="checkbox"
                 aria-checked={on}
                 onClick={() => toggle(category)}
-                className={`relative flex min-h-14 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left transition ${
+                className={`flex min-h-14 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition ${
                   on ? "border-brand bg-tint" : "border-border bg-surface hover:border-border-strong"
                 }`}
               >
-                <span className={`pr-6 text-sm font-semibold leading-tight ${on ? "text-brand-strong" : "text-ink"}`}>{categoryName(category, "en")}</span>
-                {!hasStories && <span className="mt-0.5 text-[11px] text-muted">No stories yet</span>}
+                <span className="min-w-0 flex-1">
+                  <span className={`block text-sm font-semibold leading-snug ${on ? "text-brand-strong" : "text-ink"}`}>{categoryName(category, "en")}</span>
+                  {!hasStories && <span className="block text-[11px] leading-snug text-muted">No stories yet</span>}
+                </span>
                 <span
                   aria-hidden
-                  className={`absolute right-2 top-2 flex size-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                    on ? "bg-brand text-brand-contrast" : "border border-border-strong"
+                  className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums ${
+                    on ? "bg-brand text-brand-contrast" : "border-2 border-border-strong"
                   }`}
                 >
-                  {on ? position + 1 : <Check className="size-3 opacity-0" />}
+                  {on ? position + 1 : null}
                 </span>
               </button>
             );
