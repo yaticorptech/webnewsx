@@ -78,6 +78,11 @@ export function SiteAdmin({ domain }: { domain: string }) {
     setOverride(null);
     setData(null);
   }, [domain]);
+  // Log out (owner 2026-10-30): back to the site's home page, not the login form. On their domain "/" is the site.
+  const logOut = () => {
+    signOut();
+    window.location.assign("/");
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -123,7 +128,7 @@ export function SiteAdmin({ domain }: { domain: string }) {
               <ExternalLink aria-hidden className="size-4" />
               <span className="max-sm:hidden">View site</span>
             </a>
-            <button type="button" onClick={signOut} className={`${secondary} max-sm:px-3`}>
+            <button type="button" onClick={logOut} className={`${secondary} max-sm:px-3`}>
               <LogOut aria-hidden className="size-4" />
               <span className="max-sm:hidden">Log out</span>
             </button>
