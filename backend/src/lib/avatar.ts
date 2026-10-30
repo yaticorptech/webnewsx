@@ -60,7 +60,7 @@ async function fetchGoogleAvatar(url: string): Promise<Response> {
   throw new Error("too many redirects");
 }
 
-async function rehostGoogleAvatar(url: string, userId: string): Promise<string> {
+export async function rehostGoogleAvatar(url: string, userId: string): Promise<string> {
   let bytes: Buffer;
   try {
     const response = await fetchGoogleAvatar(largeGoogleAvatarUrl(url));

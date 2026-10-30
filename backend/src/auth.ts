@@ -2,11 +2,12 @@ import { betterAuth } from "better-auth";
 import { phoneNumber } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "./db/client.js";
 import { authSchema, user as userTable } from "./db/schema.js";
 import { env } from "./env.js";
 import { claimUnverifiedAccount, promoteListedAdmin } from "./lib/admin-emails.js";
+import { isGoogleAvatarUrl, largeGoogleAvatarUrl, rehostGoogleAvatar } from "./lib/avatar.js";
 import { ADMIN_PASSWORD_ONLY, ADMIN_PASSWORD_ONLY_MESSAGE, DESK_SIGN_IN_PATH, deskSessionExpiry, hasPasswordLogin } from "./lib/desk-sign-in.js";
 import { passwordResetMail, sendMail } from "./lib/mail.js";
 import { consumeWhatsAppCheck } from "./lib/whatsapp-check.js";
@@ -30,6 +31,26 @@ export function suspendedMessage(reason: string | null): string {
  */
 function isGoogleCallback(ctx: { path?: string; params?: Record<string, unknown> } | null | undefined): boolean {
   return ctx?.path === "/callback/:id" && ctx.params?.id === "google";
+}
+
+/**
+ * A Google sign-in for an account with no profile photo: the Google photo (512px) is copied to our storage and set.
+ * Never replaces a photo the person chose; a failure only reaches the log.
+ */
+async function fillMissingAvatar(email: string, picture: string): Promise<void> {
+  try {
+    if (!isGoogleAvatarUrl(picture)) return;
+    const [record] = await db
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(and(sql`lower(${userTable.email}) = ${email.trim().toLowerCase()}`, isNull(userTable.image)))
+      .limit(1);
+    if (!record) return;
+    const image = await rehostGoogleAvatar(largeGoogleAvatarUrl(picture), record.id);
+    await db.update(userTable).set({ image, updatedAt: new Date() }).where(and(eq(userTable.id, record.id), isNull(userTable.image)));
+  } catch (error) {
+    console.warn("[auth] couldn't copy the Google photo:", error instanceof Error ? error.message : error);
+  }
 }
 
 export async function beforeSessionCreate(
@@ -184,8 +205,11 @@ export const auth = betterAuth({
             prompt: "select_account" as const,
             // Runs only for a Google-authenticated profile, before Better Auth looks the address up: a verified Google
             // address claims an unverified password account registered with it (see claimUnverifiedAccount).
-            mapProfileToUser: async (profile: { email: string; email_verified: boolean }) => {
+            mapProfileToUser: async (profile: { email: string; email_verified: boolean; picture?: string }) => {
               await claimUnverifiedAccount(profile.email, profile.email_verified);
+              // Owner 2026-10-30: "take the Google profile picture for their profile picture" — an existing account
+              // without a photo gets it now (new accounts get it at sign-up and keep it through onboarding).
+              if (profile.picture && profile.email_verified) void fillMissingAvatar(profile.email, profile.picture);
               return {};
             },
           },
