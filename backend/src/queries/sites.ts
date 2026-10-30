@@ -174,6 +174,8 @@ async function sourceCategories(sourceId: string, exclude: string[]): Promise<Ca
   const rows = await db
     .select({ category: article.category, stories: count() })
     .from(article)
+    // visibleWhere() reads the author's row (suspended / hidden accounts), like selectCards.
+    .innerJoin(user, eq(user.id, article.authorId))
     .where(and(...conditions))
     .groupBy(article.category)
     .orderBy(desc(count()));
