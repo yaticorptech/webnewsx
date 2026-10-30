@@ -56,6 +56,8 @@ const contentSecurityPolicy = [
   ["connect-src 'self'", streamOrigin, "https://*.googleusercontent.com", "https://*.razorpay.com",
     // Desktop masthead weather + reader's city (owner 2026-10-15; no keys, no cookies).
     "https://api.open-meteo.com",
+    // Publisher sites' weather card finds the city by name first (components/publisher/weather-widget.tsx).
+    "https://geocoding-api.open-meteo.com",
     "https://api.bigdatacloud.net",
     ...mediaOrigins, isDev ? "ws: wss:" : null].filter(Boolean).join(" "),
   ["media-src 'self' blob:", ...mediaOrigins].join(" "),
