@@ -513,21 +513,25 @@ describe("Editor Desk sign-in (typed email + password only)", () => {
     expect(await me(await logIn(app, desk.user.email, desk.userId))).toMatchObject({ role: "admin" });
   });
 
-  it("refuses an admin any other sign-in (Google) and never promotes through one", async () => {
+  it("lets an admin in through Google (promoting a listed address) but refuses any other sign-in", async () => {
     const desk = await adminUser(app);
     const expiresAt = new Date(Date.now() + 7 * 24 * HOUR);
+    const google = { path: "/callback/:id", params: { id: "google" } };
     const refused = { body: { code: "ADMIN_PASSWORD_ONLY" } };
-    await expect(beforeSessionCreate({ userId: desk.userId, expiresAt }, { path: "/callback/:id" })).rejects.toMatchObject(refused);
+    const viaGoogle = await beforeSessionCreate({ userId: desk.userId, expiresAt }, google);
+    expect(viaGoogle!.data.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + DESK_SESSION_HOURS * HOUR);
+    await expect(beforeSessionCreate({ userId: desk.userId, expiresAt }, { path: "/callback/:id", params: { id: "facebook" } })).rejects.toMatchObject(refused);
     await expect(beforeSessionCreate({ userId: desk.userId, expiresAt }, null)).rejects.toMatchObject(refused);
 
-    // A verified listed address coming in through Google stays a Reader.
+    // A verified listed address coming in through Google becomes the Desk.
     const email = testEmail();
     const listed = await signUp(app, email);
     await db.update(userTable).set({ emailVerified: true }).where(eq(userTable.id, listed.userId));
     adminEmails.add(email);
     try {
-      expect(await beforeSessionCreate({ userId: listed.userId, expiresAt }, { path: "/callback/:id" })).toBeUndefined();
-      expect(await me(listed)).toMatchObject({ role: "reader" });
+      expect(await beforeSessionCreate({ userId: listed.userId, expiresAt }, google)).toBeDefined();
+      const [row] = await db.select({ role: userTable.role }).from(userTable).where(eq(userTable.id, listed.userId));
+      expect(row!.role).toBe("admin");
     } finally {
       adminEmails.delete(email);
     }

@@ -3,9 +3,9 @@ import type { Executor } from "../db/client.js";
 import { account } from "../db/schema.js";
 
 /*
- * Editor Desk sign-in (owner rule 2026-09-25): the admin panel opens only after the admin's email + password are
- * typed on the Log in page — never through a link, a remembered session or "Continue with Google".
- *  - An admin account signs in with email + password only; any other sign-in is refused (`ADMIN_PASSWORD_ONLY`).
+ * Editor Desk sign-in (owner rule 2026-09-25; Google allowed 2026-10-30): the admin panel opens only after the admin's
+ * email + password are typed on the Log in page or "Continue with Google" — never through a link or a remembered session.
+ *  - An admin account signs in with email + password or Google only; any other sign-in is refused (`ADMIN_PASSWORD_ONLY`).
  *  - That sign-in is never remembered: its cookie ends with the browser and the session after DESK_SESSION_HOURS.
  *  - Becoming an admin signs the account out everywhere, so no session from before the promotion opens the Desk.
  */

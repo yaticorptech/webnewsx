@@ -24,12 +24,17 @@ export function suspendedMessage(reason: string | null): string {
 /**
  * Every new session (email sign-in, sign-up auto sign-in, Google callback) passes through here:
  * suspended accounts are refused, and the Editor Desk sign-in rule applies (lib/desk-sign-in.ts): a verified
- * ADMIN_EMAILS account is (re)promoted only by a typed email + password sign-in, an admin account may sign in no
- * other way (Google redirects back to /login with `ADMIN_PASSWORD_ONLY`), and its session lasts DESK_SESSION_HOURS.
+ * ADMIN_EMAILS account is (re)promoted by a typed email + password sign-in or by Google, an admin account may sign
+ * in no other way (WhatsApp / other socials redirect back to /login with `ADMIN_PASSWORD_ONLY`), and its session
+ * lasts DESK_SESSION_HOURS.
  */
+function isGoogleCallback(ctx: { path?: string; params?: Record<string, unknown> } | null | undefined): boolean {
+  return ctx?.path === "/callback/:id" && ctx.params?.id === "google";
+}
+
 export async function beforeSessionCreate(
   session: { userId: string; expiresAt: Date },
-  ctx: { path?: string } | null | undefined,
+  ctx: { path?: string; params?: Record<string, unknown> } | null | undefined,
 ): Promise<{ data: { expiresAt: Date } } | undefined> {
   const [record] = await db
     .select({
@@ -51,10 +56,11 @@ export async function beforeSessionCreate(
   } else if (record.suspendedAt) {
     throw APIError.from("FORBIDDEN", { code: ACCOUNT_SUSPENDED, message: suspendedMessage(record.suspendReason) });
   }
-  const typedPassword = ctx?.path === DESK_SIGN_IN_PATH;
-  const admin = record.role === "admin" || (typedPassword && (await promoteListedAdmin(record, record.role)));
+  // Owner 2026-10-30: "Continue with Google" opens the Desk too, without the password — Google proves the address.
+  const deskSignIn = ctx?.path === DESK_SIGN_IN_PATH || isGoogleCallback(ctx);
+  const admin = record.role === "admin" || (deskSignIn && (await promoteListedAdmin(record, record.role)));
   if (!admin) return undefined;
-  if (!typedPassword) throw APIError.from("FORBIDDEN", { code: ADMIN_PASSWORD_ONLY, message: ADMIN_PASSWORD_ONLY_MESSAGE });
+  if (!deskSignIn) throw APIError.from("FORBIDDEN", { code: ADMIN_PASSWORD_ONLY, message: ADMIN_PASSWORD_ONLY_MESSAGE });
   return { data: { expiresAt: deskSessionExpiry(new Date(session.expiresAt)) } };
 }
 

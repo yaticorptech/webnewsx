@@ -54,6 +54,9 @@ export function GoogleButton({ callbackURL = "/", newUserCallbackURL = "/onboard
   const inApp = useSyncExternalStore(noopSubscribe, isNativeApp, () => false);
   if (!google) return null;
 
+  // Back through /signed-in, which sends an Editor Desk account to the Desk (owner 2026-10-30).
+  const returnTo = `/signed-in?next=${encodeURIComponent(callbackURL)}`;
+
   const onClick = async () => {
     if (pending) return;
     setPending(true);
@@ -61,7 +64,7 @@ export function GoogleButton({ callbackURL = "/", newUserCallbackURL = "/onboard
     markSignedIn();
     markWelcomeBack();
     if (inApp) {
-      const { error, cancelled } = await signInWithGoogleInApp({ callbackURL, newUserCallbackURL });
+      const { error, cancelled } = await signInWithGoogleInApp({ callbackURL: returnTo, newUserCallbackURL });
       // On success the page is already loading the next one; only recover when the picker was closed or it failed.
       if (cancelled) setPending(false);
       if (error) {
@@ -70,7 +73,7 @@ export function GoogleButton({ callbackURL = "/", newUserCallbackURL = "/onboard
       }
       return;
     }
-    const { error } = await signInWithGoogle({ callbackURL, newUserCallbackURL });
+    const { error } = await signInWithGoogle({ callbackURL: returnTo, newUserCallbackURL });
     // On success the browser is already navigating away; only recover on failure.
     if (error) {
       setPending(false);
