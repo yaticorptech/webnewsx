@@ -12,6 +12,7 @@ import {
   connectMySite,
   mySite,
   removeSiteAd,
+  updateSiteAd,
   saveMySite,
   setSiteStoryFlags,
   siteAdminData,
@@ -118,6 +119,12 @@ export function siteRoutes({ limiter }: RouteDeps) {
   app.post("/d/:domain/admin/ads", async (c) => {
     const site = await admin(c);
     return c.json({ ad: await addSiteAd(site, await readJson(c, siteAdSchema)) }, 201);
+  });
+
+  // PUT /api/sites/d/:domain/admin/ads/:id — edit an ad (same fields as adding one).
+  app.put("/d/:domain/admin/ads/:id", async (c) => {
+    const site = await admin(c);
+    return c.json({ ad: await updateSiteAd(site, c.req.param("id"), await readJson(c, siteAdSchema)) });
   });
 
   app.delete("/d/:domain/admin/ads/:id", async (c) => {

@@ -626,6 +626,32 @@ export async function addSiteAd(site: PublisherSiteRecord, input: z.output<typeo
   return toSiteAd(row);
 }
 
+/** Edit an ad (owner 2026-10-30): its position, name, creative, link and dates, all replaced by the form's values. */
+export async function updateSiteAd(site: PublisherSiteRecord, adId: string, input: z.output<typeof siteAdSchema>): Promise<SiteAd> {
+  if (!isUuid(adId)) throw notFound("Ad not found");
+  if (!(SITE_AD_POSITION_KEYS as readonly string[]).includes(input.position)) throw validationError({ position: "Pick a position" });
+  const [existing] = await db.select().from(siteAd).where(and(eq(siteAd.id, adId), eq(siteAd.siteId, site.id))).limit(1);
+  if (!existing) throw notFound("Ad not found");
+  // The same creative kept: its storage key stays too (the upload sweep deletes files no ad's key points at).
+  const sameCreative = Boolean(input.creativeUrl) && input.creativeUrl === existing.creativeUrl;
+  const [row] = await db
+    .update(siteAd)
+    .set({
+      position: input.position,
+      title: input.title,
+      creativeUrl: input.creativeUrl ?? null,
+      creativeKey: input.creativeUrl ? (input.creativeKey ?? (sameCreative ? existing.creativeKey : null)) : null,
+      video: Boolean(input.creativeUrl && input.video),
+      targetUrl: input.targetUrl ?? null,
+      ...(input.startsAt ? { startsAt: new Date(input.startsAt) } : {}),
+      endsAt: input.endsAt ? new Date(input.endsAt) : null,
+    })
+    .where(and(eq(siteAd.id, adId), eq(siteAd.siteId, site.id)))
+    .returning();
+  if (!row) throw notFound("Ad not found");
+  return toSiteAd(row);
+}
+
 export async function removeSiteAd(site: PublisherSiteRecord, adId: string): Promise<void> {
   if (!isUuid(adId)) throw notFound("Ad not found");
   const deleted = await db.delete(siteAd).where(and(eq(siteAd.id, adId), eq(siteAd.siteId, site.id))).returning({ id: siteAd.id });

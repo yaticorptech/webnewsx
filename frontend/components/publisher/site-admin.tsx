@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Eye, EyeOff, ExternalLink, ImagePlus, KeyRound, LayoutDashboard, LogOut, Megaphone, Newspaper, Plus, Settings, Trash2, Upload, Zap } from "lucide-react";
+import { BarChart3, Eye, EyeOff, ExternalLink, ImagePlus, KeyRound, LayoutDashboard, LogOut, Megaphone, Newspaper, Pencil, Plus, Settings, Trash2, Upload, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { api, errorMessage, isApiError, uploadSiteFile } from "@/lib/api";
 import {
@@ -272,6 +272,7 @@ const isLive = (ad: SiteAd) => new Date(ad.startsAt) <= new Date() && (!ad.endsA
 
 function AdsPanel({ domain, token, ads, onChange }: { domain: string; token: string; ads: SiteAd[]; onChange: () => Promise<void> }) {
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -332,7 +333,21 @@ function AdsPanel({ domain, token, ads, onChange }: { domain: string; token: str
               <p className="px-5 py-4 text-sm text-gray-400">No ads here.</p>
             ) : (
               <ul className="divide-y divide-gray-100">
-                {here.map((ad) => (
+                {here.map((ad) =>
+                  editing === ad.id ? (
+                    <li key={ad.id} className="p-3">
+                      <AdForm
+                        domain={domain}
+                        token={token}
+                        ad={ad}
+                        onCancel={() => setEditing(null)}
+                        onSaved={async () => {
+                          setEditing(null);
+                          await onChange();
+                        }}
+                      />
+                    </li>
+                  ) : (
                   <li key={ad.id} className="flex items-center gap-4 px-5 py-3">
                     <AdThumb ad={ad} />
                     <div className="min-w-0 flex-1">
@@ -342,12 +357,17 @@ function AdsPanel({ domain, token, ads, onChange }: { domain: string; token: str
                       </p>
                       {ad.targetUrl && <p className="truncate text-xs text-gray-400">{ad.targetUrl}</p>}
                     </div>
+                    <button type="button" onClick={() => setEditing(ad.id)} className={secondary} aria-label={`Edit ${ad.title}`}>
+                      <Pencil aria-hidden className="size-4" />
+                      <span className="max-sm:hidden">Edit</span>
+                    </button>
                     <button type="button" onClick={() => void remove(ad)} disabled={removing === ad.id} className={secondary} aria-label={`Remove ${ad.title}`}>
                       <Trash2 aria-hidden className="size-4" />
                       <span className="max-sm:hidden">Remove</span>
                     </button>
                   </li>
-                ))}
+                  ),
+                )}
               </ul>
             )}
           </section>
@@ -366,13 +386,32 @@ function AdThumb({ ad }: { ad: Pick<SiteAd, "creativeUrl" | "video"> }) {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-function AdForm({ domain, token, onCancel, onSaved }: { domain: string; token: string; onCancel: () => void; onSaved: () => Promise<void> }) {
-  const [position, setPosition] = useState<SiteAdPosition>("hero-right");
-  const [title, setTitle] = useState("");
-  const [targetUrl, setTargetUrl] = useState("");
-  const [start, setStart] = useState(today());
-  const [end, setEnd] = useState("");
-  const [creative, setCreative] = useState<{ url: string; key: string; video: boolean } | null>(null);
+/** A date input's value (yyyy-mm-dd) in the admin's own zone. */
+const dateValue = (iso: string) => new Date(iso).toLocaleDateString("en-CA");
+
+/** Add an ad, or edit `ad` (owner 2026-10-30: "edit ad option") — the same form, filled in. */
+function AdForm({
+  domain,
+  token,
+  ad,
+  onCancel,
+  onSaved,
+}: {
+  domain: string;
+  token: string;
+  ad?: SiteAd;
+  onCancel: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const [position, setPosition] = useState<SiteAdPosition>(ad?.position ?? "hero-right");
+  const [title, setTitle] = useState(ad?.title ?? "");
+  const [targetUrl, setTargetUrl] = useState(ad?.targetUrl ?? "");
+  const [start, setStart] = useState(ad ? dateValue(ad.startsAt) : today());
+  const [end, setEnd] = useState(ad?.endsAt ? dateValue(ad.endsAt) : "");
+  // An edited ad's current creative has no new key: the server keeps the one it has.
+  const [creative, setCreative] = useState<{ url: string; key: string | null; video: boolean } | null>(
+    ad?.creativeUrl ? { url: ad.creativeUrl, key: null, video: ad.video } : null,
+  );
   const [progress, setProgress] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -400,7 +439,7 @@ function AdForm({ domain, token, onCancel, onSaved }: { domain: string; token: s
     setBusy(true);
     setError(null);
     try {
-      await api.sites.addAd(domain, token, {
+      const input = {
         position,
         title,
         creativeUrl: creative?.url ?? null,
@@ -409,7 +448,9 @@ function AdForm({ domain, token, onCancel, onSaved }: { domain: string; token: s
         targetUrl,
         startsAt: new Date(`${start}T00:00:00`).toISOString(),
         endsAt: end ? new Date(`${end}T23:59:59`).toISOString() : null,
-      });
+      };
+      if (ad) await api.sites.updateAd(domain, token, ad.id, input);
+      else await api.sites.addAd(domain, token, input);
       await onSaved();
     } catch (err) {
       setError(isApiError(err) && err.fields ? Object.values(err.fields)[0]! : errorMessage(err));
@@ -479,7 +520,7 @@ function AdForm({ domain, token, onCancel, onSaved }: { domain: string; token: s
       {error && <p className="text-sm font-semibold text-pub sm:col-span-2">{error}</p>}
       <div className="flex gap-2 sm:col-span-2">
         <button type="submit" disabled={busy || progress !== null} className={primary}>
-          {busy ? "Saving…" : "Publish ad"}
+          {busy ? "Saving…" : ad ? "Save changes" : "Publish ad"}
         </button>
         <button type="button" onClick={onCancel} className={secondary}>
           Cancel

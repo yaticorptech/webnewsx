@@ -693,6 +693,8 @@ export const api = {
       request<{ stories: SiteAdminStory[] }>(`/api/sites/d/${enc(domain)}/admin/stories/${enc(id)}`, { method: "PATCH", body: input, bearer: token }),
     addAd: (domain: string, token: string, input: SiteAdInput) =>
       request<{ ad: SiteAd }>(`/api/sites/d/${enc(domain)}/admin/ads`, { method: "POST", body: input, bearer: token }),
+    updateAd: (domain: string, token: string, id: string, input: SiteAdInput) =>
+      request<{ ad: SiteAd }>(`/api/sites/d/${enc(domain)}/admin/ads/${enc(id)}`, { method: "PUT", body: input, bearer: token }),
     removeAd: (domain: string, token: string, id: string) =>
       request<{ ok: true }>(`/api/sites/d/${enc(domain)}/admin/ads/${enc(id)}`, { method: "DELETE", bearer: token }),
   },
