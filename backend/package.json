@@ -25,6 +25,7 @@
     "db:create": "node --import tsx scripts/db-create.ts",
     "db:clean-test": "node --import tsx scripts/clean-test.ts",
     "admin:verify": "node --import tsx scripts/admin-verify.ts",
+    "admin:grant": "node --import tsx scripts/admin-grant.ts",
     "storage:sweep": "node --import tsx scripts/storage-sweep.ts",
     "media:to-r2": "node --import tsx scripts/media-to-r2.ts"
   },
