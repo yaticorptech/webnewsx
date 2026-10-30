@@ -133,6 +133,7 @@ function toPublicSite(site: PublisherSiteRecord): PublicSite {
     address: site.address,
     articleBase: `${env.FRONTEND_URL}/pub/${site.domain}/article`,
     language: siteLanguage(site.language),
+    footerText: site.footerText,
   };
 }
 
@@ -291,6 +292,7 @@ export async function mySite(person: Person, previewSourceId?: string): Promise<
           contactEmail: site.contactEmail,
           contactPhone: site.contactPhone,
           address: site.address,
+          footerText: site.footerText,
           sourceId: site.sourceId,
           adminEmail: site.adminEmail,
           connection,
@@ -327,6 +329,7 @@ export async function saveMySite(person: Person, input: SetupData): Promise<void
     contactEmail: input.contactEmail ?? null,
     contactPhone: input.contactPhone ?? null,
     address: input.address ?? null,
+    footerText: input.footerText ?? null,
     adminEmail: input.adminEmail,
     navCategories: input.navCategories ?? null,
     language: input.language,
@@ -542,6 +545,7 @@ export async function updateSiteSettings(site: PublisherSiteRecord, input: z.out
       contactEmail: input.contactEmail ?? null,
       contactPhone: input.contactPhone ?? null,
       address: input.address ?? null,
+      footerText: input.footerText ?? null,
       navCategories: input.navCategories ?? null,
       language: input.language,
       updatedAt: new Date(),

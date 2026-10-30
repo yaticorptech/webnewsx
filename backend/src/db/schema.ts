@@ -1457,6 +1457,8 @@ export const publisherSite = pgTable(
     connectedAt: ts("connected_at"),
     /** The menu's categories in order (owner 2026-10-30); null = every category the source has stories in. */
     navCategories: text("nav_categories").array(),
+    /** The footer's line under the brand (owner 2026-10-30: editable footer); null = the default line. */
+    footerText: text("footer_text"),
     /** Default interface language, `en` | `kn` (visitors can switch); stories are never translated. */
     language: text("language").notNull().default("en"),
     createdAt: tsMs("created_at").notNull().defaultNow(),

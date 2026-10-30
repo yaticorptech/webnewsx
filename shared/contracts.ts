@@ -3628,6 +3628,7 @@ export const SITE_LIMITS = {
   passwordMax: 128,
   adTitleMax: 120,
   adsPerSite: 60,
+  footerTextMax: 280,
 } as const;
 
 /** The webnews.in ad positions (its lib/adPositions.ts): key, label, display ratio, recommended size, video allowed. */
@@ -3684,6 +3685,8 @@ export type PublicSite = {
   articleBase: string;
   /** The owner's default interface language (the visitor's toggle overrides it). */
   language: SiteLanguage;
+  /** The footer's line under the brand; null = the default ("News from <city> — reported and published every day."). */
+  footerText: string | null;
 };
 
 /** `GET /api/sites/d/:domain` — the home page: the site, its stories (newest first), trending, breaking and live ads. */
@@ -3744,6 +3747,7 @@ export type MySiteResponse = {
     contactEmail: string | null;
     contactPhone: string | null;
     address: string | null;
+    footerText: string | null;
     sourceId: string;
     adminEmail: string;
     connection: SiteConnection;
@@ -3814,6 +3818,7 @@ export const siteSetupSchema = z.object({
   contactEmail: z.union([z.literal(""), z.email()]).transform((v) => (v === "" ? null : v.toLowerCase())).nullable().optional(),
   contactPhone: optionalTrimmed(SITE_LIMITS.phoneMax).refine((v) => !v || !sitePhoneProblem(v), { message: "Enter a valid mobile number" }),
   address: optionalTrimmed(SITE_LIMITS.addressMax),
+  footerText: optionalTrimmed(SITE_LIMITS.footerTextMax),
   sourceId: z.string().trim().min(1),
   adminEmail: z.email("Enter the admin email").transform((v) => v.toLowerCase()),
   adminPassword: sitePassword.optional(),
@@ -3842,6 +3847,7 @@ export const siteSettingsSchema = siteSetupSchema.pick({
   contactEmail: true,
   contactPhone: true,
   address: true,
+  footerText: true,
   navCategories: true,
   language: true,
 });

@@ -505,6 +505,13 @@
       "when": 1793353353171,
       "tag": "0071_publisher_site_menu_language",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1793356558615,
+      "tag": "0072_publisher_site_footer_text",
+      "breakpoints": true
     }
   ]
 }

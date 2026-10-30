@@ -47,7 +47,7 @@ export type ChromeEditor = {
 };
 
 type SiteChromeProps = {
-  site: Pick<PublicSite, "domain" | "title" | "tagline" | "logoUrl" | "city" | "contactEmail" | "contactPhone" | "address">;
+  site: Pick<PublicSite, "domain" | "title" | "tagline" | "logoUrl" | "city" | "contactEmail" | "contactPhone" | "address"> & { footerText?: string | null };
   /** Where the logo and Home lead (their domain; on WebNEWS's story page, back to it). */
   homeHref: string;
   ticker: ArticleCard[];
@@ -406,9 +406,10 @@ function SiteFooter({ site, homeHref, lang }: { site: SiteChromeProps["site"]; h
             </p>
           )}
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-500">
-            {lang === "kn"
-              ? `${site.city ? `${site.city} ` : ""}${tr(lang, "newsEveryDay")}`
-              : `News${site.city ? ` from ${site.city}` : ""} — reported and published every day.`}
+            {site.footerText ||
+              (lang === "kn"
+                ? `${site.city ? `${site.city} ` : ""}${tr(lang, "newsEveryDay")}`
+                : `News${site.city ? ` from ${site.city}` : ""} — reported and published every day.`)}
           </p>
         </div>
 

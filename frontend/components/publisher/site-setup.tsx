@@ -37,6 +37,7 @@ type Form = {
   phoneCode: string;
   phoneDigits: string;
   address: string;
+  footerText: string;
   sourceId: string;
   adminEmail: string;
   adminPassword: string;
@@ -65,6 +66,7 @@ function formOf(data: MySiteResponse): Form {
     phoneCode: splitPhone(s?.contactPhone ?? "").code,
     phoneDigits: splitPhone(s?.contactPhone ?? "").digits,
     address: s?.address ?? "",
+    footerText: s?.footerText ?? "",
     sourceId: s?.sourceId ?? data.sources[0]?.id ?? "",
     adminEmail: s?.adminEmail ?? "",
     adminPassword: "",
@@ -83,9 +85,10 @@ const FIELD_LABELS: Record<string, string> = {
   city: "Stories on the site → City",
   adminEmail: "Admin login → Admin email",
   adminPassword: "Admin login → Admin password",
-  contactEmail: "Footer contact → Email",
-  contactPhone: "Footer contact → Phone",
-  address: "Footer contact → Address",
+  contactEmail: "Footer → Email",
+  contactPhone: "Footer → Phone",
+  address: "Footer → Address",
+  footerText: "Footer → Footer line",
 };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -167,6 +170,7 @@ export function SiteSetup() {
         contactEmail: form.contactEmail,
         contactPhone: joinPhone(form.phoneCode, form.phoneDigits),
         address: form.address,
+        footerText: form.footerText,
         sourceId: form.sourceId,
         adminEmail: form.adminEmail,
         adminPassword: form.adminPassword || undefined,
@@ -316,7 +320,10 @@ export function SiteSetup() {
           </section>
 
           <section className="card flex flex-col gap-4 p-5">
-            <h2 className="font-wide text-lg font-extrabold text-ink">Footer contact</h2>
+            <h2 className="font-wide text-lg font-extrabold text-ink">Footer</h2>
+            <Field label="Footer line" hint={`Under your logo at the bottom of every page. Empty: "News${form.city ? ` from ${form.city}` : ""} — reported and published every day."`} error={fieldErrors.footerText}>
+              <Input value={form.footerText} maxLength={SITE_LIMITS.footerTextMax} onChange={(e) => set("footerText", e.target.value)} />
+            </Field>
             <Field label="Email" error={fieldErrors.contactEmail}>
               <Input type="email" autoCapitalize="none" spellCheck={false} value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value.trim())} />
             </Field>
@@ -365,6 +372,7 @@ export function SiteSetup() {
             contactEmail: form.contactEmail || null,
             contactPhone: joinPhone(form.phoneCode, form.phoneDigits) || null,
             address: form.address || null,
+            footerText: form.footerText || null,
           }}
           homeHref="#"
           ticker={data.preview.latest.slice(0, 8)}

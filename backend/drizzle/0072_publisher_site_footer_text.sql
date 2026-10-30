@@ -1,0 +1,1 @@
+ALTER TABLE "publisher_site" ADD COLUMN "footer_text" text;

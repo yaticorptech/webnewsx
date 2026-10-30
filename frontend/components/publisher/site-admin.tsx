@@ -598,6 +598,7 @@ function SettingsPanel({
     phoneCode: splitPhone(data.site.contactPhone ?? "").code,
     phoneDigits: splitPhone(data.site.contactPhone ?? "").digits,
     address: data.site.address ?? "",
+    footerText: data.site.footerText ?? "",
   });
   const [logo, setLogo] = useState<{ url: string | null; key: string | null }>({ url: data.site.logoUrl, key: null });
   const [navCategories, setNavCategories] = useState<Category[] | null>(data.navCategories);
@@ -684,6 +685,26 @@ function SettingsPanel({
             City (weather)
             <input maxLength={SITE_LIMITS.cityMax} value={form.city} onChange={set("city")} placeholder="e.g. Mangaluru" className={`${input} mt-1.5`} />
           </label>
+        </div>
+
+        {/* The footer (owner 2026-10-30: "edit footer" in the admin): the line under the brand and the Office block. */}
+        <h2 className="mt-8 border-t border-gray-200 pt-6 font-pub-head text-2xl font-extrabold">Footer</h2>
+        <p className="mt-1 text-sm text-gray-500">Shown at the bottom of every page: your logo and this line, then your office contact.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-semibold sm:col-span-2">
+            Footer line
+            <textarea
+              maxLength={SITE_LIMITS.footerTextMax}
+              rows={2}
+              value={form.footerText}
+              onChange={set("footerText")}
+              placeholder={`News${form.city ? ` from ${form.city}` : ""} — reported and published every day.`}
+              className={`${input} mt-1.5 h-auto py-2`}
+            />
+            <span className="mt-1 block text-xs font-normal text-gray-500">
+              {form.footerText.length}/{SITE_LIMITS.footerTextMax} · empty = the line shown as the example
+            </span>
+          </label>
           <label className="block text-sm font-semibold">
             Contact phone
             <span className={`${input} mt-1.5 flex items-center gap-2 focus-within:border-pub focus-within:ring-2 focus-within:ring-pub/15`}>
@@ -703,7 +724,7 @@ function SettingsPanel({
             </span>
             {form.phoneCode === "+91" && <span className="mt-1 block text-xs font-normal text-gray-500">{form.phoneDigits.length}/10 digits</span>}
           </label>
-          <label className="block text-sm font-semibold sm:col-span-2">
+          <label className="block text-sm font-semibold">
             Contact email
             <input type="email" value={form.contactEmail} onChange={set("contactEmail")} className={`${input} mt-1.5`} />
           </label>
