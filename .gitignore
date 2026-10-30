@@ -19,3 +19,5 @@ firebase-service-account*.json
 
 # Android app Firebase config (rebuild needs a copy from the Firebase console)
 mobile/android/app/google-services.json
+# Android release signing (owner 2026-10-30: direct APK download). Back these up — updates need the same key.
+mobile/android/release/

@@ -98,7 +98,25 @@ function forwardedHeaders(request: NextRequest): Headers | null {
   return headers;
 }
 
+/**
+ * The bare domain → www (owner 2026-10-30: "Continue with Google" said "Invalid origin" on phones that opened
+ * webnewsx.com — sign-in only trusts the site's own address, NEXT_PUBLIC_SITE_URL). Every path keeps its query.
+ */
+const SITE_HOST = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "").hostname;
+  } catch {
+    return "";
+  }
+})();
+const BARE_SITE_HOST = SITE_HOST.startsWith("www.") ? SITE_HOST.slice(4) : "";
+
 export async function proxy(request: NextRequest) {
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0]!.trim().toLowerCase().replace(/:\d+$/, "");
+  if (BARE_SITE_HOST && host === BARE_SITE_HOST) {
+    const url = new URL(request.nextUrl.pathname + request.nextUrl.search, `https://${SITE_HOST}`);
+    return NextResponse.redirect(url, 308);
+  }
   const publisher = publisherHost(request);
   if (publisher) {
     const path = request.nextUrl.pathname;

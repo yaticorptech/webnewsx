@@ -19,8 +19,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Release signing (owner 2026-10-30: direct APK download from the site). The key and its passwords live in
+    // android/release/ (git-ignored, back them up: every update must be signed with the same key).
+    def releaseProps = new Properties()
+    def releasePropsFile = rootProject.file("release/keystore.properties")
+    if (releasePropsFile.exists()) releasePropsFile.withInputStream { releaseProps.load(it) }
+    signingConfigs {
+        release {
+            if (releasePropsFile.exists()) {
+                storeFile rootProject.file(releaseProps["storeFile"])
+                storePassword releaseProps["storePassword"]
+                keyAlias releaseProps["keyAlias"]
+                keyPassword releaseProps["keyPassword"]
+            }
+        }
+    }
     buildTypes {
         release {
+            if (releasePropsFile.exists()) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
