@@ -67,7 +67,8 @@ const tooLarge = (message: string) => {
 
 /** 1 MB for JSON, 200 MB (+ overhead) for /api/upload (images 8 MB, checked there). Better Auth routes use the JSON limit too. */
 const bodyLimits: MiddlewareHandler<AppEnv> = (c, next) => {
-  const isUpload = c.req.path === "/api/upload";
+  // A publisher site admin's logo / ad creatives (images 8 MB, videos 50 MB — checked there; owner 2026-10-30).
+  const isUpload = c.req.path === "/api/upload" || /^\/api\/sites\/d\/[^/]+\/admin\/upload$/.test(c.req.path);
   // The composer's poster for auto-posting (a 1080×1920 image, checked there).
   const isPoster = c.req.path.startsWith("/api/social/poster/");
   // Press meet recordings arrive in pieces of a few seconds each (owner 2026-10-01).
