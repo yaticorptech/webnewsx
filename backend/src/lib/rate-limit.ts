@@ -53,6 +53,8 @@ export const RATE_LIMITS = {
   flag: { limit: 20, windowMs: 10 * 60_000 },
   comment: { limit: 20, windowMs: 10 * 60_000 },
   pressPass: { limit: 30, windowMs: 60 * 60_000 },
+  /** Domain "Verify" taps while DNS propagates — its own short window so retries don't eat the Press Pass budget. */
+  domainVerify: { limit: 20, windowMs: 5 * 60_000 },
   spotlightOrder: { limit: 20, windowMs: 60 * 60_000 },
   /** Chat messages and "Send to" (owner 2026-09-30). */
   message: { limit: 60, windowMs: 60_000 },

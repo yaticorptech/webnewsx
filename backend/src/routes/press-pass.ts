@@ -58,7 +58,7 @@ export function pressPassRoutes({ limiter }: RouteDeps) {
   });
 
   // POST /api/press-pass/domain/verify — checks DNS for the TXT record; 400 `domain_not_verified` until it's there.
-  app.post("/domain/verify", requireOnboarded, rateLimit(limiter, "press-pass", RATE_LIMITS.pressPass, "user"), async (c) => {
+  app.post("/domain/verify", requireOnboarded, rateLimit(limiter, "domain-verify", RATE_LIMITS.domainVerify, "user"), async (c) => {
     const viewer = mustViewer(c);
     return c.json({ pressPass: toPressPass(await verifyPressDomain(viewer.id), viewer) });
   });
