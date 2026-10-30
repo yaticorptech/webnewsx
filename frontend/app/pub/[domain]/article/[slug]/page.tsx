@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { AdSlot } from "@/components/publisher/ad-slot";
 import { SiteArticleViews, SiteShare } from "@/components/publisher/site-article-client";
 import { SiteChrome } from "@/components/publisher/site-chrome";
+import { tr } from "@/components/publisher/site-i18n";
+import { siteLanguageFor } from "@/components/publisher/site-language";
 import { GridCard, HeadlineRow, relativeTime, storyImage, storyKicker } from "@/components/publisher/site-parts";
 import { getSiteArticle } from "@/lib/server-api";
 
@@ -49,20 +51,21 @@ export default async function PublisherArticle({ params }: Props) {
   if (!data) notFound();
   const { site, article, more, breaking, ads, categories } = data;
   const href = (card: { slug: string }) => `${site.articleBase}/${card.slug}`;
-  const kicker = storyKicker(article);
+  const lang = await siteLanguageFor(site);
+  const kicker = storyKicker(article, lang);
   const media = article.articleMedia;
   const image = media?.url || storyImage(article);
   const video = media?.video ?? article.video ?? null;
   const [before, after] = splitBody(article.bodyHtml);
 
   return (
-    <SiteChrome site={site} homeHref={homeOf(site.domain)} ticker={breaking.length ? breaking : more.slice(0, 6)} articleBase={site.articleBase} ads={ads} categories={categories} activeCategory={article.category ?? null}>
+    <SiteChrome site={site} homeHref={homeOf(site.domain)} ticker={breaking.length ? breaking : more.slice(0, 6)} articleBase={site.articleBase} ads={ads} categories={categories} activeCategory={article.category ?? null} lang={lang}>
       <SiteArticleViews id={article.id} />
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-12">
         <article className="min-w-0 lg:col-span-8">
           <nav className="text-xs text-gray-500">
             <a href={homeOf(site.domain)} className="hover:text-pub">
-              Home
+              {tr(lang, "home")}
             </a>
             {kicker && <span> › {kicker}</span>}
           </nav>
@@ -72,11 +75,11 @@ export default async function PublisherArticle({ params }: Props) {
           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-y border-gray-200 py-3 text-sm text-gray-500">
             <span className="font-semibold text-pub-ink">{article.author.name}</span>
             <span aria-hidden>·</span>
-            <time dateTime={article.publishedAt}>{relativeTime(article.publishedAt)}</time>
+            <time dateTime={article.publishedAt}>{relativeTime(article.publishedAt, lang)}</time>
             {article.readingMinutes > 0 && (
               <>
                 <span aria-hidden>·</span>
-                <span>{article.readingMinutes} min read</span>
+                <span>{lang === "kn" ? `${article.readingMinutes} ನಿಮಿಷ ಓದು` : `${article.readingMinutes} min read`}</span>
               </>
             )}
           </div>
@@ -94,17 +97,17 @@ export default async function PublisherArticle({ params }: Props) {
           {after && <div className="pub-body font-pub-sans text-[1.0625rem] leading-[1.8] text-gray-800" dangerouslySetInnerHTML={{ __html: after }} />}
 
           <div className="mt-8 border-t border-gray-200 pt-5">
-            <SiteShare title={article.title} />
+            <SiteShare title={article.title} lang={lang} />
           </div>
         </article>
 
         <aside className="flex flex-col gap-6 lg:col-span-4 lg:border-l lg:border-gray-200 lg:pl-8">
           {more.length > 0 && (
             <div>
-              <h2 className="pub-section-head">More Stories</h2>
+              <h2 className="pub-section-head">{lang === "kn" ? "ಇನ್ನಷ್ಟು ಸುದ್ದಿಗಳು" : "More Stories"}</h2>
               <div className="flex flex-col gap-4">
                 {more.slice(0, 5).map((card) => (
-                  <HeadlineRow key={card.id} card={card} href={href} />
+                  <HeadlineRow key={card.id} card={card} href={href} lang={lang} />
                 ))}
               </div>
             </div>
@@ -116,10 +119,10 @@ export default async function PublisherArticle({ params }: Props) {
 
       {more.length > 5 && (
         <section className="mt-12 border-t border-gray-200 pt-6">
-          <h2 className="pub-section-head">Latest News</h2>
+          <h2 className="pub-section-head">{lang === "kn" ? "ಇತ್ತೀಚಿನ ಸುದ್ದಿ" : "Latest News"}</h2>
           <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {more.slice(5).map((card) => (
-              <GridCard key={card.id} card={card} href={href} />
+              <GridCard key={card.id} card={card} href={href} lang={lang} />
             ))}
           </div>
         </section>

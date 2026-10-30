@@ -2,6 +2,7 @@
 
 import { Check, Link2 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import type { SiteLanguage } from "@/lib/shared/contracts";
 import { countViewNow, recordArticleRead } from "@/components/feed/view-tracker";
 
 /** The story is open on WebNEWS (owner 2026-10-29: that's why publisher stories open here): count the view and the read. */
@@ -16,7 +17,7 @@ export function SiteArticleViews({ id }: { id: string }) {
 const noopSubscribe = () => () => {};
 
 /** WhatsApp · Facebook · X · copy link (webnews.in's share row). */
-export function SiteShare({ title }: { title: string }) {
+export function SiteShare({ title, lang }: { title: string; lang: SiteLanguage }) {
   const url = useSyncExternalStore(noopSubscribe, () => window.location.href, () => "");
   const [copied, setCopied] = useState(false);
   if (!url) return null;
@@ -25,7 +26,7 @@ export function SiteShare({ title }: { title: string }) {
   const button = "inline-flex h-9 items-center gap-1.5 rounded-full border border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:border-pub hover:text-pub";
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">Share</span>
+      <span className="mr-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">{lang === "kn" ? "ಹಂಚಿಕೊಳ್ಳಿ" : "Share"}</span>
       <a className={button} href={`https://wa.me/?text=${text}%20${link}`} target="_blank" rel="noopener noreferrer">
         WhatsApp
       </a>
@@ -46,7 +47,7 @@ export function SiteShare({ title }: { title: string }) {
         }
       >
         {copied ? <Check aria-hidden className="size-4" /> : <Link2 aria-hidden className="size-4" />}
-        {copied ? "Copied" : "Copy link"}
+        {lang === "kn" ? (copied ? "ನಕಲಿಸಲಾಗಿದೆ" : "ಲಿಂಕ್ ನಕಲಿಸಿ") : copied ? "Copied" : "Copy link"}
       </button>
     </div>
   );

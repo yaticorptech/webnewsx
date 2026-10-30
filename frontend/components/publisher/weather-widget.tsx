@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { SiteLanguage } from "@/lib/shared/contracts";
+import { WEATHER_KN, tr } from "./site-i18n";
 
 type Weather = { temp: number; code: number; humidity: number; wind: number; hi: number; lo: number; rain: number };
 
@@ -21,7 +23,7 @@ function describe(code: number): { icon: string; label: string } {
  * The site's city weather card (webnews.in LocalWidget, keyless Open-Meteo): the city is found by name, then today's
  * conditions. No city set: the card isn't shown.
  */
-export function WeatherWidget({ city }: { city: string | null }) {
+export function WeatherWidget({ city, lang }: { city: string | null; lang: SiteLanguage }) {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -56,14 +58,15 @@ export function WeatherWidget({ city }: { city: string | null }) {
   }, [city]);
 
   if (!city || failed) return null;
-  const cond = weather ? describe(weather.code) : null;
+  const found = weather ? describe(weather.code) : null;
+  const cond = found ? { ...found, label: lang === "kn" ? (WEATHER_KN[found.label] ?? found.label) : found.label } : null;
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
       <div className="flex items-center justify-between gap-3 bg-gradient-to-br from-pub/10 to-pub/5 px-5 py-4">
         <div className="min-w-0">
           <div className="text-xs font-semibold uppercase tracking-wide text-pub">📍 {city}</div>
-          <div className="mt-0.5 truncate text-[11px] text-gray-500">{cond ? cond.label : "Loading…"}</div>
+          <div className="mt-0.5 truncate text-[11px] text-gray-500">{cond ? cond.label : tr(lang, "loading")}</div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-3xl leading-none" aria-hidden>
@@ -76,15 +79,15 @@ export function WeatherWidget({ city }: { city: string | null }) {
         <>
           <div className="flex items-center justify-around border-b border-gray-100 px-5 py-2 text-[11px] text-gray-500">
             <span>
-              💧 Humidity <b className="text-gray-700">{weather.humidity}%</b>
+              💧 {tr(lang, "humidity")} <b className="text-gray-700">{weather.humidity}%</b>
             </span>
             <span className="h-3 w-px bg-gray-200" />
             <span>
-              🌬️ Wind <b className="text-gray-700">{weather.wind} km/h</b>
+              🌬️ {tr(lang, "wind")} <b className="text-gray-700">{weather.wind} km/h</b>
             </span>
           </div>
           <p className="px-5 py-3 text-sm font-medium leading-snug text-pub-ink">
-            {cond?.label} · {weather.lo}°–{weather.hi}° · {weather.rain}% chance of rain
+            {cond?.label} · {weather.lo}°–{weather.hi}° · {weather.rain}% {tr(lang, "rainChance")}
           </p>
         </>
       )}

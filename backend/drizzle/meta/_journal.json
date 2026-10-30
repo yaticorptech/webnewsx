@@ -498,6 +498,13 @@
       "when": 1793339317767,
       "tag": "0070_publisher_sites",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1793353353171,
+      "tag": "0071_publisher_site_menu_language",
+      "breakpoints": true
     }
   ]
 }

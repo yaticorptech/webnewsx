@@ -525,7 +525,7 @@ function StoriesPanel({ domain, token }: { domain: string; token: string }) {
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-sm font-semibold">{story.title}</p>
                 <p className="text-xs text-gray-500">
-                  {relativeTime(story.publishedAt)} · {story.viewCount.toLocaleString("en-IN")} views
+                  {relativeTime(story.publishedAt, "en")} · {story.viewCount.toLocaleString("en-IN")} views
                   {story.breaking && <span className="ml-2 rounded bg-pub px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Breaking</span>}
                   {story.hidden && <span className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold uppercase text-gray-600">Hidden</span>}
                 </p>

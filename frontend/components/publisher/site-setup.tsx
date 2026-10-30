@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, CircleAlert, Copy, Globe, ImagePlus, Loader2, Plug, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Check, CircleAlert, Copy, Globe, ImagePlus, Loader2, Plug, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "@/components/ui/toast";
 import { api, errorMessage, isApiError, uploadImage } from "@/lib/api";
-import { SITE_LIMITS, sitePasswordOk, sitePhoneProblem, type MySiteResponse, type SiteConnection } from "@/lib/shared/contracts";
+import {
+  CATEGORY_VALUES,
+  SITE_LIMITS,
+  SITE_SECTION_SIZE,
+  sitePasswordOk,
+  sitePhoneProblem,
+  type ArticleCard,
+  type Category,
+  type MySiteResponse,
+  type SiteConnection,
+  type SiteLanguage,
+  type SiteSection,
+} from "@/lib/shared/contracts";
 import { PasswordInput } from "@/components/auth/password-input";
 import { SiteChrome } from "./site-chrome";
 import { CountrySelect, PasswordChecklist, cleanDigits, joinPhone, splitPhone } from "./site-fields";
 import { SiteHomeBody } from "./site-home";
+import { categoryName } from "./site-i18n";
 
 type Form = {
   title: string;
@@ -28,7 +41,17 @@ type Form = {
   sourceId: string;
   adminEmail: string;
   adminPassword: string;
+  /** The menu's categories in order; null = automatic (every category with stories). */
+  navCategories: Category[] | null;
+  language: SiteLanguage;
 };
+
+/** The preview's menu and home rows, as the live site will deal them (backend siteHome). */
+function previewMenu(form: Form, posted: Category[], latest: ArticleCard[]): { categories: Category[]; sections: SiteSection[] } {
+  const categories = form.navCategories ? form.navCategories.filter((c) => posted.includes(c)) : posted;
+  const sections = categories.map((category) => ({ category, stories: latest.filter((card) => card.category === category).slice(0, SITE_SECTION_SIZE) }));
+  return { categories, sections };
+}
 
 function formOf(data: MySiteResponse): Form {
   const s = data.site;
@@ -46,6 +69,8 @@ function formOf(data: MySiteResponse): Form {
     sourceId: s?.sourceId ?? data.sources[0]?.id ?? "",
     adminEmail: s?.adminEmail ?? "",
     adminPassword: "",
+    navCategories: s?.navCategories ?? null,
+    language: s?.language ?? "en",
   };
 }
 
@@ -118,7 +143,7 @@ export function SiteSetup() {
     setForm((f) => (f ? { ...f, sourceId } : f));
     try {
       const next = await api.sites.mine(sourceId);
-      setData((d) => (d ? { ...d, preview: next.preview } : next));
+      setData((d) => (d ? { ...d, preview: next.preview, postedCategories: next.postedCategories } : next));
     } catch {
       /* the preview keeps the previous stories */
     }
@@ -146,6 +171,8 @@ export function SiteSetup() {
         sourceId: form.sourceId,
         adminEmail: form.adminEmail,
         adminPassword: form.adminPassword || undefined,
+        navCategories: form.navCategories,
+        language: form.language,
       });
       setData(next);
       setForm((f) => (f ? { ...f, adminPassword: "", logoKey: null } : f));
@@ -192,6 +219,7 @@ export function SiteSetup() {
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => (f ? { ...f, [key]: value } : f));
   const isNew = !data.site;
   const connection = data.site?.connection ?? "not_connected";
+  const menu = previewMenu(form, data.postedCategories, data.preview.latest);
 
   return (
     <div className="flex flex-col">
@@ -252,6 +280,14 @@ export function SiteSetup() {
               <Input value={form.city} maxLength={SITE_LIMITS.cityMax} onChange={(e) => set("city", e.target.value)} placeholder="e.g. Mangaluru" />
             </Field>
           </section>
+
+          <MenuCard
+            posted={data.postedCategories}
+            chosen={form.navCategories}
+            onChosen={(navCategories) => setForm((f) => (f ? { ...f, navCategories } : f))}
+            language={form.language}
+            onLanguage={(language) => set("language", language)}
+          />
 
           <section className="card flex flex-col gap-4 p-5">
             <h2 className="font-wide text-lg font-extrabold text-ink">Admin login</h2>
@@ -335,6 +371,8 @@ export function SiteSetup() {
           ticker={data.preview.latest.slice(0, 8)}
           articleBase={null}
           ads={{}}
+          categories={menu.categories}
+          lang={form.language}
           preview
           editor={{
             onLogo: () => setLogoOpen(true),
@@ -350,7 +388,19 @@ export function SiteSetup() {
           }}
         >
           <div className="pointer-events-none select-none">
-            <SiteHomeBody latest={data.preview.latest} trending={data.preview.trending} breaking={[]} ads={{}} city={form.city || null} href={() => "#"} preview />
+            <SiteHomeBody
+              latest={data.preview.latest}
+              trending={data.preview.trending}
+              breaking={[]}
+              sections={menu.sections}
+              ads={{}}
+              city={form.city || null}
+              href={() => "#"}
+              categoryHref={null}
+              bookHref={null}
+              lang={form.language}
+              preview
+            />
           </div>
         </SiteChrome>
       </div>
@@ -529,5 +579,103 @@ function LogoDialog({
       </button>
       {shown && progress === null && <p className="mt-2 text-center text-xs text-muted">Tap the image to choose another.</p>}
     </Modal>
+  );
+}
+
+/**
+ * The site's menu and language (owner 2026-10-30: "ask which categories to show in the navbar"; English default). Ticked
+ * categories show in the order set here (arrows); none ticked = automatic, every category with stories, most first. A
+ * ticked category with no stories yet stays out of the menu until it has one.
+ */
+function MenuCard({
+  posted,
+  chosen,
+  onChosen,
+  language,
+  onLanguage,
+}: {
+  posted: Category[];
+  chosen: Category[] | null;
+  onChosen: (next: Category[] | null) => void;
+  language: SiteLanguage;
+  onLanguage: (next: SiteLanguage) => void;
+}) {
+  const ticked = chosen ?? [];
+  const rest = [...posted.filter((c) => !ticked.includes(c)), ...CATEGORY_VALUES.filter((c) => !ticked.includes(c) && !posted.includes(c))];
+  const toggle = (category: Category) => {
+    const next = ticked.includes(category) ? ticked.filter((c) => c !== category) : [...ticked, category];
+    onChosen(next.length ? next : null);
+  };
+  const move = (index: number, by: -1 | 1) => {
+    const next = [...ticked];
+    const [item] = next.splice(index, 1);
+    next.splice(index + by, 0, item!);
+    onChosen(next);
+  };
+
+  const row = (category: Category, index: number | null) => {
+    const on = index !== null;
+    const hasStories = posted.includes(category);
+    return (
+      <li key={category} className="flex items-center gap-2 py-1.5">
+        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-sm text-ink">
+          <input type="checkbox" checked={on} onChange={() => toggle(category)} className="size-4 shrink-0 accent-brand" />
+          <span className="truncate">{categoryName(category, "en")}</span>
+          <span className="truncate text-xs text-muted">{categoryName(category, "kn")}</span>
+          {!hasStories && <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-semibold text-muted">no stories yet</span>}
+        </label>
+        {on && (
+          <span className="flex shrink-0 gap-1">
+            <button type="button" aria-label={`Move ${categoryName(category, "en")} up`} disabled={index === 0} onClick={() => move(index, -1)} className="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-30">
+              <ArrowUp aria-hidden className="size-4" />
+            </button>
+            <button type="button" aria-label={`Move ${categoryName(category, "en")} down`} disabled={index === ticked.length - 1} onClick={() => move(index, 1)} className="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-30">
+              <ArrowDown aria-hidden className="size-4" />
+            </button>
+          </span>
+        )}
+      </li>
+    );
+  };
+
+  return (
+    <section className="card flex flex-col gap-4 p-5">
+      <h2 className="font-wide text-lg font-extrabold text-ink">Menu &amp; language</h2>
+      <Field label="Site language" hint="Menus, labels and dates. Visitors can switch with (EN) / (ಕನ್ನಡ); stories stay in the language they were written in.">
+        <div role="radiogroup" aria-label="Site language" className="grid grid-cols-2 gap-2">
+          {(["en", "kn"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={language === value}
+              onClick={() => onLanguage(value)}
+              className={`h-11 rounded-xl border text-sm font-semibold transition ${language === value ? "border-brand bg-tint text-brand-strong" : "border-border-strong bg-surface text-ink hover:border-brand"}`}
+            >
+              {value === "en" ? "English" : "ಕನ್ನಡ Kannada"}
+            </button>
+          ))}
+        </div>
+      </Field>
+      <div>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-sm font-semibold text-ink">Menu categories</p>
+          {chosen && (
+            <button type="button" onClick={() => onChosen(null)} className="text-xs font-semibold text-brand hover:underline">
+              Use automatic
+            </button>
+          )}
+        </div>
+        <p className="mt-0.5 text-xs text-muted">
+          {chosen
+            ? "Shown in this order after Home. Use the arrows to reorder."
+            : "Automatic: every category you've posted in, most stories first. Tick categories to choose your own."}
+        </p>
+        <ul className="mt-2 max-h-80 divide-y divide-border overflow-y-auto pr-1">
+          {ticked.map((c, i) => row(c, i))}
+          {rest.map((c) => row(c, null))}
+        </ul>
+      </div>
+    </section>
   );
 }

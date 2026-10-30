@@ -1455,6 +1455,10 @@ export const publisherSite = pgTable(
     breakingArticleIds: uuid("breaking_article_ids").array().notNull().default(sql`'{}'::uuid[]`),
     /** Added to the Vercel project (the domain then serves the site once its DNS points at Vercel). */
     connectedAt: ts("connected_at"),
+    /** The menu's categories in order (owner 2026-10-30); null = every category the source has stories in. */
+    navCategories: text("nav_categories").array(),
+    /** Default interface language, `en` | `kn` (visitors can switch); stories are never translated. */
+    language: text("language").notNull().default("en"),
     createdAt: tsMs("created_at").notNull().defaultNow(),
     updatedAt: tsMs("updated_at").notNull().defaultNow(),
   },

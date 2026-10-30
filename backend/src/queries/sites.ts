@@ -7,7 +7,11 @@ import { env } from "../env.js";
 import { ApiError, isUniqueViolation, notFound, validationError } from "../lib/errors.js";
 import {
   CATEGORY_VALUES,
+  DEFAULT_SITE_LANGUAGE,
   SITE_AD_POSITION_KEYS,
+  SITE_LANGUAGES,
+  SITE_SECTION_SIZE,
+  type SiteLanguage,
   type Category,
   SITE_LIMITS,
   type ArticleCard,
@@ -128,8 +132,11 @@ function toPublicSite(site: PublisherSiteRecord): PublicSite {
     contactPhone: site.contactPhone,
     address: site.address,
     articleBase: `${env.FRONTEND_URL}/pub/${site.domain}/article`,
+    language: siteLanguage(site.language),
   };
 }
+
+const siteLanguage = (value: string): SiteLanguage => ((SITE_LANGUAGES as readonly string[]).includes(value) ? (value as SiteLanguage) : DEFAULT_SITE_LANGUAGE);
 
 /* ─────────────── Stories ─────────────── */
 
@@ -184,6 +191,13 @@ async function sourceCategories(sourceId: string, exclude: string[]): Promise<Ca
 
 const isCategory = (value: unknown): value is Category => (CATEGORY_VALUES as readonly unknown[]).includes(value);
 
+/** The menu: the owner's picks in their order (only those with stories), else every category with stories. */
+async function menuCategories(site: PublisherSiteRecord): Promise<Category[]> {
+  const posted = await sourceCategories(site.sourceId, site.hiddenArticleIds);
+  if (!site.navCategories) return posted;
+  return site.navCategories.filter((c): c is Category => isCategory(c) && posted.includes(c));
+}
+
 /** Home, or one category's page (`category`: its stories only; an unknown category is a 404). */
 export async function siteHome(domain: string, category?: string): Promise<SiteHome> {
   const site = await findSiteByDomain(domain);
@@ -195,9 +209,15 @@ export async function siteHome(domain: string, category?: string): Promise<SiteH
     sourceCards(site.sourceId, { exclude: hidden, trending: true, category, limit: TRENDING_LIMIT }),
     sourceCards(site.sourceId, { exclude: hidden, only: site.breakingArticleIds, limit: 10 }),
     liveAds(site.id),
-    sourceCategories(site.sourceId, hidden),
+    menuCategories(site),
   ]);
-  return { site: toPublicSite(site), latest, trending, breaking, ads, categories, category: category ?? null };
+  // Home: a block per menu category (webnews.in's category sections).
+  const sections = category
+    ? []
+    : await Promise.all(
+        categories.map(async (c) => ({ category: c, stories: await sourceCards(site.sourceId, { exclude: hidden, category: c, limit: SITE_SECTION_SIZE }) })),
+      );
+  return { site: toPublicSite(site), latest, trending, breaking, ads, categories, sections, category: category ?? null };
 }
 
 export async function siteArticle(domain: string, slug: string): Promise<SiteArticle> {
@@ -209,7 +229,7 @@ export async function siteArticle(domain: string, slug: string): Promise<SiteArt
     sourceCards(site.sourceId, { exclude: [...site.hiddenArticleIds, detail.id], limit: 13 }),
     sourceCards(site.sourceId, { exclude: site.hiddenArticleIds, only: site.breakingArticleIds, limit: 10 }),
     liveAds(site.id),
-    sourceCategories(site.sourceId, site.hiddenArticleIds),
+    menuCategories(site),
   ]);
   return { site: toPublicSite(site), article: detail, more, breaking, ads, categories };
 }
@@ -253,11 +273,12 @@ export async function mySite(person: Person, previewSourceId?: string): Promise<
     }
   }
   const source = sources.find((s) => s.id === previewSourceId)?.id ?? site?.sourceId ?? person.id;
-  const [latest, trending, connection, extraDns] = await Promise.all([
+  const [latest, trending, connection, extraDns, postedCategories] = await Promise.all([
     sourceCards(source, { exclude: site?.hiddenArticleIds, limit: LATEST_LIMIT }),
     sourceCards(source, { exclude: site?.hiddenArticleIds, trending: true, limit: TRENDING_LIMIT }),
     site ? connectionOf(site) : Promise.resolve<SiteConnection>("not_connected"),
     site?.connectedAt ? vercelVerificationRecords(site.domain) : Promise.resolve([]),
+    sourceCategories(source, site?.hiddenArticleIds ?? []),
   ]);
   return {
     domain,
@@ -273,8 +294,11 @@ export async function mySite(person: Person, previewSourceId?: string): Promise<
           sourceId: site.sourceId,
           adminEmail: site.adminEmail,
           connection,
+          navCategories: site.navCategories?.filter(isCategory) ?? null,
+          language: siteLanguage(site.language),
         }
       : null,
+    postedCategories,
     sources,
     dns: domain ? [...pointingRecords(domain), ...extraDns] : [],
     preview: { latest, trending },
@@ -304,6 +328,8 @@ export async function saveMySite(person: Person, input: SetupData): Promise<void
     contactPhone: input.contactPhone ?? null,
     address: input.address ?? null,
     adminEmail: input.adminEmail,
+    navCategories: input.navCategories ?? null,
+    language: input.language,
     updatedAt: new Date(),
   };
   try {

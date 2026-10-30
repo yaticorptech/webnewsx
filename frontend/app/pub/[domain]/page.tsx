@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteChrome } from "@/components/publisher/site-chrome";
 import { SiteHomeBody } from "@/components/publisher/site-home";
+import { siteBookHref, siteCategoryHref } from "@/components/publisher/site-i18n";
+import { siteLanguageFor } from "@/components/publisher/site-language";
 import { getSiteHome } from "@/lib/server-api";
 
 type Props = { params: Promise<{ domain: string }> };
@@ -30,16 +32,21 @@ export default async function PublisherHome({ params }: Props) {
   const home = await getSiteHome(decodeURIComponent((await params).domain));
   if (!home) notFound();
   const { site } = home;
+  const lang = await siteLanguageFor(site);
   const ticker = [...home.breaking, ...home.latest.filter((c) => !home.breaking.some((b) => b.id === c.id))].slice(0, 8);
   return (
-    <SiteChrome site={site} homeHref="/" ticker={ticker} articleBase={site.articleBase} ads={home.ads} categories={home.categories}>
+    <SiteChrome site={site} homeHref="/" ticker={ticker} articleBase={site.articleBase} ads={home.ads} categories={home.categories} lang={lang}>
       <SiteHomeBody
         latest={home.latest}
         trending={home.trending}
         breaking={home.breaking}
+        sections={home.sections}
         ads={home.ads}
         city={site.city}
         href={(card) => `${site.articleBase}/${card.slug}`}
+        categoryHref={(category) => siteCategoryHref("/", category)}
+        bookHref={siteBookHref(site)}
+        lang={lang}
       />
     </SiteChrome>
   );

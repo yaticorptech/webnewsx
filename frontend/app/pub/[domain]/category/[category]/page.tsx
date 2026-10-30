@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { SiteChrome } from "@/components/publisher/site-chrome";
 import { SiteHomeBody } from "@/components/publisher/site-home";
 import { getSiteHome } from "@/lib/server-api";
+import { categoryName, siteBookHref, siteCategoryHref, tr } from "@/components/publisher/site-i18n";
+import { siteLanguageFor } from "@/components/publisher/site-language";
 import { categoryLabel } from "@/lib/shared/contracts";
 
 type Props = { params: Promise<{ domain: string; category: string }> };
@@ -28,21 +30,27 @@ export default async function PublisherCategory({ params }: Props) {
   const home = await getSiteHome(decodeURIComponent(domain), category);
   if (!home?.category) notFound();
   const { site } = home;
+  const lang = await siteLanguageFor(site);
+  const label = categoryName(home.category, lang);
   const ticker = home.breaking.length ? home.breaking : home.latest.slice(0, 8);
   return (
-    <SiteChrome site={site} homeHref="/" ticker={ticker} articleBase={site.articleBase} ads={home.ads} categories={home.categories} activeCategory={home.category}>
-      <h1 className="pub-section-head mt-8">{categoryLabel(home.category)}</h1>
+    <SiteChrome site={site} homeHref="/" ticker={ticker} articleBase={site.articleBase} ads={home.ads} categories={home.categories} activeCategory={home.category} lang={lang}>
+      <h1 className="pub-section-head mt-8">{label}</h1>
       {home.latest.length > 0 ? (
         <SiteHomeBody
           latest={home.latest}
           trending={home.trending}
           breaking={[]}
+          sections={[]}
           ads={home.ads}
           city={site.city}
           href={(card) => `${site.articleBase}/${card.slug}`}
+          categoryHref={(category) => siteCategoryHref("/", category)}
+          bookHref={siteBookHref(site)}
+          lang={lang}
         />
       ) : (
-        <p className="py-20 text-center text-gray-500">No stories in {categoryLabel(home.category)} yet.</p>
+        <p className="py-20 text-center text-gray-500">{tr(lang, "noneInSection")}</p>
       )}
     </SiteChrome>
   );

@@ -324,6 +324,24 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   "press-releases": "Press Releases",
   jobs: "Job Vacancies",
 };
+/** Kannada names (webnews.in's own, its prisma/seed.ts; owner 2026-10-30) — publisher sites' Kannada menu. */
+export const CATEGORY_LABELS_KN: Record<Category, string> = {
+  national: "ರಾಷ್ಟ್ರೀಯ",
+  world: "ವಿಶ್ವ",
+  sports: "ಕ್ರೀಡೆ",
+  entertainment: "ಮನರಂಜನೆ",
+  technology: "ತಂತ್ರಜ್ಞಾನ",
+  karnataka: "ಕರ್ನಾಟಕ",
+  astrology: "ಜ್ಯೋತಿಷ್ಯ",
+  business: "ವ್ಯಾಪಾರ ಮತ್ತು ಆರ್ಥಿಕತೆ",
+  crime: "ಅಪರಾಧ ಮತ್ತು ಕಾನೂನು",
+  education: "ಶಿಕ್ಷಣ",
+  cinema: "ಸಿನಿಮಾ",
+  others: "ಇತರೆ",
+  politics: "ರಾಜಕೀಯ ಮತ್ತು ಆಡಳಿತ",
+  "press-releases": "ಪತ್ರಿಕಾ ಪ್ರಕಟಣೆಗಳು",
+  jobs: "ಉದ್ಯೋಗಾವಕಾಶಗಳು",
+};
 /** Stories published before categories existed were filed here (migration 0008). */
 export const DEFAULT_CATEGORY: Category = "others";
 /** The one category whose stories also carry a district. */
@@ -3665,17 +3683,39 @@ export type PublicSite = {
   address: string | null;
   /** Where its stories open: `<WebNEWS>/pub/<domain>/article/<slug>`. */
   articleBase: string;
+  /** The owner's default interface language (the visitor's toggle overrides it). */
+  language: SiteLanguage;
 };
 
 /** `GET /api/sites/d/:domain` — the home page: the site, its stories (newest first), trending, breaking and live ads. */
+/**
+ * A publisher site's interface language (owner 2026-10-30): menus, labels and dates switch between English and
+ * Kannada; stories always stay in the language they were written in. The owner picks the default (English).
+ */
+export const SITE_LANGUAGES = ["en", "kn"] as const;
+export type SiteLanguage = (typeof SITE_LANGUAGES)[number];
+export const DEFAULT_SITE_LANGUAGE: SiteLanguage = "en";
+/** The visitor's choice (the site's toggle), read by the site's pages. */
+export const SITE_LANGUAGE_COOKIE = "wn_site_lang";
+/** Home's per-category blocks (webnews.in's category sections): stories in each. */
+export const SITE_SECTION_SIZE = 4;
+
+/** One category block on a publisher's home. */
+export type SiteSection = { category: Category; stories: ArticleCard[] };
+
 export type SiteHome = {
   site: PublicSite;
   latest: ArticleCard[];
   trending: ArticleCard[];
   breaking: ArticleCard[];
   ads: SiteAdsByPosition;
-  /** The site's menu (owner 2026-10-30): the categories it has stories in, most stories first. */
+  /**
+   * The site's menu (owner 2026-10-30): the owner's picks in their order (site setup), or every category the site has
+   * stories in, most stories first; categories with no stories are left out either way.
+   */
   categories: Category[];
+  /** Home only: a block of the latest stories per menu category (empty on a category page). */
+  sections: SiteSection[];
   /** `GET …/category/:category`: the section shown (latest + trending in it only); null on Home. */
   category: Category | null;
 };
@@ -3708,7 +3748,12 @@ export type MySiteResponse = {
     sourceId: string;
     adminEmail: string;
     connection: SiteConnection;
+    /** The menu's categories in order; null = every category with stories (the default). */
+    navCategories: Category[] | null;
+    language: SiteLanguage;
   } | null;
+  /** The categories the chosen source has stories in, most first (the setup's menu picker marks them). */
+  postedCategories: Category[];
   sources: SiteSource[];
   /** Records to add at their DNS provider so the domain opens the site. */
   dns: SiteDnsRecord[];
@@ -3773,6 +3818,10 @@ export const siteSetupSchema = z.object({
   sourceId: z.string().trim().min(1),
   adminEmail: z.email("Enter the admin email").transform((v) => v.toLowerCase()),
   adminPassword: sitePassword.optional(),
+  // The menu (owner 2026-10-30): the categories to show, in order; null / omitted = every category with stories.
+  navCategories: z.array(z.enum(CATEGORY_VALUES)).max(CATEGORY_VALUES.length).nullable().optional()
+    .transform((v) => (v ? [...new Set(v)] : null)),
+  language: z.enum(SITE_LANGUAGES).default(DEFAULT_SITE_LANGUAGE),
 });
 export type SiteSetupInput = z.input<typeof siteSetupSchema>;
 
