@@ -75,6 +75,12 @@ export function siteRoutes({ limiter }: RouteDeps) {
     return c.json(await siteHome(c.req.param("domain")));
   });
 
+  // GET /api/sites/d/:domain/category/:category — one menu section: the site's stories in that category.
+  app.get("/d/:domain/category/:category", async (c) => {
+    c.header("Cache-Control", "public, max-age=30");
+    return c.json(await siteHome(c.req.param("domain"), c.req.param("category")));
+  });
+
   // GET /api/sites/d/:domain/articles/:slug — a story in the site's layout (premium stories open in full).
   app.get("/d/:domain/articles/:slug", async (c) => c.json(await siteArticle(c.req.param("domain"), c.req.param("slug"))));
 

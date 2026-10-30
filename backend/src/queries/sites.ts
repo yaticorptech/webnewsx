@@ -6,7 +6,9 @@ import { article, pressPass, publisherSite, siteAd, user, type PublisherSiteReco
 import { env } from "../env.js";
 import { ApiError, isUniqueViolation, notFound, validationError } from "../lib/errors.js";
 import {
+  CATEGORY_VALUES,
   SITE_AD_POSITION_KEYS,
+  type Category,
   SITE_LIMITS,
   type ArticleCard,
   type MySiteResponse,
@@ -132,8 +134,12 @@ function toPublicSite(site: PublisherSiteRecord): PublicSite {
 /* ─────────────── Stories ─────────────── */
 
 /** The source's visible stories (read as the source itself, so premium stories keep their text — owner: all open). */
-async function sourceCards(sourceId: string, opts: { exclude?: string[]; only?: string[]; trending?: boolean; limit: number }): Promise<ArticleCard[]> {
+async function sourceCards(
+  sourceId: string,
+  opts: { exclude?: string[]; only?: string[]; trending?: boolean; category?: Category; limit: number },
+): Promise<ArticleCard[]> {
   const conditions: SQL[] = [visibleWhere(), eq(article.authorId, sourceId)];
+  if (opts.category) conditions.push(eq(article.category, opts.category));
   if (opts.exclude?.length) conditions.push(notInArray(article.id, opts.exclude));
   if (opts.only) {
     if (opts.only.length === 0) return [];
@@ -161,17 +167,35 @@ async function liveAds(siteId: string): Promise<SiteAdsByPosition> {
   return ads;
 }
 
-export async function siteHome(domain: string): Promise<SiteHome> {
+/** The categories the source has posted in (owner 2026-10-30: the site's menu), most stories first. */
+async function sourceCategories(sourceId: string, exclude: string[]): Promise<Category[]> {
+  const conditions: SQL[] = [visibleWhere(), eq(article.authorId, sourceId), isNotNull(article.category)];
+  if (exclude.length) conditions.push(notInArray(article.id, exclude));
+  const rows = await db
+    .select({ category: article.category, stories: count() })
+    .from(article)
+    .where(and(...conditions))
+    .groupBy(article.category)
+    .orderBy(desc(count()));
+  return rows.map((r) => r.category).filter((c): c is Category => isCategory(c));
+}
+
+const isCategory = (value: unknown): value is Category => (CATEGORY_VALUES as readonly unknown[]).includes(value);
+
+/** Home, or one category's page (`category`: its stories only; an unknown category is a 404). */
+export async function siteHome(domain: string, category?: string): Promise<SiteHome> {
   const site = await findSiteByDomain(domain);
   if (!site) throw notFound("No site on this domain");
+  if (category !== undefined && !isCategory(category)) throw notFound("No such section");
   const hidden = site.hiddenArticleIds;
-  const [latest, trending, breaking, ads] = await Promise.all([
-    sourceCards(site.sourceId, { exclude: hidden, limit: LATEST_LIMIT }),
-    sourceCards(site.sourceId, { exclude: hidden, trending: true, limit: TRENDING_LIMIT }),
+  const [latest, trending, breaking, ads, categories] = await Promise.all([
+    sourceCards(site.sourceId, { exclude: hidden, category, limit: LATEST_LIMIT }),
+    sourceCards(site.sourceId, { exclude: hidden, trending: true, category, limit: TRENDING_LIMIT }),
     sourceCards(site.sourceId, { exclude: hidden, only: site.breakingArticleIds, limit: 10 }),
     liveAds(site.id),
+    sourceCategories(site.sourceId, hidden),
   ]);
-  return { site: toPublicSite(site), latest, trending, breaking, ads };
+  return { site: toPublicSite(site), latest, trending, breaking, ads, categories, category: category ?? null };
 }
 
 export async function siteArticle(domain: string, slug: string): Promise<SiteArticle> {
@@ -179,12 +203,13 @@ export async function siteArticle(domain: string, slug: string): Promise<SiteArt
   if (!site) throw notFound("No site on this domain");
   const detail = await getSiteStoryDetail(slug.toLowerCase(), site.sourceId);
   if (!detail || site.hiddenArticleIds.includes(detail.id)) throw notFound("Story not found");
-  const [more, breaking, ads] = await Promise.all([
+  const [more, breaking, ads, categories] = await Promise.all([
     sourceCards(site.sourceId, { exclude: [...site.hiddenArticleIds, detail.id], limit: 13 }),
     sourceCards(site.sourceId, { exclude: site.hiddenArticleIds, only: site.breakingArticleIds, limit: 10 }),
     liveAds(site.id),
+    sourceCategories(site.sourceId, site.hiddenArticleIds),
   ]);
-  return { site: toPublicSite(site), article: detail, more, breaking, ads };
+  return { site: toPublicSite(site), article: detail, more, breaking, ads, categories };
 }
 
 /* ─────────────── The owner's setup (WebNEWS, /site-setup) ─────────────── */

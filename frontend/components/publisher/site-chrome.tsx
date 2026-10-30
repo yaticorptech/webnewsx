@@ -2,8 +2,8 @@
 
 import { ArrowUp, ImagePlus, Mail, Phone } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import type { ArticleCard, PublicSite, SiteAdsByPosition } from "@/lib/shared/contracts";
-import { AdSlot } from "./ad-slot";
+import { categoryLabel, type ArticleCard, type Category, type PublicSite, type SiteAdsByPosition } from "@/lib/shared/contracts";
+import { AdBooking, AdSlot } from "./ad-slot";
 import { PUB_FONTS } from "./fonts";
 import { COMPANY } from "@/lib/company";
 import { SITE_NAME, TAGLINE, siteUrl } from "@/lib/config";
@@ -30,25 +30,40 @@ type SiteChromeProps = {
   /** Stories open at `<articleBase>/<slug>` (WebNEWS); null in the setup preview (links go nowhere). */
   articleBase: string | null;
   ads: SiteAdsByPosition;
+  /** The menu after Home (owner 2026-10-30): the categories the site has stories in. */
+  categories?: Category[];
+  /** The section being read (its menu item is underlined); null on Home. */
+  activeCategory?: Category | null;
   preview?: boolean;
   editor?: ChromeEditor;
   children: ReactNode;
 };
 
+/** A menu section's page: `<domain>/category/<category>` (no link anywhere in the setup preview). */
+const categoryHref = (homeHref: string, category: Category) => (homeHref === "#" ? "#" : `${homeHref.replace(/\/+$/, "")}/category/${category}`);
+const navItem = (active: boolean) =>
+  `inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
+    active ? "border-pub text-pub" : "border-transparent text-gray-700 hover:text-pub"
+  }`;
+
 /**
  * A publisher site's frame in the webnews.in layout (its components/layout/Header.tsx + BreakingTicker + Footer): the
  * date bar, the masthead (logo-left ad · logo, title, tagline · logo-right ad), the breaking ticker, the sticky menu
- * with Home only (owner 2026-10-29: no categories), the page, and the footer.
+ * (Home + the site's categories, owner 2026-10-30), the page, and the footer. Full width like webnews.in's container-wn.
+ * An empty ad position shows webnews.in's "Advertise here" card, booked by mail to the site (AdBooking).
  */
-export function SiteChrome({ site, homeHref, ticker, articleBase, ads, preview = false, editor, children }: SiteChromeProps) {
+export function SiteChrome({ site, homeHref, ticker, articleBase, ads, categories = [], activeCategory = null, preview = false, editor, children }: SiteChromeProps) {
   // The visitor's own date, after hydration (the server's clock and zone may differ).
   const today = useSyncExternalStore(noopSubscribe, todayLabel, () => "");
 
+  const bookHref = `mailto:${site.contactEmail || COMPANY.email}?subject=${encodeURIComponent(`Advertise on ${site.title || site.domain}`)}`;
+
   return (
+    <AdBooking value={preview ? null : bookHref}>
     <div className={`${PUB_FONTS} min-h-dvh bg-white font-pub-sans text-pub-ink`}>
       <header className="border-b border-gray-200 bg-white">
         <div className="border-b border-gray-100">
-          <div className="mx-auto flex h-9 max-w-7xl items-center justify-between gap-2 whitespace-nowrap px-4 text-[11px] text-gray-500">
+          <div className="pub-container flex h-9 items-center justify-between gap-2 whitespace-nowrap text-[11px] text-gray-500">
             <span className="truncate">
               {today}
               {site.city && <span className="hidden sm:inline"> · {site.city}</span>}
@@ -57,7 +72,7 @@ export function SiteChrome({ site, homeHref, ticker, articleBase, ads, preview =
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 px-4 py-5">
+        <div className="pub-container flex items-center justify-center gap-6 py-5">
           <div className="hidden flex-1 justify-end lg:flex">
             <AdSlot position="logo-left" ads={ads} preview={preview} className="w-full max-w-[320px]" />
           </div>
@@ -140,7 +155,7 @@ export function SiteChrome({ site, homeHref, ticker, articleBase, ads, preview =
 
         {/* Phones: the two header ads under the masthead. */}
         {(preview || ads["logo-left"]?.length || ads["logo-right"]?.length) && (
-          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-4 pb-4 lg:hidden">
+          <div className="pub-container grid grid-cols-2 gap-3 pb-4 lg:hidden">
             <AdSlot position="logo-left" ads={ads} preview={preview} />
             <AdSlot position="logo-right" ads={ads} preview={preview} />
           </div>
@@ -149,7 +164,7 @@ export function SiteChrome({ site, homeHref, ticker, articleBase, ads, preview =
 
       {ticker.length > 0 && (
         <div className="border-b border-gray-200 bg-red-50">
-          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
+          <div className="pub-container flex items-center gap-3 py-2">
             <span className="z-10 shrink-0 rounded bg-pub px-2 py-0.5 text-xs font-bold text-white">Breaking</span>
             <div className="relative flex-1 overflow-hidden text-sm">
               <div className="pub-marquee">
@@ -168,24 +183,37 @@ export function SiteChrome({ site, homeHref, ticker, articleBase, ads, preview =
         </div>
       )}
 
-      <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-7xl justify-center px-4">
-          <a href={homeHref} className="inline-flex items-center gap-1.5 border-b-2 border-pub px-3 py-3 text-sm font-semibold text-pub">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M3 10.5 12 3l9 7.5" />
-              <path d="M5 9.5V21h14V9.5" />
-              <path d="M9.5 21v-6h5v6" />
-            </svg>
-            Home
-          </a>
+      <nav aria-label="Sections" className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur">
+        <div className="pub-container">
+          <div className="no-scrollbar -mx-1 flex items-center justify-start overflow-x-auto px-1 md:justify-center">
+            <a href={homeHref} aria-current={activeCategory ? undefined : "page"} className={navItem(!activeCategory)}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5 9.5V21h14V9.5" />
+                <path d="M9.5 21v-6h5v6" />
+              </svg>
+              Home
+            </a>
+            {categories.map((category) => (
+              <a
+                key={category}
+                href={categoryHref(homeHref, category)}
+                aria-current={activeCategory === category ? "page" : undefined}
+                className={navItem(activeCategory === category)}
+              >
+                {categoryLabel(category)}
+              </a>
+            ))}
+          </div>
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl px-4 pb-16">{children}</main>
+      <main className="pub-container pb-16">{children}</main>
 
       <SiteFooter site={site} homeHref={homeHref} />
       <BackToTop />
     </div>
+    </AdBooking>
   );
 }
 
@@ -203,7 +231,7 @@ function SiteFooter({ site, homeHref }: { site: SiteChromeProps["site"]; homeHre
     <footer className="mt-16 bg-gray-50">
       <span aria-hidden className="block h-0.5 w-full bg-linear-to-r from-pub via-pub-dark to-pub" />
 
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+      <div className="pub-container grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
         <div className="lg:col-span-4">
           <a href={homeHref} className="inline-block">
             {site.logoUrl ? (
@@ -296,7 +324,7 @@ function SiteFooter({ site, homeHref }: { site: SiteChromeProps["site"]; homeHre
       </div>
 
       <div className="border-t border-gray-200">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-2 px-4 py-4 text-center text-xs text-gray-500">
+        <div className="pub-container flex flex-col items-center justify-center gap-2 py-4 text-center text-xs text-gray-500">
           <a href={siteUrl} className="group inline-flex items-center gap-2" aria-label={`Powered by ${SITE_NAME} — ${TAGLINE}`}>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Powered by</span>
             {/* Same deployment on every domain: a relative path works on the publisher's own domain too. */}

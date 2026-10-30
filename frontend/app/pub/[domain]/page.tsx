@@ -32,7 +32,7 @@ export default async function PublisherHome({ params }: Props) {
   const { site } = home;
   const ticker = [...home.breaking, ...home.latest.filter((c) => !home.breaking.some((b) => b.id === c.id))].slice(0, 8);
   return (
-    <SiteChrome site={site} homeHref="/" ticker={ticker} articleBase={site.articleBase} ads={home.ads}>
+    <SiteChrome site={site} homeHref="/" ticker={ticker} articleBase={site.articleBase} ads={home.ads} categories={home.categories}>
       <SiteHomeBody
         latest={home.latest}
         trending={home.trending}

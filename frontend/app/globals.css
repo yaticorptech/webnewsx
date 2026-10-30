@@ -1461,6 +1461,21 @@ html:has([data-pending-page]) {
 }
 
 /* ─── Publisher websites (webnews.in layout) ─── */
+/* webnews.in's container-wn: full width, its side padding. */
+.pub-container {
+  margin-inline: auto;
+  width: 100%;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .pub-container { padding-inline: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .pub-container { padding-inline: 2rem; }
+}
+@media (min-width: 1536px) {
+  .pub-container { padding-inline: 3rem; }
+}
 .pub-kicker {
   font-size: 0.6875rem;
   font-weight: 700;

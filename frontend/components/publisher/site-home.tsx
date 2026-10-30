@@ -88,7 +88,7 @@ export function SiteHomeBody({ latest, trending, breaking, ads, city, href, prev
 
       <SpotlightRow title="Latest Stories" cards={spotlight} href={href} />
 
-      <AdSlot position="mid-page" ads={ads} preview={preview} className="mx-auto mt-10 max-w-5xl" />
+      <AdSlot position="mid-page" ads={ads} preview={preview} className="mx-auto mt-10 w-full max-w-[720px]" />
 
       {feature && <FeatureList feature={feature} list={mostRead} href={href} />}
 

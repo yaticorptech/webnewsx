@@ -3674,6 +3674,10 @@ export type SiteHome = {
   trending: ArticleCard[];
   breaking: ArticleCard[];
   ads: SiteAdsByPosition;
+  /** The site's menu (owner 2026-10-30): the categories it has stories in, most stories first. */
+  categories: Category[];
+  /** `GET …/category/:category`: the section shown (latest + trending in it only); null on Home. */
+  category: Category | null;
 };
 
 /** `GET /api/sites/d/:domain/articles/:slug` — a story on the site's layout (premium stories open in full). */
@@ -3683,6 +3687,7 @@ export type SiteArticle = {
   more: ArticleCard[];
   breaking: ArticleCard[];
   ads: SiteAdsByPosition;
+  categories: Category[];
 };
 
 /** A story source the owner may pick: their own account or a group they own. */

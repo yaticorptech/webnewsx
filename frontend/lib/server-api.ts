@@ -492,9 +492,11 @@ export function getAdminAudit(params: AdminAuditQuery = {}): Promise<Page<AuditE
 }
 
 /** A publisher site's home page (owner 2026-10-29); null when no site is on that domain. */
-export async function getSiteHome(domain: string): Promise<SiteHome | null> {
+/** A publisher site's home — or one menu section's page with `category`; null when there's no such site / section. */
+export async function getSiteHome(domain: string, category?: string): Promise<SiteHome | null> {
+  const section = category ? `/category/${encodeURIComponent(category)}` : "";
   try {
-    return await serverFetch<SiteHome>(`/api/sites/d/${encodeURIComponent(domain)}`, { forwardRequestHeaders: false });
+    return await serverFetch<SiteHome>(`/api/sites/d/${encodeURIComponent(domain)}${section}`, { forwardRequestHeaders: false });
   } catch (error) {
     if (error instanceof ServerApiError && error.status === 404) return null;
     throw error;

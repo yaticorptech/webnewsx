@@ -47,7 +47,7 @@ export default async function PublisherArticle({ params }: Props) {
   const { domain, slug } = await params;
   const data = await getSiteArticle(decodeURIComponent(domain), slug);
   if (!data) notFound();
-  const { site, article, more, breaking, ads } = data;
+  const { site, article, more, breaking, ads, categories } = data;
   const href = (card: { slug: string }) => `${site.articleBase}/${card.slug}`;
   const kicker = storyKicker(article);
   const media = article.articleMedia;
@@ -56,7 +56,7 @@ export default async function PublisherArticle({ params }: Props) {
   const [before, after] = splitBody(article.bodyHtml);
 
   return (
-    <SiteChrome site={site} homeHref={homeOf(site.domain)} ticker={breaking.length ? breaking : more.slice(0, 6)} articleBase={site.articleBase} ads={ads}>
+    <SiteChrome site={site} homeHref={homeOf(site.domain)} ticker={breaking.length ? breaking : more.slice(0, 6)} articleBase={site.articleBase} ads={ads} categories={categories} activeCategory={article.category ?? null}>
       <SiteArticleViews id={article.id} />
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-12">
         <article className="min-w-0 lg:col-span-8">
@@ -115,7 +115,7 @@ export default async function PublisherArticle({ params }: Props) {
         </aside>
       </div>
 
-      <AdSlot position="mid-page" ads={ads} className="mx-auto mt-12 max-w-5xl" />
+      <AdSlot position="mid-page" ads={ads} className="mx-auto mt-12 w-full max-w-[640px]" />
 
       {more.length > 5 && (
         <section className="mt-12 border-t border-gray-200 pt-6">

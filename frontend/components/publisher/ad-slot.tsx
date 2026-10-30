@@ -1,15 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { SITE_AD_POSITIONS, SITE_AD_ROTATE_MS, type SiteAdPosition, type SiteAdsByPosition } from "@/lib/shared/contracts";
 
+/** Where an empty position's "Advertise here" card leads (the site's contact, from SiteChrome); null: not a link. */
+const AdBookingContext = createContext<string | null>(null);
+export const AdBooking = AdBookingContext.Provider;
+
+/** webnews.in's "Advertise here" cards (its public/ad-*.svg, owner 2026-10-30: "same like that"), one per shape. */
+const BANNERS: Partial<Record<SiteAdPosition, string>> = {
+  "logo-left": "/pub-ads/ad-logo.svg",
+  "logo-right": "/pub-ads/ad-logo.svg",
+  "article-strip": "/pub-ads/ad-logo.svg",
+  "hero-left": "/pub-ads/ad-hero.svg",
+  "hero-right": "/pub-ads/ad-hero.svg",
+  "mid-page": "/pub-ads/ad-newsletter.svg",
+  "newsletter-left": "/pub-ads/ad-newsletter.svg",
+  "trending-sidebar": "/pub-ads/ad-trending.svg",
+  "in-article": "/pub-ads/ad-article.svg",
+};
+
 /**
- * One webnews.in ad position (its AdSlotView): the live ads there rotate every few seconds. Empty: nothing on the live
- * site; a dashed "Ad space" box in the setup preview so the owner sees where ads go.
+ * One webnews.in ad position (its AdSlotView): the live ads there rotate every few seconds. Empty: webnews.in's
+ * "Advertise here" card at the position's own shape — on the live site it books the spot (mail to the site), in the
+ * setup preview it only shows where ads go.
  */
 export function AdSlot({ position, ads, preview = false, className }: { position: SiteAdPosition; ads: SiteAdsByPosition; preview?: boolean; className?: string }) {
   const list = ads[position] ?? [];
   const spec = SITE_AD_POSITIONS.find((p) => p.key === position)!;
+  const bookHref = useContext(AdBookingContext);
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -19,16 +38,22 @@ export function AdSlot({ position, ads, preview = false, className }: { position
   }, [list.length]);
 
   if (list.length === 0) {
-    if (!preview) return null;
+    const banner = (
+      <img
+        src={BANNERS[position] ?? "/pub-ads/ad-hero.svg"}
+        alt={preview ? `Ad space · ${spec.recW}×${spec.recH}` : "Advertise here — click to book this spot"}
+        className="size-full object-cover"
+      />
+    );
     return (
-      <div
-        className={`flex flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 bg-gray-50 p-2 text-center text-[11px] font-semibold uppercase tracking-wider text-gray-400 ${className ?? ""}`}
-        style={{ aspectRatio: spec.ratio }}
-      >
-        Ad space
-        <span className="mt-0.5 font-normal normal-case tracking-normal">
-          {spec.label.split(" — ")[0]} · {spec.recW}×{spec.recH}
-        </span>
+      <div className={`overflow-hidden rounded-lg ${className ?? ""}`} style={{ aspectRatio: spec.ratio }}>
+        {bookHref && !preview ? (
+          <a href={bookHref} className="block size-full transition hover:opacity-90">
+            {banner}
+          </a>
+        ) : (
+          banner
+        )}
       </div>
     );
   }
