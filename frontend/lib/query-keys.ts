@@ -146,5 +146,6 @@ export const qk = {
   adminSpotlightPackages: ["admin", "spotlight-packages"] as const,
   adminPlatformFee: ["admin", "press-meet-platform-fee"] as const,
   adminPressMeets: ["admin", "press-meets"] as const,
+  adminActivity: (q = "") => ["admin", "activity", q] as const,
   adminAudit: (filters: Omit<AdminAuditQuery, "cursor"> = {}) => ["admin", "audit", filters] as const,
 } as const;

@@ -28,6 +28,7 @@ import {
   type PressLanguage,
   type PressPassSummary,
   type ProfilePress,
+  type PublicPressPass,
   type ReporterLevel,
   type pressPassApplySchema,
   type pressPassUpdateSchema,
@@ -109,6 +110,28 @@ export function toProfilePress(pass: PressPassRecord): ProfilePress {
     district: pass.district,
     city: pass.city,
     languages: pass.languages,
+  };
+}
+
+/** A pass by its number, as the QR code's verify page shows it (null = no such pass). */
+export async function publicPressPass(passNumber: string): Promise<PublicPressPass | null> {
+  const number = passNumber.trim().toUpperCase();
+  if (!/^WN-[A-Z]{2}-[0-9]{6}$/.test(number)) return null;
+  const [row] = await db
+    .select({ pass: pressPass, name: user.name, username: user.username, image: user.image, role: user.role, suspendedAt: user.suspendedAt })
+    .from(pressPass)
+    .innerJoin(user, eq(user.id, pressPass.userId))
+    .where(eq(pressPass.passNumber, number))
+    .limit(1);
+  if (!row) return null;
+  return {
+    ...toProfilePress(row.pass),
+    passNumber: row.pass.passNumber,
+    status: row.pass.revokedAt || row.suspendedAt ? "revoked" : "active",
+    issuedAt: row.pass.issuedAt.toISOString(),
+    pledgeSigned: Boolean(row.pass.pledgeSignedAt),
+    editorDesk: row.role === "admin",
+    holder: { name: row.name, username: row.username ?? "", image: row.image },
   };
 }
 
@@ -227,6 +250,8 @@ export async function applyForPressPass(holder: HolderFields & { role: string },
 export async function updatePressPass(holder: HolderFields, input: PressPassUpdateData): Promise<PressPassRecord> {
   const existing = await findActivePass(holder.id);
   if (!existing) throw new ApiError(404, "not_found", "You don't have an active Press Pass");
+  // Once the pass is complete its details are fixed (owner 2026-10-31: "after the press card is created, no edits").
+  if (isPassComplete(existing)) throw new ApiError(409, "press_pass_locked", "Your Press Pass details can't be changed once it's issued");
   const changes: Partial<typeof pressPass.$inferInsert> = { ...passDetails(input), updatedAt: new Date() };
   if (!existing.pledgeSignedAt) {
     if (!input.acceptPledge || !input.pledgeSignature) {

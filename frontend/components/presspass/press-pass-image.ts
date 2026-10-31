@@ -1,7 +1,9 @@
 import { initialsOf } from "@/lib/utils";
+import QRCode from "qrcode";
+import { isNativeApp, nativeSharePlugin, shareFileUri } from "@/lib/native-app";
 import { barcodeBars, languageLabels, passDate } from "./press-format";
 import type { PressPassCardData } from "./press-pass-card";
-import { CARD_ART, CARD_H, CARD_RADIUS, CARD_W, LAYOUT } from "./press-pass-layout";
+import { CARD_ART, CARD_H, CARD_RADIUS, CARD_W, LAYOUT, passVerifyUrl } from "./press-pass-layout";
 
 /*
  * Renders the Press Pass as a PNG with the Canvas 2D API (no dependencies), the same card as on screen
@@ -220,6 +222,15 @@ export async function renderPressPassPng(data: PressPassCardData): Promise<Blob>
   ctx.fillStyle = C.ink;
   ctx.fillText(preview ? "ON SIGNING" : passDate(data.issuedAt), LAYOUT.issued.x, LAYOUT.passNo.valueBaseline);
 
+  // The pass's own QR → its verify page (not on the preview, which has no number yet).
+  if (!preview) {
+    patch(ctx, LAYOUT.qrPatch);
+    const q = LAYOUT.qr;
+    const size = Math.min(q.w, q.h);
+    const qr = await loadImage(await QRCode.toDataURL(passVerifyUrl(data.passNumber), { margin: 0, width: size * SCALE, errorCorrectionLevel: "M", color: { dark: "#111111", light: "#ffffff" } }), false);
+    if (qr) ctx.drawImage(qr, q.x + (q.w - size) / 2, q.y + (q.h - size) / 2, size, size);
+  }
+
   // Barcode
   const bc = LAYOUT.barcode;
   ctx.fillStyle = C.ink;
@@ -246,6 +257,20 @@ export async function renderPressPassPng(data: PressPassCardData): Promise<Blob>
 /** Renders the pass and saves it as `webnews-press-pass-<number>.png`. */
 export async function downloadPressPass(data: PressPassCardData): Promise<void> {
   const blob = await renderPressPassPng(data);
+  // The phone app's web view ignores download links (owner 2026-10-31: "download not working in the app"): hand the
+  // image to the phone's share sheet, where it can be saved to Photos / Files or sent on.
+  const plugin = nativeSharePlugin();
+  if (isNativeApp() && plugin) {
+    const uri = await shareFileUri(blob, `webnews-press-pass-${data.passNumber.toLowerCase()}.png`);
+    if (uri) {
+      try {
+        await plugin.share({ title: "Save Press Pass", files: [uri], dialogTitle: "Save Press Pass" });
+      } catch (error) {
+        if (!/cancel/i.test(error instanceof Error ? error.message : String(error))) throw error;
+      }
+      return;
+    }
+  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

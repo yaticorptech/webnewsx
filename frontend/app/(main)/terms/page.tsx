@@ -65,7 +65,7 @@ const SECTIONS: LegalSection[] = [
             suggest an affiliation that does not exist.
           </li>
           <li>
-            Usernames use lowercase letters and dots only. Some names are reserved, and we may reclaim or change a username that
+            Usernames use lowercase letters, dots and underscores only. Some names are reserved, and we may reclaim or change a username that
             impersonates others, infringes a trademark, or is misleading or offensive.
           </li>
           <li>

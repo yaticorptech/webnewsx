@@ -2,6 +2,7 @@ import {
   Activity,
   Building2,
   Crown,
+  FileClock,
   Flag,
   IdCard,
   Inbox,
@@ -54,6 +55,8 @@ export const DESK_SECTIONS: readonly DeskSection[] = [
   { key: "memberships", href: "/admin/memberships", label: "Memberships", short: "Members", icon: Crown, group: "Revenue" },
   // Every tap on the site with who made it (owner 2026-10-16).
   { key: "behaviour", href: "/admin/behaviour", label: "Analytics", short: "Analytics", icon: Activity, group: "Overview" },
+  // Every story reporters publish / edit / delete, with IP and device (owner 2026-10-31: kept for legal requests).
+  { key: "activity", href: "/admin/activity", label: "Reporter activity", short: "Activity", icon: FileClock, group: "System" },
   { key: "audit", href: "/admin/audit", label: "Audit log", short: "Audit", icon: ScrollText, group: "System" },
 ];
 

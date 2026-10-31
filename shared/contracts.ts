@@ -14,8 +14,11 @@ import { z } from "zod";
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 30;
 
-/** Lowercase letters and dots only; 3–30 chars; no leading/trailing dot; no "..". */
-export const USERNAME_REGEX = /^(?=.{3,30}$)(?!\.)(?!.*\.\.)(?!.*\.$)[a-z.]+$/;
+/**
+ * Lowercase letters, dots and underscores (underscores since 2026-10-31); 3–30 chars; no dot / underscore first or last,
+ * never two in a row.
+ */
+export const USERNAME_REGEX = /^(?=.{3,30}$)(?![._])(?!.*[._]{2})(?!.*[._]$)[a-z._]+$/;
 
 export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "a", "about", "admin", "api", "auth", "brand", "dev", "drafts", "edit", "explore", "favicon",
@@ -50,11 +53,11 @@ export type UsernameIssue =
 export const USERNAME_MESSAGES: Record<UsernameIssue, string> = {
   too_short: `Username must be at least ${USERNAME_MIN} characters`,
   too_long: `Username can be at most ${USERNAME_MAX} characters`,
-  invalid_chars: "Only letters and dots allowed",
-  leading_dot: "Can't start with a dot",
-  trailing_dot: "Can't end with a dot",
-  double_dot: "No consecutive dots",
-  pattern: "Use at least 4 letters, a dot, then at least 2 letters — like hari.ap",
+  invalid_chars: "Only letters, dots and underscores allowed",
+  leading_dot: "Can't start with a dot or underscore",
+  trailing_dot: "Can't end with a dot or underscore",
+  double_dot: "No two dots or underscores in a row",
+  pattern: "Start with at least 4 letters — like harikiran, hari.ap or hari_ap",
   reserved: "Username is not available",
   taken: "Username is not available",
 };
@@ -66,7 +69,7 @@ export function normalizeUsername(input: string): string {
 
 /** For live typing: lowercase and drop every character that can never be valid. */
 export function sanitizeUsernameInput(input: string): string {
-  return input.toLowerCase().replace(/[^a-z.]/g, "").slice(0, USERNAME_MAX);
+  return input.toLowerCase().replace(/[^a-z._]/g, "").slice(0, USERNAME_MAX);
 }
 
 export type UsernameFormatResult = { ok: true } | { ok: false; code: UsernameIssue; message: string };
@@ -74,22 +77,23 @@ export type UsernameFormatResult = { ok: true } | { ok: false; code: UsernameIss
 /** Format + reserved-word check (no database lookup). Expects a normalized username. */
 export function validateUsernameFormat(username: string): UsernameFormatResult {
   const fail = (code: UsernameIssue): UsernameFormatResult => ({ ok: false, code, message: USERNAME_MESSAGES[code] });
-  if (/[^a-z.]/.test(username)) return fail("invalid_chars");
+  if (/[^a-z._]/.test(username)) return fail("invalid_chars");
   if (username.length < USERNAME_MIN) return fail("too_short");
   if (username.length > USERNAME_MAX) return fail("too_long");
-  if (username.startsWith(".")) return fail("leading_dot");
-  if (username.endsWith(".")) return fail("trailing_dot");
-  if (username.includes("..")) return fail("double_dot");
+  if (/^[._]/.test(username)) return fail("leading_dot");
+  if (/[._]$/.test(username)) return fail("trailing_dot");
+  if (/[._]{2}/.test(username)) return fail("double_dot");
   if (RESERVED_USERNAMES.has(username)) return fail("reserved");
   return { ok: true };
 }
 
 /**
- * New usernames (owner 2026-10-15; 4 letters since 2026-10-23): at least 4 letters, a dot, then at least 2 letters — "hari.ap", "ravi.kumar".
+ * New usernames: at least 4 letters first; then, optionally, parts of 2+ letters after a dot or underscore — "harikiran",
+ * "hari.ap", "ravi_kumar" (owner 2026-10-31: the full name alone is fine when it's free; a dot was required before).
  * Checked when an account picks or changes its username; accounts that already have an older, shorter one keep it
  * (USERNAME_REGEX, the database rule and profile links stay as they were).
  */
-export const NEW_USERNAME_REGEX = /^[a-z]{4,}(\.[a-z]+)*\.[a-z]{2,}$/;
+export const NEW_USERNAME_REGEX = /^[a-z]{4,}(?:[._][a-z]{2,})*$/;
 
 /** validateUsernameFormat + the new-username pattern. */
 export function validateNewUsername(username: string): UsernameFormatResult {
@@ -750,6 +754,36 @@ export type ProfilePress = {
   languages: PressLanguage[];
 };
 
+/**
+ * `GET /api/press-pass/verify/:passNumber` (owner 2026-10-31): what the card's QR code shows anyone who scans it — the
+ * card's own details and whether the pass is live. Never the holder's private application data.
+ */
+export type PublicPressPass = ProfilePress & {
+  passNumber: string;
+  status: "active" | "revoked";
+  issuedAt: string;
+  pledgeSigned: boolean;
+  editorDesk: boolean;
+  holder: { name: string; username: string; image: string | null };
+};
+
+/**
+ * Reporter activity (owner 2026-10-31: kept for legal requests): one story action by an account, with where it came from.
+ * `GET /api/admin/activity?cursor=&q=` (newest first; `q` = a username or story title).
+ */
+export const CONTENT_LOG_ACTIONS = ["published", "edited", "draft_saved", "submitted", "sent", "deleted"] as const;
+export type ContentLogAction = (typeof CONTENT_LOG_ACTIONS)[number];
+export type ContentLogEntry = {
+  id: string;
+  action: ContentLogAction;
+  createdAt: string;
+  user: { id: string | null; username: string | null };
+  actor: { id: string; username: string | null } | null;
+  article: { id: string | null; title: string | null; slug: string | null };
+  ip: string | null;
+  userAgent: string | null;
+};
+
 export type ProfileData = {
   user: {
     id: string;
@@ -924,7 +958,7 @@ export type CommentInput = z.input<typeof commentSchema>;
 export type CommentLikeResult = { liked: boolean; likeCount: number };
 
 /** "@name" in a comment (usernames: 3–30 letters and dots, no dot first or last). Group 2 = the username. */
-export const MENTION_REGEX = /(^|[^a-z0-9._@])@([a-z](?:[a-z.]{0,28}[a-z])?)/gi;
+export const MENTION_REGEX = /(^|[^a-z0-9._@])@([a-z](?:[a-z._]{0,28}[a-z])?)/gi;
 
 /** The distinct lowercase usernames mentioned in a text (at most 20). */
 export function extractMentions(text: string): string[] {

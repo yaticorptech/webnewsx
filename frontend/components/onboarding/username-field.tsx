@@ -29,7 +29,7 @@ export type UsernameFieldProps = {
 };
 
 // Word joiners (U+2060) keep "3–30" together when the hint wraps.
-const RULES_HINT = "Lowercase letters and dots only · 3\u2060–\u206030 characters";
+const RULES_HINT = "Lowercase letters, dots and underscores · 3\u2060–\u206030 characters";
 const EASE = [0.2, 0.8, 0.2, 1] as const;
 
 /**
@@ -74,7 +74,7 @@ export function UsernameField({
           value={value}
           onChange={(event) => {
             const withoutAt = event.target.value.replace(/^@+/, "");
-            setStripped(/[^a-z.]/.test(withoutAt.toLowerCase()));
+            setStripped(/[^a-z._]/.test(withoutAt.toLowerCase()));
             onChange(sanitizeUsernameInput(withoutAt));
           }}
           autoFocus={autoFocus}

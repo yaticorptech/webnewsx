@@ -630,6 +630,9 @@ export const userEvent = pgTable(
     path: text("path").notNull(),
     platform: text("platform").notNull(),
     props: jsonb("props").$type<Record<string, string | number | boolean>>(),
+    /** The address and browser / app it came from (owner 2026-10-31: kept for legal requests). */
+    ip: text("ip"),
+    userAgent: text("user_agent"),
     createdAt: tsMs("created_at").notNull().defaultNow(),
   },
   (t) => [
@@ -638,6 +641,36 @@ export const userEvent = pgTable(
     index("user_event_viewer_idx").on(t.viewerKey, t.createdAt.desc()),
     index("user_event_article_idx").on(t.articleId, t.createdAt),
     index("user_event_name_idx").on(t.name, t.createdAt),
+  ],
+);
+
+/**
+ * Content log (owner 2026-10-31: "for future or any legal issues"): every story a reporter publishes, edits, saves,
+ * sends for review or deletes — who did it (the account, and the member / editor who acted for it), the story as it was
+ * named then, and the IP address and browser / app it came from. No foreign keys: the record outlives a deleted story
+ * or account. The Editor Desk reads it under Reporter activity.
+ */
+export const contentLog = pgTable(
+  "content_log",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: text("user_id"),
+    username: text("username"),
+    /** Who pressed the button when it wasn't the account itself: a group member, or the Editor Desk. */
+    actorId: text("actor_id"),
+    actorUsername: text("actor_username"),
+    action: text("action").notNull(),
+    articleId: uuid("article_id"),
+    articleTitle: text("article_title"),
+    articleSlug: text("article_slug"),
+    ip: text("ip"),
+    userAgent: text("user_agent"),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("content_log_created_idx").on(t.createdAt.desc()),
+    index("content_log_user_idx").on(t.userId, t.createdAt.desc()),
+    index("content_log_article_idx").on(t.articleId, t.createdAt.desc()),
   ],
 );
 

@@ -2,13 +2,14 @@
 
 import { Globe, MapPin } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState, type CSSProperties, type ReactNode } from "react";
+import QRCode from "qrcode";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { UserHandle } from "@/components/brand/user-handle";
 import { VerifiedBadge } from "@/components/brand/verified-badge";
 import type { PressLanguage, ReporterLevel } from "@/lib/shared/contracts";
 import { cn, initialsOf } from "@/lib/utils";
 import { barcodeBars, languageLabels, passDate } from "./press-format";
-import { CARD_ART, CARD_H, CARD_W, cq, fs, LAYOUT, px, py, rect, type Patch as PatchRect } from "./press-pass-layout";
+import { CARD_ART, CARD_H, CARD_W, cq, fs, LAYOUT, passVerifyUrl, px, py, rect, type Patch as PatchRect } from "./press-pass-layout";
 
 /** Everything the ID card prints — built from a `PressPass` or from the application form (preview). */
 export type PressPassCardData = {
@@ -64,7 +65,7 @@ export function PressPassCard({ data, animateIn = true, hints = false, className
   const languages = languageLabels(data.languages);
   const play = animateIn && !reduce;
   const name = data.holder.name || "Your name";
-  const label = `WebNEWS Press Pass${preview ? " preview" : ""} — ${data.holder.name}, ${data.level === "verified" ? "Verified" : "Trainee"} reporter`;
+  const label = `WebNEWS Global Press Pass${preview ? " preview" : ""} — ${data.holder.name}, ${data.level === "verified" ? "Verified" : "Trainee"} reporter`;
   const portrait = (
     <>
       <span aria-hidden className="font-wider font-black uppercase text-brand" style={{ fontSize: fs(96, 1.5) }}>
@@ -190,6 +191,14 @@ export function PressPassCard({ data, animateIn = true, hints = false, className
         </dl>
 
         <Barcode seed={data.passNumber} className="absolute text-ink" style={rect(LAYOUT.barcode)} />
+
+        {/* The pass's own QR: scanning it opens the pass's verify page (owner 2026-10-31). */}
+        {!preview && data.passNumber && (
+          <>
+            <Patch r={LAYOUT.qrPatch} />
+            <PassQr passNumber={data.passNumber} />
+          </>
+        )}
       </CardFrame>
     </div>
   );
@@ -241,6 +250,31 @@ function CardFrame({
 }
 
 /** A patch with its edges feathered (a mask fading over `feather` card pixels on every side). */
+function PassQr({ passNumber }: { passNumber: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void QRCode.toDataURL(passVerifyUrl(passNumber), { margin: 0, width: 360, errorCorrectionLevel: "M", color: { dark: "#111111", light: "#ffffff" } })
+      .then((url) => live && setSrc(url))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [passNumber]);
+  const q = LAYOUT.qr;
+  const size = Math.min(q.w, q.h);
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt={`QR code — scan to verify Press Pass ${passNumber}`}
+      draggable={false}
+      className="absolute"
+      style={rect({ x: q.x + (q.w - size) / 2, y: q.y + (q.h - size) / 2, w: size, h: size })}
+    />
+  );
+}
+
 function Patch({ r }: { r: PatchRect }) {
   const f = cq(r.feather);
   const mask = `linear-gradient(to right, transparent, #000 ${f}, #000 calc(100% - ${f}), transparent), linear-gradient(to bottom, transparent, #000 ${f}, #000 calc(100% - ${f}), transparent)`;

@@ -10,9 +10,9 @@ const LETTERS = "abcdefghijklmnopqrstuvwxyz";
 /** Reduces anything to a letters-and-dots stem usable as a suggestion base. */
 export function suggestionStem(input: string): string {
   const stem = sanitizeUsernameInput(normalizeUsername(input))
-    .replace(/\.{2,}/g, ".")
-    .replace(/^\.+|\.+$/g, "");
-  return stem.length >= 2 ? stem.slice(0, 20).replace(/\.+$/, "") : "reader";
+    .replace(/[._]{2,}/g, ".")
+    .replace(/^[._]+|[._]+$/g, "");
+  return stem.length >= 2 ? stem.slice(0, 20).replace(/[._]+$/, "") : "reader";
 }
 
 function randomLetters(n: number): string {
@@ -29,9 +29,14 @@ export function usernameCandidates(input: string, count = 12): string[] {
   const stem = suggestionStem(input);
   // New usernames need 4+ letters before the dot (owner 2026-10-15 / 2026-10-23): a short name ("ravi", "jane.doe") is also tried
   // joined up ("janedoe") and with a prefix ("theravi"), so it never ends up with no suggestions at all.
-  const compact = stem.replace(/\./g, "");
+  const compact = stem.replace(/[._]/g, "");
   const bases = [stem, compact, ...PREFIXES.map((p) => `${p}${compact}`)];
+  // The name as typed, then joined up ("harikiran") and with an underscore ("hari_kiran") come first when they're free
+  // (owner 2026-10-31).
   const raw = [
+    stem,
+    compact,
+    stem.replace(/\./g, "_"),
     ...SUFFIXES.slice(0, 4).map((s) => `${stem}.${s}`),
     ...PREFIXES.slice(0, 2).map((p) => `${p}.${stem}`),
     ...SUFFIXES.slice(4).map((s) => `${stem}.${s}`),
@@ -44,7 +49,7 @@ export function usernameCandidates(input: string, count = 12): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const candidate of raw) {
-    const trimmed = candidate.slice(0, USERNAME_MAX).replace(/\.+$/, "");
+    const trimmed = candidate.slice(0, USERNAME_MAX).replace(/[._]+$/, "");
     if (seen.has(trimmed) || !validateNewUsername(trimmed).ok) continue;
     seen.add(trimmed);
     out.push(trimmed);

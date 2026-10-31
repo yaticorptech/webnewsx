@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { db } from "../db/client.js";
 import { writeAudit } from "../lib/audit.js";
+import { logContent } from "../queries/content-log.js";
+import { user } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 import { ApiError, notFound } from "../lib/errors.js";
 import { RATE_LIMITS } from "../lib/rate-limit.js";
 import { needsReview } from "../lib/roles.js";
@@ -23,10 +26,21 @@ import {
   flagSchema,
   saveArticleSchema,
   shareSchema,
+  type ContentLogAction,
+  type SaveArticleResponse,
   type ShortLinkTarget,
 } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 import type { RouteDeps } from "./deps.js";
+
+/** Reporter activity's verb for a save (a live story saved again is an edit). */
+function logActionOf(result: SaveArticleResponse, wasLive: boolean): ContentLogAction {
+  if (result.status === "published") return wasLive ? "edited" : "published";
+  if (result.status === "in_review") return "submitted";
+  if (result.status === "sent" || result.status === "group_review") return "sent";
+  return "draft_saved";
+}
+const storyOf = (result: SaveArticleResponse) => ({ id: result.article.id, title: result.article.title ?? null, slug: result.article.slug ?? null });
 
 export function articleRoutes({ limiter }: RouteDeps) {
   const app = new Hono<AppEnv>();
@@ -51,11 +65,15 @@ export function articleRoutes({ limiter }: RouteDeps) {
       if (target && target.authorId !== viewer.id) {
         const result = await saveArticle({ id: target.authorId, needsReview: false, editorId: viewer.id }, input);
         await writeAudit(db, { actorId: viewer.id, action: "story.edit", targetType: "article", targetId: target.id, targetLabel: input.title ?? target.title });
+        const [owner] = await db.select({ id: user.id, username: user.username }).from(user).where(eq(user.id, target.authorId)).limit(1);
+        await logContent(c, logActionOf(result, target.status === "published"), storyOf(result), owner);
         return c.json(result, 200);
       }
     }
     const groupWriter = viewer.actor ? { id: viewer.actor.id, role: viewer.actor.role } : undefined;
+    const before = input.id ? await findOwnedArticle(input.id, viewer.id) : null;
     const result = await saveArticle({ id: viewer.id, needsReview: needsReview(viewer), groupWriter }, input);
+    await logContent(c, logActionOf(result, before?.status === "published"), storyOf(result));
     return c.json(result, input.id ? 200 : 201);
   });
 
@@ -119,8 +137,10 @@ export function articleRoutes({ limiter }: RouteDeps) {
   app.delete("/:id", requireUser, async (c) => {
     const viewer = mustViewer(c);
     const groupWriter = viewer.actor ? { id: viewer.actor.id, role: viewer.actor.role } : undefined;
+    const story = await findOwnedArticle(c.req.param("id"), viewer.id);
     const deleted = await deleteArticle(viewer.id, c.req.param("id"), groupWriter);
     if (!deleted) throw notFound("Story not found");
+    if (story) await logContent(c, "deleted", { id: story.id, title: story.title, slug: story.slug });
     return c.body(null, 204);
   });
 

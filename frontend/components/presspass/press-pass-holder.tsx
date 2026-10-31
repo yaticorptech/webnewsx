@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BarChart3, CalendarDays, Download, ExternalLink, FilePen, FileText, Link2, Maximize2, PenLine, Plus, ScrollText, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarDays, Download, ExternalLink, FileText, Link2, Maximize2, PenLine, Plus, ScrollText, ShieldAlert, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState, type ComponentType, type ReactNode, type SVGProps } from "react";
 import { SpeedLinesSweep } from "@/components/brand/speed-lines-motion";
@@ -162,11 +162,6 @@ export function PressPassHolder({ pass, justIssued = false, editorDesk = false, 
               {!revoked && (
                 <Button href="/newsroom" variant="ghost" size="sm" leftIcon={<BarChart3 aria-hidden />} className={LINK_FIT}>
                   Newsroom
-                </Button>
-              )}
-              {!revoked && pass.complete && (
-                <Button variant="ghost" size="sm" leftIcon={<FilePen aria-hidden />} onClick={() => onEdit("edit")} className={LINK_FIT}>
-                  Edit details
                 </Button>
               )}
             </div>

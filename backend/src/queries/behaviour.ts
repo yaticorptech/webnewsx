@@ -28,7 +28,13 @@ const iso = (value: unknown): string => new Date(value as string).toISOString();
 const FEATURE_NAMES = Object.keys(TRACKED_FEATURES);
 
 /** Saves one page's batch. Admin pages are never tracked (the client skips them too). */
-export async function recordEvents(viewerKey: string, userId: string | null, platform: "web" | "app", events: TrackEvent[]): Promise<void> {
+export async function recordEvents(
+  viewerKey: string,
+  userId: string | null,
+  platform: "web" | "app",
+  events: TrackEvent[],
+  from: { ip: string | null; userAgent: string | null } = { ip: null, userAgent: null },
+): Promise<void> {
   const rows = events.filter((event) => !event.path.startsWith("/admin"));
   if (rows.length === 0) return;
   // Story ids that don't exist (deleted, or made up) are dropped rather than failing the batch.
@@ -56,6 +62,8 @@ export async function recordEvents(viewerKey: string, userId: string | null, pla
       path: event.path,
       platform,
       props: event.props && Object.keys(event.props).length > 0 ? event.props : null,
+      ip: from.ip,
+      userAgent: from.userAgent,
     })),
   );
   // Desk → Analytics updates live (owner 2026-10-16).

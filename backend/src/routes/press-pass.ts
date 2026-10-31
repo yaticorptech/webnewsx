@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { notFound } from "../lib/errors.js";
 import { RATE_LIMITS } from "../lib/rate-limit.js";
 import { readJson } from "../lib/validate.js";
 import { mustViewer, requireOnboarded, requireUser } from "../middleware/guards.js";
@@ -7,6 +8,7 @@ import {
   applyForPressPass,
   findPressPass,
   PRESS_PASS_OPTIONS,
+  publicPressPass,
   removePressDomain,
   setPressDomain,
   toPressPass,
@@ -26,6 +28,14 @@ export function pressPassRoutes({ limiter }: RouteDeps) {
   app.get("/options", (c) => {
     c.header("Cache-Control", "public, max-age=3600");
     return c.json(PRESS_PASS_OPTIONS);
+  });
+
+  // GET /api/press-pass/verify/:passNumber — public: the card's QR code opens this (owner 2026-10-31).
+  app.get("/verify/:passNumber", async (c) => {
+    const pass = await publicPressPass(c.req.param("passNumber"));
+    if (!pass) throw notFound("No Press Pass with that number");
+    c.header("Cache-Control", "public, max-age=60");
+    return c.json({ pressPass: pass });
   });
 
   // GET /api/press-pass — your pass (active or revoked) or null.

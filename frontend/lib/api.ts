@@ -87,6 +87,7 @@ import type {
   AuditEntry,
   Category,
   CommentInput,
+  ContentLogEntry,
   GifSearchResponse,
   CommentLikeResult,
   DraftCard,
@@ -987,6 +988,9 @@ export const api = {
     pressMeets: (cursor?: string | null, signal?: AbortSignal) =>
       request<{ items: AdminPressMeetRow[]; nextCursor: string | null }>(`/api/admin/press-meets${query({ cursor })}`, { signal }),
 
+    /** Reporter activity, newest first (owner 2026-10-31); `q` = a username or story title. */
+    activity: (params: { cursor?: string | null; q?: string } = {}, signal?: AbortSignal) =>
+      request<Page<ContentLogEntry>>(`/api/admin/activity${query({ cursor: params.cursor, q: params.q || undefined })}`, { signal }),
     /** Audit log, newest first. `action` filters by prefix ("story." / "user.role"), `target` by target id. */
     audit: (params: AdminAuditQuery = {}, signal?: AbortSignal) =>
       request<Page<AuditEntry>>(`/api/admin/audit${query(params)}`, { signal }),

@@ -153,18 +153,18 @@ describe("GET /api/username/check", () => {
     expect(taken).toMatchObject({ available: false, reason: "taken", code: "taken", message: "Username is not available" });
     expect(taken.suggestions.length).toBeGreaterThan(0);
     expect(taken.suggestions.length).toBeLessThanOrEqual(3);
-    for (const s of taken.suggestions) expect(s).toMatch(/^[a-z]+(\.[a-z]+)*$/);
+    for (const s of taken.suggestions) expect(s).toMatch(/^[a-z]+([._][a-z]+)*$/);
 
     const reserved = await check("admin");
     expect(reserved).toMatchObject({ available: false, reason: "reserved", code: "reserved", message: "Username is not available" });
     expect(reserved.suggestions.length).toBe(3);
-    for (const s of reserved.suggestions) expect(s).toMatch(/^[a-z]+(\.[a-z]+)*$/);
+    for (const s of reserved.suggestions) expect(s).toMatch(/^[a-z]+([._][a-z]+)*$/);
 
-    expect(await check("bad_name")).toEqual({ available: false, reason: "invalid", code: "invalid_chars", message: "Only letters and dots allowed", suggestions: [] });
+    expect(await check("bad-name")).toEqual({ available: false, reason: "invalid", code: "invalid_chars", message: "Only letters, dots and underscores allowed", suggestions: [] });
     expect(await check("abc2")).toMatchObject({ reason: "invalid", code: "invalid_chars" });
-    expect(await check("a..b")).toMatchObject({ reason: "invalid", code: "double_dot", message: "No consecutive dots" });
-    expect(await check(".abc")).toMatchObject({ reason: "invalid", code: "leading_dot", message: "Can't start with a dot" });
-    expect(await check("abc.")).toMatchObject({ reason: "invalid", code: "trailing_dot", message: "Can't end with a dot" });
+    expect(await check("a..b")).toMatchObject({ reason: "invalid", code: "double_dot", message: "No two dots or underscores in a row" });
+    expect(await check(".abc")).toMatchObject({ reason: "invalid", code: "leading_dot", message: "Can't start with a dot or underscore" });
+    expect(await check("abc.")).toMatchObject({ reason: "invalid", code: "trailing_dot", message: "Can't end with a dot or underscore" });
     expect(await check("ab")).toMatchObject({ reason: "invalid", code: "too_short" });
     expect(await check("a".repeat(31))).toMatchObject({ reason: "invalid", code: "too_long" });
     expect(await check("")).toMatchObject({ available: false, reason: "invalid" });
@@ -265,12 +265,12 @@ describe("POST /api/upload", () => {
 describe("POST /api/onboarding", () => {
   it("validates every required field", async () => {
     const c = await signUp(app);
-    const res = await c.req("/api/onboarding", { json: { username: "a_b", name: "", bio: "", image: "", acceptTerms: false } });
+    const res = await c.req("/api/onboarding", { json: { username: "a-b", name: "", bio: "", image: "", acceptTerms: false } });
     expect(res.status).toBe(400);
     const { error } = await json<ApiErrorBody>(res);
     expect(error.code).toBe("validation_error");
     expect(Object.keys(error.fields ?? {}).sort()).toEqual(["acceptTerms", "bio", "image", "name", "username"]);
-    expect(error.fields?.username).toBe("Only letters and dots allowed");
+    expect(error.fields?.username).toBe("Only letters, dots and underscores allowed");
   });
 
   it("rejects reserved usernames", async () => {
@@ -333,9 +333,9 @@ describe("PATCH /api/me", () => {
     expect(clash.status).toBe(409);
     expect(await clash.json()).toMatchObject({ error: { code: "username_taken", message: "Username is not available" } });
 
-    const invalid = await me.req("/api/me", { method: "PATCH", json: { username: "no_underscores" } });
+    const invalid = await me.req("/api/me", { method: "PATCH", json: { username: "no-dashes" } });
     expect(invalid.status).toBe(400);
-    expect((await json<ApiErrorBody>(invalid)).error.fields?.username).toBe("Only letters and dots allowed");
+    expect((await json<ApiErrorBody>(invalid)).error.fields?.username).toBe("Only letters, dots and underscores allowed");
 
     const avatar = await json<UploadedImage>(await upload(me, "avatar"));
     const photo = await me.req("/api/me", { method: "PATCH", json: { image: avatar.url } });

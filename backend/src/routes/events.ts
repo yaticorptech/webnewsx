@@ -19,7 +19,9 @@ export function eventRoutes({ limiter }: RouteDeps) {
     // The Editor Desk browsing the site is never tracked.
     if (viewer?.role === "admin") return c.body(null, 204);
     const viewerKey = ensureViewerKey(c, limiter);
-    if (viewerKey) await recordEvents(viewerKey, viewer?.id ?? null, platform, events);
+    // Where each tap came from (owner 2026-10-31: kept for legal requests).
+    const from = { ip: c.get("clientIp") || null, userAgent: c.req.header("user-agent")?.slice(0, 500) ?? null };
+    if (viewerKey) await recordEvents(viewerKey, viewer?.id ?? null, platform, events, from);
     return c.body(null, 204);
   });
 

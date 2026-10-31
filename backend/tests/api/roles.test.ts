@@ -209,14 +209,13 @@ describe("Press Pass", () => {
     expect(sameId.status).toBe(400);
     expect((await json<ApiErrorBody>(sameId)).error.fields?.idNumber).toMatch(/already on another Press Pass/);
 
-    // Holders can update their pass (the pledge stays signed); citizen journalists have no outlet.
+    // Once issued, the pass's details are fixed (owner 2026-10-31).
     const patch = await reader.req("/api/press-pass", {
       method: "PATCH",
       json: {
         ...personal,
         mobile,
         reporterType: "citizen",
-        outlet: "Ignored",
         experience: "new",
         state: "KA",
         district: "Udupi",
@@ -226,22 +225,14 @@ describe("Press Pass", () => {
         links: [],
       },
     });
-    expect(patch.status, await patch.clone().text()).toBe(200);
-    expect((await json<{ pressPass: PressPass }>(patch)).pressPass).toMatchObject({
-      reporterType: "citizen",
-      outlet: null,
-      experience: "new",
-      state: "KA",
-      district: "Udupi",
-      city: "Manipal",
-      complete: true,
-    });
+    expect(patch.status).toBe(409);
+    expect(await code(patch)).toBe("press_pass_locked");
 
     // Profile shows the press chips — never the verification details.
     const profileRes = await app.request(`/api/users/${reader.username}`);
     const profileText = await profileRes.clone().text();
     const profile = await json<{ press: { level: string; stateName: string } }>(profileRes);
-    expect(profile.press).toMatchObject({ level: "trainee", stateName: "Karnataka" });
+    expect(profile.press).toMatchObject({ level: "trainee", stateName: "Maharashtra" });
     expect(profileText).not.toContain(mobile);
     expect(profileText).not.toContain("citizen");
 

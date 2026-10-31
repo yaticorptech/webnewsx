@@ -13,7 +13,7 @@ type Mention = { query: string; start: number };
 
 /** The partial "@name" right before the caret (letters and dots), or null. */
 function mentionAt(text: string, caret: number): Mention | null {
-  const match = /(^|[\s(])@([a-z.]{0,30})$/i.exec(text.slice(0, caret));
+  const match = /(^|[\s(])@([a-z._]{0,30})$/i.exec(text.slice(0, caret));
   if (!match) return null;
   const query = match[2] ?? "";
   return { query: query.toLowerCase(), start: caret - query.length - 1 };

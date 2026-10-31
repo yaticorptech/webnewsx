@@ -1,0 +1,2 @@
+ALTER TABLE "user" DROP CONSTRAINT "user_username_format";--> statement-breakpoint
+ALTER TABLE "user" ADD CONSTRAINT "user_username_format" CHECK ("user"."username" ~ '^(?=.{3,30}$)(?![._])(?!.*[._]{2})(?!.*[._]$)[a-z._]+$');

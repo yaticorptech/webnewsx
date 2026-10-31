@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { MarketResponse, SiteArticle, SiteHome } from "@/lib/shared/contracts";
+import type { ContentLogEntry, MarketResponse, PublicPressPass, SiteArticle, SiteHome } from "@/lib/shared/contracts";
 
 import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
@@ -328,6 +328,11 @@ export const getOwnedArticle = cache(
     orNull(async () => (await serverFetch<{ article: OwnedArticle }>(`/api/articles/${enc(id)}`, { asAdmin: true })).article, true),
 );
 
+/** A Press Pass by number for the QR code's public verify page (null = no such pass). */
+export async function getPublicPressPass(passNumber: string): Promise<PublicPressPass | null> {
+  return orNull(async () => (await serverFetch<{ pressPass: PublicPressPass }>(`/api/press-pass/verify/${enc(passNumber)}`)).pressPass);
+}
+
 export async function getFollowers(username: string, cursor?: string | null): Promise<Page<UserRow>> {
   return soft(`getFollowers(${username})`, emptyPage<UserRow>(), () =>
     serverFetch<Page<UserRow>>(`/api/users/${enc(username)}/followers${query({ cursor })}`),
@@ -488,6 +493,10 @@ export function getAdminPressMeets(): Promise<{ items: AdminPressMeetRow[]; next
 
 export async function getAdminSpotlightPackages(): Promise<SpotlightPackage[]> {
   return (await serverFetch<{ items: SpotlightPackage[] }>("/api/admin/spotlight/packages")).items;
+}
+
+export function getAdminActivity(q?: string): Promise<Page<ContentLogEntry>> {
+  return serverFetch<Page<ContentLogEntry>>(`/api/admin/activity${query({ q: q || undefined })}`);
 }
 
 export function getAdminAudit(params: AdminAuditQuery = {}): Promise<Page<AuditEntry>> {

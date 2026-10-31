@@ -36,7 +36,17 @@ export const LAYOUT = {
   issued: { x: 602 },
   barcodePatch: { x: 885, y: 718, w: 335, h: 112, from: "#f9f9f9", to: "#f9f9f9", feather: 8 },
   barcode: { x: 901, y: 734, w: 297, h: 80 },
+  /** The pass's own QR (owner 2026-10-31: scanning it opens the pass) over the artwork's sample one. */
+  qrPatch: { x: 1246, y: 694, w: 128, h: 120, from: "#ffffff", to: "#ffffff", feather: 6 },
+  qr: { x: 1254, y: 700, w: 112, h: 108 },
 } as const;
+
+/**
+ * Where the card's QR code leads: the pass's public verify page on the LIVE site (owner 2026-10-31: on localhost the QR
+ * held a localhost link a phone can't open, so scanners only showed it as text). NEXT_PUBLIC_PASS_VERIFY_ORIGIN overrides.
+ */
+const VERIFY_ORIGIN = (process.env.NEXT_PUBLIC_PASS_VERIFY_ORIGIN || "https://www.webnewsx.com").replace(/\/+$/, "");
+export const passVerifyUrl = (passNumber: string) => `${VERIFY_ORIGIN}/press-pass/verify/${encodeURIComponent(passNumber)}`;
 
 /** Percent of the card's width / height, for the on-screen card. */
 export const px = (x: number) => `${((x / CARD_W) * 100).toFixed(3)}%`;

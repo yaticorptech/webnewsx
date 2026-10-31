@@ -942,7 +942,7 @@ function ApplyForm() {
       </Field>
       <Field
         label="Username"
-        hint="The group's @handle — letters and dots."
+        hint="The group's @handle — letters, dots and underscores."
         error={errors.username}
       >
         <Input
