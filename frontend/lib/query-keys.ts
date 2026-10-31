@@ -18,6 +18,7 @@ export const qk = {
   /** Prefix of every story feed (`qk.feed`) and of the publisher reels under stories (`qk.publisherReel`). */
   feedAll: ["feed"] as const,
   /** Comments under one story (newest first, cursor pages). */
+  wishes: ["wishes"] as const,
   comments: (articleId: string) => ["comments", articleId] as const,
   /** Replies to one top-level comment. */
   replies: (commentId: string) => ["comment-replies", commentId] as const,

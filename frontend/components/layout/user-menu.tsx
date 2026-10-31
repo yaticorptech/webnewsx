@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Bookmark, Building2, ChevronDown, Download, Info, LogOut, Settings, ShieldAlert } from "lucide-react";
+import { BadgeCheck, Bookmark, Building2, Cake, ChevronDown, Download, Info, LogOut, Settings, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserHandle, handleText } from "@/components/brand/user-handle";
@@ -157,6 +157,8 @@ export function UserMenu({
           ...(canGetApp
             ? [{ label: <span className="font-bold text-brand">Download app</span>, onSelect: () => downloadApp("get_app_menu"), icon: <Download aria-hidden /> }]
             : []),
+          // Any member (owner 2026-10-31): no Press Pass needed.
+          { label: "Birthday wish / invitation", href: "/wishes/new", icon: <Cake aria-hidden /> },
           ...switchItems(viewer, switchTo),
           ...menuItems({
             username,

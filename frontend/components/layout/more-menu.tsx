@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileText, Info, Mail, Menu, ShieldCheck } from "lucide-react";
+import { Cake, Download, FileText, Info, Mail, Menu, ShieldCheck } from "lucide-react";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { COMPANY } from "@/lib/company";
 import { downloadApp, useCanGetApp } from "./get-app-banner";
@@ -26,6 +26,8 @@ export function MoreMenu({ className }: { className?: string }) {
               { type: "separator" as const },
             ]
           : []),
+        { label: "Birthday wish / invitation", href: "/wishes/new", icon: <Cake aria-hidden /> },
+        { type: "separator" as const },
         { label: "About WebNEWS", href: "/about", icon: <Info aria-hidden /> },
         { label: "Terms & Conditions", href: "/terms", icon: <FileText aria-hidden /> },
         { label: "Privacy Policy", href: "/privacy", icon: <ShieldCheck aria-hidden /> },

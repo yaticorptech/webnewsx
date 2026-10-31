@@ -9,7 +9,7 @@ import { showPendingPage } from "@/components/layout/pending-page";
 import { Avatar } from "@/components/ui/avatar";
 import { TimeAgo } from "@/components/ui/time-ago";
 import { formatNumber } from "@/lib/format";
-import { type ArticleCard } from "@/lib/shared/contracts";
+import { type ArticleCard, type Wish } from "@/lib/shared/contracts";
 import { openStoryHref, storyHref, storyLinkProps } from "@/lib/story-link";
 import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ import { DOUBLE_TAP_MS, HeartPop } from "./story-cover";
 import { ReporterMark, SpotlightedTag } from "./story-badges";
 import { useLike } from "./use-like";
 import { useViewTracking } from "./view-tracker";
+import { FeedWish, type FeedEntry } from "@/components/wishes/feed-wishes";
 
 /*
  * Home and every feed on tablets and computers (owner 2026-10-16): news cards in a grid, newspaper style — the article
@@ -79,8 +80,11 @@ export function FrontPage({
   locked = [],
   justIn,
   loadingMore,
+  weave,
 }: {
   items: ArticleCard[];
+  /** Slots birthday wishes & invitations in between the stories (owner 2026-10-31; feed-wishes.tsx). */
+  weave?: (items: ArticleCard[]) => FeedEntry<ArticleCard>[];
   /**
    * A visitor's stories past the free ones (read-wall.tsx): the same cards, blurred under "Sign in to read", carrying
    * straight on in the grid after `items` (owner 2026-10-22: "don't break — continue the cards till the end").
@@ -97,6 +101,10 @@ export function FrontPage({
   // headline, blurb, the reporter row), in one grid with thin lines between the columns.
   const all = [...items, ...locked];
   const blocks: { kind: "grid" | "reels"; items: ArticleCard[] }[] = all.length > 0 ? [{ kind: "grid", items: all }] : [];
+  const cells: (ArticleCard | Wish)[] = weave
+    ? [...weave(items).map((entry) => (entry.kind === "story" ? entry.item : entry.wish)), ...locked]
+    : all;
+  const isWish = (cell: ArticleCard | Wish): cell is Wish => "kind" in cell && (cell.kind === "birthday" || cell.kind === "invitation");
   const reelSize = columns + 2;
   return (
     <div ref={ref} className="flex flex-col gap-12">
@@ -106,11 +114,11 @@ export function FrontPage({
             key={block.items[0]!.id}
             className={cn("-mx-6 grid gap-y-10", GRID_COLS[columns])}
           >
-            {block.items.map((article, i) => (
+            {cells.map((article, i) => (
               <li
-                key={article.id}
-                // Locked cards aren't feed items: News radio and the view counter leave them alone.
-                data-feed-item={lockedIds.has(article.id) ? undefined : article.id}
+                key={isWish(article) ? `wish-${article.id}` : article.id}
+                // Locked cards and wishes aren't feed items: News radio and the view counter leave them alone.
+                data-feed-item={isWish(article) || lockedIds.has(article.id) ? undefined : article.id}
                 // A thin line between the columns (owner 2026-10-16 reference), none after the last of a row.
                 className={cn(
                   // The same padding on every column (equal widths, so every photo is the same height); the row hangs
@@ -122,10 +130,16 @@ export function FrontPage({
                   i >= columns &&
                     "pt-10 before:absolute before:top-0 before:h-0.5 before:bg-ink before:content-['']",
                   i >= columns && (i % columns === 0 ? "before:left-6 before:right-0" : i % columns === columns - 1 ? "before:left-0 before:right-6" : "before:inset-x-0"),
-                  justIn.has(article.id) && "animate-pop-in",
+                  !isWish(article) && justIn.has(article.id) && "animate-pop-in",
                 )}
               >
-                {lockedIds.has(article.id) ? <LockedGridCard article={article} /> : <GridCard article={article} priority={index === 0} />}
+                {isWish(article) ? (
+                  <FeedWish wish={article} />
+                ) : lockedIds.has(article.id) ? (
+                  <LockedGridCard article={article} />
+                ) : (
+                  <GridCard article={article} priority={index === 0} />
+                )}
               </li>
             ))}
           </ol>

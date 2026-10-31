@@ -104,6 +104,8 @@ export type ComposerProps = {
    * Pass instead of filing.
    */
   needsPressPass?: boolean;
+  /** Shown at the top of the images step (owner 2026-10-31): Article | Birthday wish / invitation. */
+  kindSwitch?: ReactNode;
 };
 
 type Busy = null | "draft" | "publish";
@@ -144,7 +146,7 @@ const FIELD_DOM_ID: Record<FieldKey, string> = {
  * refresh. Saving a new story swaps the URL to /publish/<id> in place (history.replaceState) so the
  * editor, its undo history and any in-flight upload survive.
  */
-export function Composer({ author, draft, review: trainee = false, pressMeetId = null, needsPressPass = false }: ComposerProps) {
+export function Composer({ author, draft, review: trainee = false, pressMeetId = null, needsPressPass = false, kindSwitch = null }: ComposerProps) {
   const router = useRouter();
   const draftsHref = draftsPath(author.username);
   const queryClient = useQueryClient();
@@ -830,6 +832,7 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
         >
           {/* STEP 1 (owner 2026-10-14): the images — upload or take a photo. */}
           <div hidden={step !== "poster"} className="flex flex-col gap-4 sm:gap-6">
+          {kindSwitch}
           {/* Both images at once (owner 2026-10-07): the cover and the article image, in one popup. */}
           <Section id="composer-media-section" label="Images" required error={errors.cover ?? errors.articleMedia} flash={flash}>
             <MediaUpload

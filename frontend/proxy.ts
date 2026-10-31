@@ -27,7 +27,7 @@ const BACKEND_URL = (process.env.BACKEND_URL || "http://127.0.0.1:4000").replace
 /** Top-level pages that aren't profiles. */
 const TOP_LEVEL = new Set([
   "about", "communities", "contact", "explore", "language", "market", "membership", "messages", "newsroom", "newsy",
-  "notifications", "press-meet", "press-pass", "privacy", "publish", "reels", "settings", "terms", "trending", "login",
+  "notifications", "press-meet", "press-pass", "privacy", "publish", "reels", "settings", "terms", "trending", "wishes", "login",
   "signup", "forgot-password", "reset-password", "onboarding", "admin", "dev", "s", "a", "category", "api", "media", "pub", "site-setup", "signed-in",
 ]);
 const FILE = /\.(txt|xml|png|jpe?g|webp|gif|svg|ico|apk|json|webmanifest|js|css|map|woff2?)$/i;

@@ -37,6 +37,8 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "newsy", "reel", "reels",
   // Publisher websites (owner 2026-10-29).
   "pub", "site-setup",
+  // Birthday wishes & invitations (owner 2026-10-31).
+  "wish", "wishes",
 ]);
 
 export type UsernameIssue =
@@ -765,6 +767,73 @@ export type PublicPressPass = ProfilePress & {
   pledgeSigned: boolean;
   editorDesk: boolean;
   holder: { name: string; username: string; image: string | null };
+};
+
+/* ─────────────── Wishes: birthday wishes & invitations (owner 2026-10-31) ─────────────── */
+
+export const WISH_KINDS = ["birthday", "invitation"] as const;
+export type WishKind = (typeof WISH_KINDS)[number];
+/** Simple designs; each kind has its own. */
+export const WISH_TEMPLATES = {
+  // "photo" (owner 2026-10-31): the photo fills the card, the wishes over its bottom.
+  // "party": cream card, balloons, script heading, the photo in an arch, the name on a ribbon (owner's reference).
+  // "custom": the member's own finished design, uploaded as the photo and shown as it is (owner 2026-10-31).
+  // "flyer": the photo full-bleed with balloon bokeh, a big silver HAPPY + script Birthday and the details below.
+  birthday: ["party", "flyer", "photo", "confetti", "balloons", "classic", "custom"],
+  invitation: ["flyer", "photo", "elegant", "festive", "minimal", "custom"],
+} as const satisfies Record<WishKind, readonly string[]>;
+export type WishTemplate = (typeof WISH_TEMPLATES)[WishKind][number];
+export const WISH_LIMITS = { titleMax: 80, messageMax: 400, venueMax: 120, birthdayDays: 2, maxPerDay: 5 } as const;
+
+export const wishSchema = z
+  .object({
+    kind: z.enum(WISH_KINDS),
+    template: z.string().max(20),
+    /** Optional when there's a photo (owner 2026-10-31: an image alone is fine). */
+    title: z.string().trim().max(WISH_LIMITS.titleMax).optional().default(""),
+    message: z.string().trim().max(WISH_LIMITS.messageMax).optional().default(""),
+    photo: z.object({ url: z.string().max(500), key: z.string().max(200) }).nullable().optional(),
+    eventAt: z.string().datetime({ offset: true }).nullable().optional(),
+    venue: z.string().trim().max(WISH_LIMITS.venueMax).nullable().optional(),
+  })
+  .refine((w) => (WISH_TEMPLATES[w.kind] as readonly string[]).includes(w.template), { message: "Pick a design", path: ["template"] })
+  .refine((w) => w.kind !== "invitation" || Boolean(w.eventAt), { message: "Choose the date and time", path: ["eventAt"] })
+  .refine((w) => w.template !== "custom" || Boolean(w.photo), { message: "Upload your design", path: ["photo"] })
+  .refine((w) => w.title.length > 0 || Boolean(w.photo), { message: "Write a name or add a photo", path: ["title"] });
+export type WishInput = z.input<typeof wishSchema>;
+
+/** The quick wishes people tap on a card in Home (owner 2026-10-31) — the only comments wishes take. */
+export const WISH_QUICK_COMMENTS = {
+  birthday: [
+    "🎂 Happy birthday!",
+    "🎉 Many more happy returns of the day!",
+    "🎈 Have a wonderful year ahead!",
+    "🙏 God bless you!",
+    "🥳 Enjoy your special day!",
+  ],
+  invitation: ["🙌 Congratulations!", "✅ Will be there!", "💐 Best wishes!", "🎉 All the best!", "🙏 Thank you for inviting!"],
+} as const satisfies Record<WishKind, readonly string[]>;
+
+export const wishCommentSchema = z.object({ body: z.string().trim().min(1).max(80) });
+
+export type WishComment = { id: string; body: string; createdAt: string; author: AuthorSummary };
+
+export type Wish = {
+  id: string;
+  kind: WishKind;
+  template: WishTemplate;
+  title: string;
+  message: string | null;
+  photoUrl: string | null;
+  eventAt: string | null;
+  venue: string | null;
+  createdAt: string;
+  author: AuthorSummary;
+  /** The viewer posted it, or is the Editor Desk: may delete it. */
+  canDelete: boolean;
+  /** Quick wishes: how many, and the latest few. */
+  commentCount: number;
+  comments: WishComment[];
 };
 
 /**

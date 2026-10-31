@@ -259,7 +259,8 @@ export function isTourActive(): boolean {
 /** The first welcome (the basics) is about to show on this page: the site's own after-sign-in popup steps aside. */
 export function basicsTourPendingOn(pathname: string): boolean {
   if (typeof navigator !== "undefined" && navigator.webdriver) return false;
-  return isFeedPath(pathname) && !isMarked(readTour(local()), "basics", null);
+  const record = readTour(local());
+  return isFeedPath(pathname) && !record.optOut && !isMarked(record, "basics", null);
 }
 
 const feedOfferedThisSession = (): boolean => {
@@ -418,13 +419,14 @@ export function GuidedTour() {
     const current = phaseRef.current;
     const id = ctxRef.current.viewer?.id ?? null;
     if (current.kind === "welcome") {
-      writeTour(local(), markGuide(readTour(local()), current.guide, id, "skipped"));
+      // Skipped: no guide comes back on this device (owner 2026-10-31); Settings replays them.
+      writeTour(local(), { ...markGuide(readTour(local()), current.guide, id, "skipped"), optOut: true });
       track("tour_declined", { props: { guide: current.guide } });
     } else if (current.kind === "step") {
       const step = current.steps[current.index]!;
       step.leave?.(context());
-      // Not offered again (Settings brings every guide back).
-      writeTour(local(), markGuide(readTour(local()), current.guide, id, "skipped"));
+      // Not offered again, nor any other guide (owner 2026-10-31; Settings brings every guide back).
+      writeTour(local(), { ...markGuide(readTour(local()), current.guide, id, "skipped"), optOut: true });
       writeProgress(session(), null);
       track("tour_exit", { props: { guide: current.guide, step: step.id } });
     } else if (current.kind === "finished" && current.guide === "basics") {

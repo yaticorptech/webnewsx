@@ -1,6 +1,6 @@
 import { inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { article, conversation, publisherSite, siteAd, user } from "../db/schema.js";
+import { article, conversation, publisherSite, siteAd, user, wish } from "../db/schema.js";
 import { UPLOAD_FOLDERS, storage as defaultStorage, type StorageDriver } from "./storage.js";
 
 /**
@@ -17,7 +17,7 @@ export type SweepResult = { scanned: number; deleted: number };
 /** Keys (of `keys`) still referenced by a user's avatar or any article's cover, video or article image / video. */
 async function referencedKeys(keys: string[], driver: StorageDriver): Promise<Set<string>> {
   const urls = new Map(keys.map((key) => [driver.urlFor(key), key]));
-  const [avatars, chatPhotos, covers, videos, articleImages, articleVideos, frames, storyFrames, siteLogos, siteAds] = await Promise.all([
+  const [avatars, chatPhotos, covers, videos, articleImages, articleVideos, frames, storyFrames, siteLogos, siteAds, wishPhotos] = await Promise.all([
     db.select({ image: user.image }).from(user).where(inArray(user.image, [...urls.keys()])),
     db.select({ image: conversation.image }).from(conversation).where(inArray(conversation.image, [...urls.keys()])),
     db.select({ key: article.coverKey }).from(article).where(inArray(article.coverKey, keys)),
@@ -30,13 +30,15 @@ async function referencedKeys(keys: string[], driver: StorageDriver): Promise<Se
     // Publisher sites (owner 2026-10-29): logos and ad creatives.
     db.select({ key: publisherSite.logoKey }).from(publisherSite).where(inArray(publisherSite.logoKey, keys)),
     db.select({ key: siteAd.creativeKey }).from(siteAd).where(inArray(siteAd.creativeKey, keys)),
+    // Wishes (owner 2026-10-31): their photos.
+    db.select({ key: wish.photoKey }).from(wish).where(inArray(wish.photoKey, keys)),
   ]);
   const used = new Set<string>();
   for (const { image } of [...avatars, ...chatPhotos]) {
     const key = image ? urls.get(image) : undefined;
     if (key) used.add(key);
   }
-  for (const { key } of [...covers, ...videos, ...articleImages, ...articleVideos, ...frames, ...storyFrames, ...siteLogos, ...siteAds]) if (key) used.add(key);
+  for (const { key } of [...covers, ...videos, ...articleImages, ...articleVideos, ...frames, ...storyFrames, ...siteLogos, ...siteAds, ...wishPhotos]) if (key) used.add(key);
   return used;
 }
 

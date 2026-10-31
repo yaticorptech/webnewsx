@@ -533,6 +533,27 @@
       "when": 1793431730507,
       "tag": "0075_content_log",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1793433204710,
+      "tag": "0076_wishes",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1793434905445,
+      "tag": "0077_wish_comments",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1793435263508,
+      "tag": "0078_wish_comment_one_per_user",
+      "breakpoints": true
     }
   ]
 }

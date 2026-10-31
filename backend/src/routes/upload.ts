@@ -15,7 +15,7 @@ import { LIMITS, type UploadedImage, type UploadedVideo } from "../shared/contra
 import type { AppEnv } from "../types.js";
 import type { RouteDeps } from "./deps.js";
 
-const kindSchema = z.enum(["avatar", "cover", "article", "frame", "logo", "video"]);
+const kindSchema = z.enum(["avatar", "cover", "article", "frame", "logo", "video", "wish"]);
 const VIDEO_MB = Math.round(LIMITS.videoUploadMaxBytes / (1024 * 1024));
 
 export function uploadRoutes({ limiter }: RouteDeps) {
@@ -39,11 +39,12 @@ export function uploadRoutes({ limiter }: RouteDeps) {
     }
 
     const kind = kindSchema.safeParse(form.kind);
-    if (!kind.success) throw validationError({ kind: "kind must be 'avatar', 'cover', 'article', 'frame', 'logo' or 'video'" });
+    if (!kind.success) throw validationError({ kind: "kind must be 'avatar', 'cover', 'article', 'frame', 'logo', 'video' or 'wish'" });
     if (kind.data !== "avatar" && !viewer.onboarded) {
       throw new ApiError(403, "onboarding_required", "Finish setting up your profile first");
     }
-    if (kind.data !== "avatar" && !canPublish(viewer)) throw pressPassRequired();
+    // Birthday wishes / invitations (owner 2026-10-31): any member, no Press Pass.
+    if (kind.data !== "avatar" && kind.data !== "wish" && !canPublish(viewer)) throw pressPassRequired();
 
     const file = form.file;
     if (kind.data === "video") {
@@ -72,7 +73,7 @@ export function uploadRoutes({ limiter }: RouteDeps) {
     if (!(file instanceof File) || file.size === 0) throw validationError({ file: "Choose an image to upload" });
     if (file.size > LIMITS.uploadMaxBytes) throw new ApiError(413, "file_too_large", "Images must be 8 MB or smaller");
 
-    const processed = await processImage(Buffer.from(await file.arrayBuffer()), kind.data);
+    const processed = await processImage(Buffer.from(await file.arrayBuffer()), kind.data === "wish" ? "article" : kind.data);
     const key = newImageKey(kind.data === "avatar" ? "avatar" : "cover", viewer.id);
     const url = await storage.put(key, processed.buffer, processed.contentType);
     // A frame (owner 2026-10-08) becomes the account's frame at once; the one it replaces stays as long as a story

@@ -17,6 +17,7 @@ import { scrollToTop } from "@/lib/scroll-to-top";
 import { newShuffleSeed, shuffleSignature, visitorShuffleSeed } from "@/lib/shuffle";
 import type { ArticleCard, Page, UserRow, ViewerUser } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
+import { FeedWish, useFeedWishes } from "@/components/wishes/feed-wishes";
 import { CategoryEmpty, FollowingEmpty, LanguageEmpty, LatestEmpty } from "./feed-empty";
 import { FOLLOWING_VIEW, isRanked, isShuffled, viewCopy, viewId, viewQuery, viewsOfCard, type FeedView } from "./feed-views";
 import { feedHas, feedItems, feedKey, prependToFeed, removeFromAllFeeds, seedStats, type FeedData } from "./live-state";
@@ -67,6 +68,7 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
   const viewerId = viewer?.id ?? null;
   const queryClient = useQueryClient();
   const phone = usePhoneLayout();
+  const { weave } = useFeedWishes();
   const id = viewId(view);
   const key = useMemo(() => feedKey(id, viewerId), [id, viewerId]);
 
@@ -214,15 +216,23 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
       >
         {phone ? (
           <ol aria-label={viewCopy(view).listLabel} className={PHONE_LIST}>
-            {items.map((article, index) => (
-              <li
-                key={article.id}
-                data-feed-item={article.id}
-                className={cn("min-w-0 scroll-mt-nav pt-1.5", index >= initialPage.items.length && "animate-fade-up")}
-              >
-                <PhoneStoryCard article={article} priority={index < 2} justIn={justIn.has(article.id)} />
-              </li>
-            ))}
+            {/* Birthday wishes & invitations between the stories, never on top (owner 2026-10-31). */}
+            {weave(items).map((entry) =>
+              entry.kind === "wish" ? (
+                // A clear gap before and after a wish, so it reads apart from the stories (owner 2026-10-31).
+                <li key={`wish-${entry.wish.id}`} className="min-w-0 pb-5 pt-4">
+                  <FeedWish wish={entry.wish} />
+                </li>
+              ) : (
+                <li
+                  key={entry.item.id}
+                  data-feed-item={entry.item.id}
+                  className={cn("min-w-0 scroll-mt-nav pt-1.5", entry.index >= initialPage.items.length && "animate-fade-up")}
+                >
+                  <PhoneStoryCard article={entry.item} priority={entry.index < 2} justIn={justIn.has(entry.item.id)} />
+                </li>
+              ),
+            )}
             {/* A visitor's stories past the free ones carry straight on in the list, blurred (owner 2026-10-22). */}
             {blurred.map((article) => (
               <li key={article.id} className="min-w-0 pt-1.5">
@@ -249,6 +259,7 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
             loadingMore={isFetchingNextPage}
             ended={!moreToLoad}
             sections={view.kind === "tab" && view.tab !== "following"}
+            weave={weave}
           />
           </>
         )}

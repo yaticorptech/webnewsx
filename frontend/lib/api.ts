@@ -89,6 +89,9 @@ import type {
   CommentInput,
   ContentLogEntry,
   GifSearchResponse,
+  Wish,
+  WishComment,
+  WishInput,
   CommentLikeResult,
   DraftCard,
   FeedTab,
@@ -305,7 +308,8 @@ const enc = encodeURIComponent;
 
 /** `article`: the full article's image — stored like a cover, any shape. */
 /** `frame`: the reporter's own poster frame (owner 2026-10-08) — saved to their account as it uploads. */
-export type UploadKind = "avatar" | "cover" | "article" | "frame" | "logo";
+/** `wish`: a birthday wish / invitation photo (owner 2026-10-31) — any member, no Press Pass. */
+export type UploadKind = "avatar" | "cover" | "article" | "frame" | "logo" | "wish";
 
 /**
  * Multipart upload with progress. `onProgress` receives a fraction 0..1.
@@ -589,6 +593,15 @@ export const api = {
   likeComment: (id: string, commentId: string, liked: boolean) =>
     request<CommentLikeResult>(`/api/articles/${enc(id)}/comments/${enc(commentId)}/like`, { method: liked ? "POST" : "DELETE" }),
   /** POST /api/articles/:id/comments — onboarded accounts (`parentId` = reply). 400 `fields.body`. */
+  /** Birthday wishes & invitations (owner 2026-10-31). */
+  wishes: {
+    list: (signal?: AbortSignal) => request<{ items: Wish[] }>("/api/wishes", { signal }),
+    create: (input: WishInput) => request<{ wish: Wish }>("/api/wishes", { method: "POST", body: input }),
+    remove: (id: string) => request<void>(`/api/wishes/${enc(id)}`, { method: "DELETE" }),
+    /** One of the quick wishes (WISH_QUICK_COMMENTS) on a wish card. */
+    comment: (id: string, body: string) =>
+      request<{ commentCount: number; comments: WishComment[] }>(`/api/wishes/${enc(id)}/comments`, { method: "POST", body: { body } }),
+  },
   /** GET /api/gifs — the comment box's GIF picker (GIPHY; trending when `q` is empty). */
   gifs: (q: string, offset: number, signal?: AbortSignal) => request<GifSearchResponse>(`/api/gifs${query({ q: q || undefined, offset: offset || undefined })}`, { signal }),
   addComment: (id: string, input: CommentInput) =>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BarChart3, CalendarDays, Download, ExternalLink, FileText, Link2, Maximize2, PenLine, Plus, ScrollText, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarDays, Download, ExternalLink, FileText, Link2, Maximize2, PenLine, Plus, ScrollText, Share2, ShieldAlert, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState, type ComponentType, type ReactNode, type SVGProps } from "react";
 import { SpeedLinesSweep } from "@/components/brand/speed-lines-motion";
@@ -13,7 +13,7 @@ import { COMPANY } from "@/lib/company";
 import type { PressPass } from "@/lib/shared/contracts";
 import { passDate, regionLabel } from "./press-format";
 import { PressPassCard, type PressPassCardData } from "./press-pass-card";
-import { downloadPressPass } from "./press-pass-image";
+import { downloadPressPass, sharePressPass } from "./press-pass-image";
 import { PressPassZoom } from "./press-pass-zoom";
 import { ReviewProgress } from "./review-progress";
 
@@ -56,6 +56,7 @@ const EASE = [0.2, 0.8, 0.2, 1] as const;
 export function PressPassHolder({ pass, justIssued = false, editorDesk = false, onEdit }: PressPassHolderProps) {
   const reduce = useReducedMotion();
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const revoked = pass.status === "revoked";
   const data = cardDataOf(pass, editorDesk);
@@ -70,6 +71,17 @@ export function PressPassHolder({ pass, justIssued = false, editorDesk = false, 
       });
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const share = async () => {
+    setSharing(true);
+    try {
+      await sharePressPass(data);
+    } catch (error) {
+      toast.error("Couldn't share it", { description: errorMessage(error) });
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -151,6 +163,16 @@ export function PressPassHolder({ pass, justIssued = false, editorDesk = false, 
                 className="rounded-2xl px-6 max-sm:flex-1"
               >
                 Download PNG
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                loading={sharing}
+                leftIcon={<Share2 aria-hidden />}
+                onClick={() => void share()}
+                className="rounded-2xl px-6 max-sm:flex-1"
+              >
+                Share
               </Button>
             </div>
             {/* One line at every width (owner 2026-10-09): on phones the three spread across the row, a little tighter. */}

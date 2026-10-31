@@ -29,6 +29,9 @@ export type TourRecord = {
   pages?: Partial<Record<GuideId, TourMark>>;
   /** The account guides, by account id. */
   members?: Record<string, Partial<Record<MemberGuide, TourMark>>>;
+  /** Skipped a guide (owner 2026-10-31: "if a user skips the guide, don't show it again"): no guide is offered on this
+   * device any more. Settings → Help center → "Take the tour again" clears it. */
+  optOut?: true;
 };
 
 /** Mid-guide progress, kept per tab so a reload (the layout switch's rescue, the app) resumes where it was. */
@@ -109,6 +112,7 @@ export type OfferContext = {
  */
 export function guideToOffer({ viewer, canPublish, pathname, onFeed, record, feedOfferedThisSession }: OfferContext): GuideId | null {
   if (viewer?.role === "admin") return null;
+  if (record.optOut) return null;
   const member = toursAsMember(viewer);
   const id = viewer?.id ?? null;
   for (const page of PAGE_GUIDES) {

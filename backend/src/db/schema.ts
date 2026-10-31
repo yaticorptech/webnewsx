@@ -645,6 +645,55 @@ export const userEvent = pgTable(
 );
 
 /**
+ * Wishes (owner 2026-10-31): birthday wishes and invitations any member can post (no Press Pass), drawn in a simple
+ * template and woven into the Home feed at random spots, never on top. They stay — no expiry (owner 2026-10-31);
+ * `expires_at` is kept but not used.
+ */
+export const wish = pgTable(
+  "wish",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["birthday", "invitation"] }).notNull(),
+    template: text("template").notNull(),
+    /** Birthday: whose birthday. Invitation: the event's name. */
+    title: text("title").notNull(),
+    message: text("message"),
+    photoUrl: text("photo_url"),
+    photoKey: text("photo_key"),
+    /** Invitations: when and where. */
+    eventAt: tsMs("event_at"),
+    venue: text("venue"),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+    /** Not used: wishes don't expire (owner 2026-10-31). */
+    expiresAt: tsMs("expires_at").notNull(),
+  },
+  (t) => [index("wish_expires_idx").on(t.expiresAt), index("wish_author_idx").on(t.authorId, t.createdAt.desc())],
+);
+
+/**
+ * Quick wishes on a birthday wish / invitation (owner 2026-10-31): one of WISH_QUICK_COMMENTS, tapped on the Home card.
+ * One per person per wish — tapping another replaces it.
+ */
+export const wishComment = pgTable(
+  "wish_comment",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    wishId: uuid("wish_id")
+      .notNull()
+      .references(() => wish.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("wish_comment_wish_idx").on(t.wishId, t.createdAt.desc()), uniqueIndex("wish_comment_one_per_user").on(t.wishId, t.userId)],
+);
+
+/**
  * Content log (owner 2026-10-31: "for future or any legal issues"): every story a reporter publishes, edits, saves,
  * sends for review or deletes — who did it (the account, and the member / editor who acted for it), the story as it was
  * named then, and the IP address and browser / app it came from. No foreign keys: the record outlives a deleted story

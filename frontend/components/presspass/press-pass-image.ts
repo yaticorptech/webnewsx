@@ -287,3 +287,37 @@ export async function downloadPressPass(data: PressPassCardData): Promise<void> 
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
+
+/**
+ * Shares the pass (owner 2026-10-31: "both download and share"): the card image with its verify link — the phone's share
+ * sheet in the app, the browser's where it can send files, else the verify link copied.
+ */
+export async function sharePressPass(data: PressPassCardData): Promise<void> {
+  const blob = await renderPressPassPng(data);
+  const fileName = `webnews-press-pass-${data.passNumber.toLowerCase()}.png`;
+  const link = passVerifyUrl(data.passNumber);
+  const text = `${data.holder.name} — WebNEWS Press Pass ${data.passNumber}\n${link}`;
+  const cancelled = (error: unknown) => /cancel|abort/i.test(error instanceof Error ? `${error.name} ${error.message}` : String(error));
+  const plugin = nativeSharePlugin();
+  if (isNativeApp() && plugin) {
+    const uri = await shareFileUri(blob, fileName);
+    try {
+      await plugin.share(uri ? { title: "WebNEWS Press Pass", text, files: [uri], dialogTitle: "Share Press Pass" } : { title: "WebNEWS Press Pass", text, url: link, dialogTitle: "Share Press Pass" });
+    } catch (error) {
+      if (!cancelled(error)) throw error;
+    }
+    return;
+  }
+  const file = new File([blob], fileName, { type: "image/png" });
+  if (typeof navigator.share === "function") {
+    try {
+      if (navigator.canShare?.({ files: [file] })) await navigator.share({ title: "WebNEWS Press Pass", text, files: [file] });
+      else await navigator.share({ title: "WebNEWS Press Pass", text, url: link });
+      return;
+    } catch (error) {
+      if (cancelled(error)) return;
+    }
+  }
+  await navigator.clipboard?.writeText(link).catch(() => undefined);
+  toast.success("Link copied", { id: "press-pass-share", description: "Anyone with it sees your Press Pass." });
+}
