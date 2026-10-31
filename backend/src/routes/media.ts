@@ -46,6 +46,13 @@ export function mediaRoutes() {
     }
     if (!(storage instanceof LocalStorage)) {
       if (!KEY_PATTERN.test(key)) throw notFound();
+      // `?inline=1` (owner 2026-10-31): the image itself, same-origin — the share poster is drawn in the browser, which
+      // can't read R2's cross-site images (the photo came out as its blurred placeholder in WhatsApp shares).
+      if (c.req.query("inline") === "1" && !key.startsWith("videos/")) {
+        const upstream = await fetch(storage.urlFor(key), { signal: AbortSignal.timeout(10_000) }).catch(() => null);
+        if (!upstream?.ok) throw notFound();
+        return c.body(new Uint8Array(await upstream.arrayBuffer()), 200, { "Content-Type": contentTypeForKey(key), "Cache-Control": IMMUTABLE_CACHE });
+      }
       return c.redirect(storage.urlFor(key), 301);
     }
     // Only well-formed keys we create, and the resolved path must stay inside the upload dir.
