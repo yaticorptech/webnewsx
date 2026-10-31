@@ -13,7 +13,7 @@ import { ROLE_LABELS, ROLE_VALUES, type AdminUserRow, type Page, type Role } fro
 import { ActionDialog } from "./action-dialog";
 import { Chip, LevelChip, RoleChip } from "./chips";
 import { DeskDate } from "./desk-date";
-import { ListEmpty, ListError, ListLoading, LiveCount, LoadMore, SearchBox, Segmented, SelectFilter } from "./list-parts";
+import { ListEmpty, ListError, ListLoading, LiveCount, LoadMore, SearchBox, SelectFilter } from "./list-parts";
 import { PersonCell } from "./person";
 import { SectionHeader } from "./section-header";
 import { TBody, THead, Table, Td, Th, Tr } from "./table";
@@ -24,12 +24,6 @@ import { useUndo } from "./use-story-actions";
 
 export type PeopleFilters = { q?: string; role?: Role; status?: "active" | "suspended" };
 
-const ROLE_FILTERS = [
-  { value: "all", label: "Everyone" },
-  { value: "reader", label: "Readers" },
-  { value: "reporter", label: "Reporters" },
-  { value: "admin", label: "Editor Desk" },
-] as const;
 
 const ROLE_EFFECT: Record<Role, string> = {
   reader: "They lose publishing rights: an active Press Pass is revoked (their stories stay up).",
@@ -50,8 +44,9 @@ export function PeopleView({ initialFilters, initial }: { initialFilters: People
   const [filters, setFilters] = useUrlFilters<PeopleFilters>(initialFilters);
   const [initialKey] = useState(() => filtersKey(initialFilters));
   const list = useDeskList({
-    queryKey: qk.adminUsers(filters),
-    fetchPage: (cursor, signal) => api.admin.users({ ...filters, cursor }, signal),
+    // Readers only (owner 2026-10-31): reporters have their own section (Reporters).
+    queryKey: qk.adminUsers({ ...filters, role: "reader" }),
+    fetchPage: (cursor, signal) => api.admin.users({ ...filters, role: "reader", cursor }, signal),
     initial: filtersKey(filters) === initialKey ? initial : null,
   });
   const undo = useUndo();
@@ -149,16 +144,11 @@ export function PeopleView({ initialFilters, initial }: { initialFilters: People
   return (
     <div className="animate-fade-up flex flex-col gap-8">
       <SectionHeader
-        title="People"
-        description="Every account on WebNEWS. Change roles, and suspend accounts that break the rules — suspended people are signed out, can't sign in, and their stories leave the feeds."
+        title="Readers"
+        description="Readers on WebNEWS (reporters are under Reporters). Change roles, and suspend accounts that break the rules — suspended people are signed out and can't sign in."
       />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <Segmented
-          label="Role"
-          options={ROLE_FILTERS}
-          value={filters.role ?? "all"}
-          onChange={(role) => setFilters({ role: role === "all" ? undefined : role })}
-        />
+<span />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <SelectFilter
             label="Status"

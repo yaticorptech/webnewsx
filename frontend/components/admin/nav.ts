@@ -45,7 +45,7 @@ export const DESK_SECTIONS: readonly DeskSection[] = [
   { key: "inbox", href: "/admin/inbox", label: "Inbox", short: "Inbox", icon: Inbox, pending: (k) => k.newMessages, group: "Newsroom" },
   { key: "stories", href: "/admin/stories", label: "Stories", short: "Stories", icon: Newspaper, group: "Newsroom" },
   { key: "reporters", href: "/admin/reporters", label: "Reporters", short: "Reporters", icon: IdCard, group: "People" },
-  { key: "people", href: "/admin/people", label: "People", short: "People", icon: UsersRound, group: "People" },
+  { key: "people", href: "/admin/people", label: "Readers", short: "Readers", icon: UsersRound, group: "People" },
   // Group account applications from Press Pass holders (owner 2026-10-23).
   { key: "groups", href: "/admin/groups", label: "Group accounts", short: "Groups", icon: Building2, group: "People" },
   { key: "spotlight", href: "/admin/spotlight", label: "Spotlight", short: "Spotlight", icon: Sparkles, pending: (k) => k.spotlightRequests, group: "Revenue" },

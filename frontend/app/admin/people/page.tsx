@@ -6,17 +6,16 @@ import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "People" };
 
-const ROLES = ["all", "reader", "reporter", "admin"] as const;
 const STATUSES = ["any", "active", "suspended"] as const;
 
 export default async function AdminPeoplePage({ searchParams }: PageProps<"/admin/people">) {
   await requireAdmin();
   const sp = await searchParams;
-  const role = pick(param(sp.role), ROLES, "all");
   const status = pick(param(sp.status), STATUSES, "any");
   const filters: PeopleFilters = {
     q: param(sp.q)?.slice(0, 100),
-    role: role === "all" ? undefined : role,
+    // Readers only (owner 2026-10-31); reporters are under Reporters.
+    role: "reader",
     status: status === "any" ? undefined : status,
   };
   return <PeopleView initialFilters={filters} initial={await getAdminUsers(filters)} />;
