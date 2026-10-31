@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
-import { Heart, MessageCircle, Reply, Send, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Reply, Send, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { UserHandle } from "@/components/brand/user-handle";
@@ -17,8 +17,9 @@ import { toast } from "@/components/ui/toast";
 import { api, errorMessage, isApiError } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { qk } from "@/lib/query-keys";
-import { COMMENT_MAX, MENTION_REGEX, type ArticleCard, type ArticleComment, type Page } from "@/lib/shared/contracts";
+import { COMMENT_MAX, MENTION_REGEX, type ArticleCard, type ArticleComment, type CommentGif, type Page } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
+import { GifPicker } from "./gif-picker";
 import { MentionTextarea } from "./mention-textarea";
 
 type CommentPages = InfiniteData<Page<ArticleComment>, string | null>;
@@ -197,24 +198,29 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
   const authPrompt = useAuthPrompt();
   const inputId = useId();
   const [body, setBody] = useState(initial);
+  const [gif, setGif] = useState<CommentGif | null>(null);
+  const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
+  const textarea = useRef<HTMLTextAreaElement>(null);
 
   const send = async () => {
     if (posting || !authPrompt.guard("Log in to comment")) return;
     const text = body.trim();
-    if (!text) {
+    if (!text && !gif) {
       setError("Write a comment first");
       return;
     }
     setPosting(true);
     setError(null);
     try {
-      const { comment, commentCount } = await api.addComment(articleId, { body: text, parentId: parentId ?? null });
+      const { comment, commentCount } = await api.addComment(articleId, { body: text, gif, parentId: parentId ?? null });
       // The story's count as the server has it (owner 2026-10-05: adding 1 here as well as the live count showed 2 for 1).
       setStats(queryClient, articleId, { commentCount });
       onPosted(comment);
       setBody("");
+      setGif(null);
+      setPicking(false);
     } catch (err) {
       if (isApiError(err) && err.fields?.body) setError(err.fields.body);
       else toast.error("Couldn't post your comment", { id: "comment-error", description: errorMessage(err) });
@@ -241,6 +247,13 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
     );
   }
 
+  const canSend = Boolean(body.trim() || gif);
+
+  /*
+   * One box (owner 2026-10-31: "proper aligned"): the text, the chosen GIF and a toolbar — GIF on the left, Cancel /
+   * Post on the right — all inside the same rounded frame, which lights up while you type. The GIF picker opens
+   * right under it.
+   */
   return (
     <form
       onSubmit={(event: FormEvent) => {
@@ -250,51 +263,123 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
       className={cn("flex gap-3", className)}
       noValidate
     >
-      {!compact && <Avatar src={viewer.image} name={viewer.name} size="md" decorative className="mt-0.5 hidden sm:block xl:hidden" />}
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <label htmlFor={inputId} className="sr-only">
-          {parentId ? "Write a reply" : "Add a comment"}
-        </label>
-        <MentionTextarea
-          id={inputId}
-          value={body}
-          onValueChange={(value) => {
-            setBody(value);
-            if (error) setError(null);
-          }}
-          maxLength={COMMENT_MAX}
-          showCount={body.length > COMMENT_MAX * 0.8}
-          rows={compact ? 1 : 2}
-          autoGrow
-          maxRows={8}
-          autoFocus={autoFocus}
-          invalid={Boolean(error)}
-          aria-describedby={error ? `${inputId}-error` : undefined}
-          textareaClassName={compact ? "min-h-11 py-2.5" : undefined}
-          // Enter sends, Shift+Enter starts a new line (the @mention list handles Enter first while it's open).
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-              event.preventDefault();
-              void send();
-            }
-          }}
-          placeholder={parentId ? "Write a reply…" : "Add a comment…"}
-        />
-        <div className="flex items-center justify-between gap-3">
-          <p id={`${inputId}-error`} aria-live="polite" className="text-xs font-semibold text-brand">
-            {error}
-          </p>
-          <div className="flex items-center gap-1.5">
-            {onCancel && (
-              <Button variant="ghost" size="sm" onClick={onCancel} disabled={posting}>
-                Cancel
-              </Button>
+      {!compact && <Avatar src={viewer.image} name={viewer.name} size="md" decorative className="mt-1 hidden sm:block xl:hidden" />}
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div
+          className={cn(
+            "rounded-2xl border border-border-strong bg-surface transition-[border-color,box-shadow] duration-150",
+            "focus-within:border-brand focus-within:shadow-[0_0_0_3px_var(--tint-3)]",
+            error && "border-brand",
+          )}
+        >
+          <label htmlFor={inputId} className="sr-only">
+            {parentId ? "Write a reply" : "Add a comment"}
+          </label>
+          <MentionTextarea
+            id={inputId}
+            ref={textarea}
+            value={body}
+            onValueChange={(value) => {
+              setBody(value);
+              if (error) setError(null);
+            }}
+            maxLength={COMMENT_MAX}
+            showCount={false}
+            rows={compact ? 1 : 2}
+            autoGrow
+            maxRows={8}
+            autoFocus={autoFocus}
+            invalid={Boolean(error)}
+            aria-describedby={error ? `${inputId}-error` : undefined}
+            className="rounded-none border-0 bg-transparent shadow-none hover:border-0 focus-within:border-0 focus-within:shadow-none"
+            textareaClassName={cn("px-4 pt-3 pb-1", compact ? "min-h-11" : "min-h-16")}
+            // Enter sends, Shift+Enter starts a new line (the @mention list handles Enter first while it's open).
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                void send();
+              }
+            }}
+            placeholder={parentId ? "Write a reply…" : "Add a comment…"}
+          />
+
+          {gif && (
+            <div className="relative mx-4 mt-1 mb-1 inline-block">
+              <img
+                src={gif.url}
+                alt={gif.title || "GIF"}
+                width={gif.width}
+                height={gif.height}
+                className="block max-h-40 w-auto max-w-full rounded-xl"
+                style={{ aspectRatio: `${gif.width} / ${gif.height}` }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setGif(null);
+                  textarea.current?.focus();
+                }}
+                aria-label="Remove GIF"
+                className="absolute top-1.5 right-1.5 inline-flex size-7 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur transition-colors hover:bg-black/80"
+              >
+                <X aria-hidden className="size-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 px-2 pt-1 pb-2">
+            <button
+              type="button"
+              onClick={() => setPicking((open) => !open)}
+              aria-expanded={picking}
+              aria-label={gif ? "Change GIF" : "Add a GIF"}
+              className={cn(
+                "inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-[0.75rem] font-black tracking-wide transition-colors",
+                picking ? "bg-tint text-brand" : "text-muted hover:bg-tint hover:text-brand",
+              )}
+            >
+              <span aria-hidden className="rounded-[5px] border-[1.5px] border-current px-1 py-px leading-none">
+                GIF
+              </span>
+            </button>
+            {body.length > COMMENT_MAX * 0.8 && (
+              <span className={cn("text-xs tabular-nums", body.length >= COMMENT_MAX * 0.95 ? "font-semibold text-brand-strong" : "text-muted")}>
+                {COMMENT_MAX - body.length}
+              </span>
             )}
-            <Button type="submit" size="sm" loading={posting} leftIcon={<Send aria-hidden />} disabled={!body.trim()}>
-              {parentId ? "Reply" : "Post"}
-            </Button>
+            <div className="ml-auto flex items-center gap-1.5">
+              {onCancel && (
+                <Button variant="ghost" size="sm" onClick={onCancel} disabled={posting}>
+                  Cancel
+                </Button>
+              )}
+              <Button type="submit" size="sm" loading={posting} leftIcon={<Send aria-hidden />} disabled={!canSend}>
+                {parentId ? "Reply" : "Post"}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {picking && (
+          <GifPicker
+            onPick={(picked) => {
+              setGif(picked);
+              setPicking(false);
+              if (error) setError(null);
+              textarea.current?.focus({ preventScroll: true });
+            }}
+            onClose={() => {
+              setPicking(false);
+              textarea.current?.focus({ preventScroll: true });
+            }}
+          />
+        )}
+
+        {error && (
+          <p id={`${inputId}-error`} aria-live="polite" className="px-1 text-xs font-semibold text-brand">
+            {error}
+          </p>
+        )}
       </div>
     </form>
   );
@@ -470,7 +555,19 @@ function CommentItem({ comment, articleId, small = false, onReply, onDeleted }: 
           </span>
           <TimeAgo date={comment.createdAt} className="text-xs text-muted" />
         </p>
-        <CommentBody body={comment.body} mentions={comment.mentions} />
+        {comment.body && <CommentBody body={comment.body} mentions={comment.mentions} />}
+        {comment.gif && (
+          <img
+            src={comment.gif.url}
+            alt={comment.gif.title || "GIF"}
+            width={comment.gif.width}
+            height={comment.gif.height}
+            loading="lazy"
+            decoding="async"
+            className={cn("mt-1.5 block w-auto max-w-full rounded-xl bg-surface-2", small ? "max-h-36" : "max-h-48")}
+            style={{ aspectRatio: `${comment.gif.width} / ${comment.gif.height}` }}
+          />
+        )}
         <div className="-ml-2 mt-1 flex flex-wrap items-center gap-0.5">
           <button
             type="button"

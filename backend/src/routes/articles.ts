@@ -132,8 +132,8 @@ export function articleRoutes({ limiter }: RouteDeps) {
   // POST /api/articles/:id/comments — onboarded accounts comment on a visible story (`parentId` = a reply).
   app.post("/:id/comments", requireOnboarded, rateLimit(limiter, "comment", RATE_LIMITS.comment, "user"), async (c) => {
     const viewer = mustViewer(c);
-    const { body, parentId } = await readJson(c, commentSchema);
-    const added = await addComment(viewer, c.req.param("id"), body, parentId ?? null);
+    const { body, gif, parentId } = await readJson(c, commentSchema);
+    const added = await addComment(viewer, c.req.param("id"), body, parentId ?? null, gif ?? null);
     if (!added) throw notFound(parentId ? "Comment not found" : "Story not found");
     return c.json(added, 201);
   });

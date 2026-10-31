@@ -512,6 +512,13 @@
       "when": 1793356558615,
       "tag": "0072_publisher_site_footer_text",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1793422899677,
+      "tag": "0073_comment_gif",
+      "breakpoints": true
     }
   ]
 }

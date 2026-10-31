@@ -87,6 +87,7 @@ import type {
   AuditEntry,
   Category,
   CommentInput,
+  GifSearchResponse,
   CommentLikeResult,
   DraftCard,
   FeedTab,
@@ -587,6 +588,8 @@ export const api = {
   likeComment: (id: string, commentId: string, liked: boolean) =>
     request<CommentLikeResult>(`/api/articles/${enc(id)}/comments/${enc(commentId)}/like`, { method: liked ? "POST" : "DELETE" }),
   /** POST /api/articles/:id/comments — onboarded accounts (`parentId` = reply). 400 `fields.body`. */
+  /** GET /api/gifs — the comment box's GIF picker (GIPHY; trending when `q` is empty). */
+  gifs: (q: string, offset: number, signal?: AbortSignal) => request<GifSearchResponse>(`/api/gifs${query({ q: q || undefined, offset: offset || undefined })}`, { signal }),
   addComment: (id: string, input: CommentInput) =>
     request<{ comment: ArticleComment; commentCount: number }>(`/api/articles/${enc(id)}/comments`, { method: "POST", body: input }),
   /** DELETE /api/articles/:id/comments/:commentId — the comment's author, the story's author or the Editor Desk. */

@@ -49,7 +49,7 @@ const contentSecurityPolicy = [
   `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${isDev ? " 'unsafe-eval'" : ""}`,
   "frame-src https://api.razorpay.com https://checkout.razorpay.com",
   "style-src 'self' 'unsafe-inline'",
-  ["img-src 'self' data: blob: https://*.googleusercontent.com https://*.razorpay.com", ...mediaOrigins].join(" "),
+  ["img-src 'self' data: blob: https://*.googleusercontent.com https://*.razorpay.com https://*.giphy.com", ...mediaOrigins].join(" "),
   "font-src 'self' data:",
   // The poster images shared / auto-posted (components/poster/poster-jpeg.tsx) read the cover and the author's photo
   // to draw them: the media hosts and Google profile photos.

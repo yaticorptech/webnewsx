@@ -5,7 +5,7 @@ import { decodeCursor, paginate } from "../lib/cursor.js";
 import { publishEvent } from "../lib/events.js";
 import { notifyCommented } from "./notifications.js";
 import { toReporterLevel } from "../lib/roles.js";
-import { extractMentions, type ArticleComment, type CommentLikeResult, type Page, type Role } from "../shared/contracts.js";
+import { extractMentions, type ArticleComment, type CommentGif, type CommentLikeResult, type Page, type Role } from "../shared/contracts.js";
 import { visibleWhere } from "./articles.js";
 import { badgeLevelSql, beforeCursor, isUuid } from "./shared.js";
 
@@ -21,6 +21,7 @@ function commentColumns(viewerId: string | null) {
     articleId: articleComment.articleId,
     parentId: articleComment.parentId,
     body: articleComment.body,
+    gif: articleComment.gif,
     likeCount: articleComment.likeCount,
     createdAt: articleComment.createdAt,
     authorId: user.id,
@@ -40,6 +41,7 @@ type CommentRow = {
   articleId: string;
   parentId: string | null;
   body: string;
+  gif: CommentGif | null;
   likeCount: number;
   createdAt: Date;
   authorId: string;
@@ -72,6 +74,7 @@ function toComment(row: CommentRow, viewer: CommentViewer, storyAuthorId: string
     articleId: row.articleId,
     parentId: row.parentId,
     body: row.body,
+    gif: row.gif ?? null,
     createdAt: row.createdAt.toISOString(),
     author: { id: row.authorId, username: row.username ?? "", name: row.name, image: row.image, reporterLevel: toReporterLevel(row.reporterLevel) },
     likeCount: row.likeCount,
@@ -149,6 +152,7 @@ export async function addComment(
   articleId: string,
   body: string,
   parentId: string | null = null,
+  gif: CommentGif | null = null,
 ): Promise<{ comment: ArticleComment; commentCount: number } | null> {
   if (!isUuid(articleId) || (parentId !== null && !isUuid(parentId))) return null;
   return db.transaction(async (tx) => {
@@ -172,7 +176,7 @@ export async function addComment(
     }
     const [inserted] = await tx
       .insert(articleComment)
-      .values({ articleId, authorId: author.id, body, parentId: threadId })
+      .values({ articleId, authorId: author.id, body, gif, parentId: threadId })
       .returning({ id: articleComment.id });
     if (!inserted) return null;
     const [counted] = await tx
@@ -182,7 +186,7 @@ export async function addComment(
       .returning({ commentCount: article.commentCount });
     await publishEvent(tx, { t: "article.stats", id: articleId });
     await publishEvent(tx, { t: "comments", id: articleId });
-    await notifyCommented(tx, story, author.id, body);
+    await notifyCommented(tx, story, author.id, body || "sent a GIF");
     const rows = await tx
       .select(commentColumns(author.id))
       .from(articleComment)

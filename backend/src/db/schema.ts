@@ -504,14 +504,17 @@ export const articleComment = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     /** A reply's top-level comment (one level of threading; replies to a reply attach to the same parent). */
     parentId: uuid("parent_id").references((): AnyPgColumn => articleComment.id, { onDelete: "cascade" }),
+    /** Empty when the comment is only a GIF. */
     body: text("body").notNull(),
+    /** A GIPHY GIF under the text (owner 2026-10-31). */
+    gif: jsonb("gif").$type<{ url: string; width: number; height: number; title: string }>(),
     likeCount: integer("like_count").notNull().default(0),
     createdAt: tsMs("created_at").notNull().defaultNow(),
   },
   (t) => [
     index("article_comment_article_created_idx").on(t.articleId, t.createdAt.desc(), t.id.desc()),
     index("article_comment_parent_created_idx").on(t.parentId, t.createdAt, t.id),
-    check("article_comment_body_length", sql`char_length(${t.body}) between 1 and 1000`),
+    check("article_comment_body_length", sql`char_length(${t.body}) <= 1000 and (char_length(${t.body}) >= 1 or ${t.gif} is not null)`),
   ],
 );
 export type ArticleCommentRecord = typeof articleComment.$inferSelect;

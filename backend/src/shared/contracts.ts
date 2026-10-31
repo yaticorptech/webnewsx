@@ -868,6 +868,25 @@ export type ArticleStats = { id: string; viewCount: number; likeCount: number; s
 
 export const COMMENT_MAX = 1000;
 
+/*
+ * GIFs in comments (owner 2026-10-31), from GIPHY through `GET /api/gifs`. Only GIPHY's own media addresses are
+ * accepted, so a comment can't embed an image from anywhere else.
+ */
+export const GIF_HOST_REGEX = /^https:\/\/media[0-9]?\.giphy\.com\/media\/[A-Za-z0-9/_.-]+\.(gif|webp)(\?[A-Za-z0-9=&_.-]*)?$/;
+
+export const commentGifSchema = z.object({
+  url: z.string().max(500).regex(GIF_HOST_REGEX, "That GIF can't be used"),
+  width: z.number().int().min(1).max(2000),
+  height: z.number().int().min(1).max(2000),
+  title: z.string().trim().max(140).default(""),
+});
+export type CommentGif = z.output<typeof commentGifSchema>;
+
+/** One result in the GIF picker: the small `preview` for the grid and the `gif` that goes in the comment. */
+export type GifResult = { id: string; preview: string; gif: CommentGif };
+/** `GET /api/gifs?q=&offset=` — trending when `q` is empty. `configured: false` = no GIPHY key on the server yet. */
+export type GifSearchResponse = { configured: boolean; items: GifResult[]; nextOffset: number | null };
+
 /**
  * One comment under a story. `parentId` = the top-level comment it replies to (one level of threading).
  * `canDelete` = the viewer wrote it, wrote the story, or is the Editor Desk. `mentions` = the @usernames in the
@@ -878,6 +897,8 @@ export type ArticleComment = {
   articleId: string;
   parentId: string | null;
   body: string;
+  /** A GIF under (or instead of) the text. */
+  gif: CommentGif | null;
   createdAt: string;
   author: AuthorSummary & { reporterLevel: ReporterLevel | null };
   likeCount: number;
@@ -887,15 +908,18 @@ export type ArticleComment = {
   canDelete: boolean;
 };
 
-/** `POST /api/articles/:id/comments` (`parentId` = reply to that comment). */
-export const commentSchema = z.object({
-  body: z
-    .string()
-    .trim()
-    .min(1, "Write a comment first")
-    .max(COMMENT_MAX, `Keep comments under ${COMMENT_MAX.toLocaleString("en-US")} characters`),
-  parentId: z.string().uuid().nullable().optional(),
-});
+/** `POST /api/articles/:id/comments` (`parentId` = reply to that comment). Text, a GIF, or both. */
+export const commentSchema = z
+  .object({
+    body: z
+      .string()
+      .trim()
+      .max(COMMENT_MAX, `Keep comments under ${COMMENT_MAX.toLocaleString("en-US")} characters`)
+      .default(""),
+    gif: commentGifSchema.nullable().optional(),
+    parentId: z.string().uuid().nullable().optional(),
+  })
+  .refine((value) => value.body.length > 0 || Boolean(value.gif), { message: "Write a comment first", path: ["body"] });
 export type CommentInput = z.input<typeof commentSchema>;
 /** `POST | DELETE /api/articles/:id/comments/:commentId/like`. */
 export type CommentLikeResult = { liked: boolean; likeCount: number };
