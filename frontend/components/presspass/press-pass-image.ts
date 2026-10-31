@@ -1,7 +1,8 @@
 import { initialsOf } from "@/lib/utils";
 import QRCode from "qrcode";
 import { sameOriginMediaUrl } from "@/lib/media-url";
-import { isNativeApp, nativeSharePlugin, shareFileUri } from "@/lib/native-app";
+import { toast } from "@/components/ui/toast";
+import { isNativeApp, nativeSharePlugin, saveFileToDevice, shareFileUri } from "@/lib/native-app";
 import { barcodeBars, languageLabels, passDate } from "./press-format";
 import type { PressPassCardData } from "./press-pass-card";
 import { CARD_ART, CARD_H, CARD_RADIUS, CARD_W, LAYOUT, passVerifyUrl } from "./press-pass-layout";
@@ -258,12 +259,17 @@ export async function renderPressPassPng(data: PressPassCardData): Promise<Blob>
 /** Renders the pass and saves it as `webnews-press-pass-<number>.png`. */
 export async function downloadPressPass(data: PressPassCardData): Promise<void> {
   const blob = await renderPressPassPng(data);
-  // The phone app's web view ignores download links (owner 2026-10-31: "download not working in the app"): hand the
-  // image to the phone's share sheet, where it can be saved to Photos / Files or sent on.
-  const plugin = nativeSharePlugin();
-  if (isNativeApp() && plugin) {
-    const uri = await shareFileUri(blob, `webnews-press-pass-${data.passNumber.toLowerCase()}.png`);
-    if (uri) {
+  // The phone app's web view ignores download links (owner 2026-10-31): save it straight to the phone
+  // (Documents/WebNEWS); only if that fails, the share sheet (Save to Photos / Files from there).
+  const fileName = `webnews-press-pass-${data.passNumber.toLowerCase()}.png`;
+  if (isNativeApp()) {
+    if (await saveFileToDevice(blob, fileName)) {
+      toast.success("Press Pass saved", { id: "press-pass-download", description: "In your phone's Documents › WebNEWS folder." });
+      return;
+    }
+    const plugin = nativeSharePlugin();
+    const uri = plugin ? await shareFileUri(blob, fileName) : null;
+    if (plugin && uri) {
       try {
         await plugin.share({ title: "Save Press Pass", files: [uri], dialogTitle: "Save Press Pass" });
       } catch (error) {

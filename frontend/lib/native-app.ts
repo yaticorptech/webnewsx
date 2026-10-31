@@ -77,7 +77,7 @@ type PushSupportPlugin = { status(): Promise<{ configured: boolean }> };
 
 /** @capacitor/filesystem (mobile/, owner 2026-10-02): writes the shared cover image (and recordings) to the app's cache. */
 type FilesystemPlugin = {
-  writeFile(options: { path: string; data: string; directory: "CACHE"; recursive?: boolean }): Promise<{ uri: string }>;
+  writeFile(options: { path: string; data: string; directory: "CACHE" | "DOCUMENTS"; recursive?: boolean }): Promise<{ uri: string }>;
   appendFile(options: { path: string; data: string; directory: "CACHE" }): Promise<void>;
 };
 
@@ -236,6 +236,22 @@ export async function shareFileUriFromParts(parts: Blob[], name: string): Promis
   const { uri } = await fs.writeFile({ path, data: await base64(parts[0]!), directory: "CACHE", recursive: true });
   for (const part of parts.slice(1)) await fs.appendFile({ path, data: await base64(part), directory: "CACHE" });
   return uri;
+}
+
+/**
+ * Saves a file straight onto the phone (owner 2026-10-31: "download, not only share"): Documents/WebNEWS/<name> through
+ * the Filesystem plugin. Returns false where that isn't possible (website, older builds, storage refused).
+ */
+export async function saveFileToDevice(blob: Blob, name: string): Promise<boolean> {
+  const cap = capacitor();
+  const fs = cap?.Plugins?.Filesystem;
+  if (!cap || !fs || !(cap.isPluginAvailable?.("Filesystem") ?? false)) return false;
+  try {
+    await fs.writeFile({ path: `WebNEWS/${name}`, data: await base64(blob), directory: "DOCUMENTS", recursive: true });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function base64(blob: Blob): Promise<string> {
