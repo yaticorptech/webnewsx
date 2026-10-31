@@ -23,6 +23,7 @@ import { SpeedLinesLoader } from "@/components/ui/speed-lines-loader";
 import { TabPanel, Tabs, type TabItem } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { useSwipe } from "@/lib/hooks/use-swipe";
+import { useNativeApp } from "@/lib/hooks/use-native-app";
 import { useStartAtTop } from "@/lib/hooks/use-start-at-top";
 import { qk } from "@/lib/query-keys";
 import { canPublish, type ArticleCard, type DraftCard, type Page, type ProfileData } from "@/lib/shared/contracts";
@@ -218,30 +219,32 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
   };
 
   // Icon + label, no counts (owner 2026-09-28 mockup; the story count is in the stats strip).
-  const tabItems: TabItem[] = [{ value: "published", label: <TabLabel icon={<LayoutGrid aria-hidden />}>Articles</TabLabel> }];
+  // In the phone app the tabs are icons only (owner 2026-10-31), spread across the width so they never scroll sideways.
+  const inApp = useNativeApp();
+  const tabItems: TabItem[] = [{ value: "published", label: <TabLabel iconOnly={inApp} icon={<LayoutGrid aria-hidden />}>Articles</TabLabel> }];
   if (hasMembers) {
-    tabItems.push({ value: "members", label: <TabLabel icon={<Crown aria-hidden />}>Members only</TabLabel> });
+    tabItems.push({ value: "members", label: <TabLabel iconOnly={inApp} icon={<Crown aria-hidden />}>Members only</TabLabel> });
   }
   if (hasDesk) {
     tabItems.push({
       value: "drafts",
       // "Drafts" (SPEC §3.11; owner 2026-10-08, was "Desk"): drafts, stories at the Review Desk and returned stories.
       label: (
-        <TabLabel icon={<FilePen aria-hidden />}>
+        <TabLabel iconOnly={inApp} icon={<FilePen aria-hidden />}>
           Drafts<span className="sr-only"> and stories in review</span>
         </TabLabel>
       ),
     });
   }
   if (isSelf) {
-    tabItems.push({ value: "saved", label: <TabLabel icon={<Bookmark aria-hidden />}>Saved</TabLabel> });
+    tabItems.push({ value: "saved", label: <TabLabel iconOnly={inApp} icon={<Bookmark aria-hidden />}>Saved</TabLabel> });
   }
   if (hasPressMeet) {
-    tabItems.push({ value: "press-meet", label: <TabLabel icon={<Presentation aria-hidden />}>Press meet</TabLabel> });
+    tabItems.push({ value: "press-meet", label: <TabLabel iconOnly={inApp} icon={<Presentation aria-hidden />}>Press meet</TabLabel> });
   }
   // Only once one of their stories has been reported (or when the bell brought them here).
   if (isSelf && (reportedItems.length > 0 || tab === "reported")) {
-    tabItems.push({ value: "reported", label: <TabLabel icon={<Flag aria-hidden />}>Reported</TabLabel> });
+    tabItems.push({ value: "reported", label: <TabLabel iconOnly={inApp} icon={<Flag aria-hidden />}>Reported</TabLabel> });
   }
 
   // Phones (owner 2026-10-09): a sideways swipe moves to the next / previous tab (Articles → Drafts → Saved → Press
@@ -345,9 +348,12 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
           onValueChange={selectTab}
           items={tabItems}
           size="lg"
+          fullWidth={inApp}
           // Three tabs must fit a 320px phone: spread them instead of the fixed desktop gap.
           className={
-            tabItems.length > 3
+            inApp
+              ? "gap-0"
+              : tabItems.length > 3
               ? // Four or five tabs: they scroll sideways on phones rather than squeeze.
                 "no-scrollbar max-sm:gap-5 max-sm:overflow-x-auto max-sm:overflow-y-hidden max-[400px]:*:[[role=tab]]:text-sm"
               : tabItems.length > 2
@@ -513,7 +519,16 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
   );
 }
 
-function TabLabel({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+function TabLabel({ icon, children, iconOnly = false }: { icon: ReactNode; children: ReactNode; iconOnly?: boolean }) {
+  if (iconOnly) {
+    // The name stays for screen readers.
+    return (
+      <span className="inline-flex items-center [&_svg]:size-5.5 [&_svg]:shrink-0">
+        {icon}
+        <span className="sr-only">{children}</span>
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1.5 [&_svg]:size-4 [&_svg]:shrink-0">
       {icon}
