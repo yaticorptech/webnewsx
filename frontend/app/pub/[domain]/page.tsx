@@ -20,7 +20,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: site.tagline ?? `${site.title}: the latest news.`,
     alternates: { canonical: `https://${site.domain}/` },
     openGraph: { siteName: site.title, title: site.title, description: site.tagline ?? undefined, images: site.logoUrl ? [site.logoUrl] : undefined },
-    icons: site.logoUrl ? { icon: site.logoUrl } : undefined,
   };
 }
 

@@ -20,7 +20,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: { absolute: `${label} — ${home.site.title}` },
     description: `${home.site.title}: the latest ${label} news.`,
     alternates: { canonical: `https://${home.site.domain}/category/${home.category}` },
-    icons: home.site.logoUrl ? { icon: home.site.logoUrl } : undefined,
   };
 }
 

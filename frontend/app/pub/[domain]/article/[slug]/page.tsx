@@ -37,7 +37,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: article.blurb ?? article.excerpt ?? undefined,
     openGraph: { siteName: site.title, title: article.title, type: "article", images: image ? [image] : undefined },
     twitter: { card: "summary_large_image", title: article.title, images: image ? [image] : undefined },
-    icons: site.logoUrl ? { icon: site.logoUrl } : undefined,
   };
 }
 
