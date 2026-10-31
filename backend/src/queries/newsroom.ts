@@ -21,9 +21,39 @@ export const DEFAULT_TIME_ZONE = "Asia/Kolkata";
 
 const TIME_ZONES = new Set<string>([...Intl.supportedValuesOf("timeZone"), "UTC"]);
 
+/*
+ * Old names browsers still report (Chrome on Indian Macs sends "Asia/Calcutta") that the production Postgres doesn't
+ * know — it failed every Newsroom chart there (2026-10-31). Mapped to today's names before they reach a query.
+ */
+const LEGACY_ZONES: Record<string, string> = {
+  "Asia/Calcutta": "Asia/Kolkata",
+  "Asia/Katmandu": "Asia/Kathmandu",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Rangoon": "Asia/Yangon",
+  "Asia/Dacca": "Asia/Dhaka",
+  "Asia/Thimbu": "Asia/Thimphu",
+  "Asia/Ulan_Bator": "Asia/Ulaanbaatar",
+  "Europe/Kiev": "Europe/Kyiv",
+  "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+  "Atlantic/Faeroe": "Atlantic/Faroe",
+  "Pacific/Truk": "Pacific/Chuuk",
+  "Pacific/Ponape": "Pacific/Pohnpei",
+};
+
+/** The zones this database knows (loaded once); until it answers only the legacy map + Node's list apply. */
+let dbZones: Set<string> | null = null;
+void db
+  .execute<{ name: string }>(sql`select name from pg_timezone_names`)
+  .then((rows) => {
+    dbZones = new Set(Array.from(rows as Iterable<{ name: string }>, (r) => r.name));
+  })
+  .catch(() => undefined);
+
 /** IANA zone from `?tz=` (the reporter's browser); unknown values fall back to India time. */
 export function resolveTimeZone(raw: string | undefined): string {
-  return raw && TIME_ZONES.has(raw) ? raw : DEFAULT_TIME_ZONE;
+  const zone = raw ? (LEGACY_ZONES[raw] ?? raw) : "";
+  if (!zone || !TIME_ZONES.has(zone)) return DEFAULT_TIME_ZONE;
+  return dbZones && !dbZones.has(zone) ? DEFAULT_TIME_ZONE : zone;
 }
 
 const num = (value: number) => sql.raw(String(Math.trunc(value)));
