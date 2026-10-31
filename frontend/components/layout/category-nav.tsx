@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { isFeedPath } from "@/components/feed/feed-views";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, House } from "lucide-react";
 import { NAV_FOLLOWING, NAV_HOME, NAV_MAIN, NAV_MARKET, NAV_MORE, type NavItem, type NavKey } from "@/lib/categories";
 import { districtFromSlug, isCategory } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
@@ -211,8 +211,10 @@ function CategoryNavView({ active, className, trail }: CategoryNavProps & { acti
                   href={item.href}
                   onClick={onTap(item.key)}
                   aria-current={here ? "page" : undefined}
-                  className={cn(TEXT_ITEM, here ? "text-brand after:bg-brand" : "text-ink hover:text-brand")}
+                  className={cn(TEXT_ITEM, item.key === NAV_HOME.key && "gap-1.5", here ? "text-brand after:bg-brand" : "text-ink hover:text-brand")}
                 >
+                  {/* Home with its house icon (owner 2026-10-31). */}
+                  {item.key === NAV_HOME.key && <House aria-hidden className="size-4 shrink-0" strokeWidth={2.25} />}
                   {item.label}
                 </Link>
               </li>
