@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis, Eye, EyeOff, FileX2, Flag, History, Newspaper, Pin, PinOff, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Ellipsis, Eye, EyeOff, FileX2, Flag, History, Newspaper, PenLine, Pin, PinOff, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -92,7 +92,10 @@ export function StoriesView({ initialFilters, initial, initialPins }: StoriesVie
 
   const menuFor = (story: AdminStoryRow): DropdownItem[] => {
     const live = story.status === "published";
-    const items: DropdownItem[] = [{ label: "Preview", icon: <Eye aria-hidden />, onSelect: () => setPreview(story) }];
+    const items: DropdownItem[] = [
+      { label: "Preview", icon: <Eye aria-hidden />, onSelect: () => setPreview(story) },
+      { label: "Edit story", icon: <PenLine aria-hidden />, href: `/publish/${story.id}` },
+    ];
     items.push({ type: "separator" });
     if (live) {
       items.push(
@@ -403,6 +406,11 @@ function DayGroups({
                           <button type="button" onClick={() => onRead(story)} className={cn(ROW_BUTTON, "border-brand/40 text-brand hover:bg-tint")}>
                             Read
                           </button>
+                          {/* The Editor Desk edits any story in the composer (owner 2026-10-31); it stays the reporter's. */}
+                          <a href={`/publish/${story.id}`} className={cn(ROW_BUTTON, "gap-1.5 border-border text-ink hover:bg-surface-2")}>
+                            <PenLine aria-hidden className="size-3.5" />
+                            Edit
+                          </a>
                           {live && story.slug && (
                             <a href={`/a/${story.slug}`} target="_blank" rel="noopener" className={cn(ROW_BUTTON, "border-[#bfe3c8] text-[#1f7a3d] hover:bg-[#f1faf3]")}>
                               View live
@@ -418,6 +426,7 @@ function DayGroups({
                             trigger={<Ellipsis aria-hidden className="size-4" />}
                             triggerClassName={cn(ROW_BUTTON, "w-9 border-border px-0 text-muted hover:text-ink")}
                             items={menuFor(story)}
+                            floating
                           />
                         </div>
                       </td>

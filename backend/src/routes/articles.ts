@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { db } from "../db/client.js";
+import { writeAudit } from "../lib/audit.js";
 import { ApiError, notFound } from "../lib/errors.js";
 import { RATE_LIMITS } from "../lib/rate-limit.js";
 import { needsReview } from "../lib/roles.js";
@@ -9,7 +11,7 @@ import { mustViewer, requireOnboarded, requireReporter, requireUser } from "../m
 import { rateLimit } from "../middleware/rate-limit.js";
 import { deleteArticle, saveArticle, setArticleCategory } from "../queries/article-write.js";
 import { addComment, deleteComment, listComments, listReplies, setCommentLike } from "../queries/comments.js";
-import { findOwnedArticle, findSlugByShortCode, getPublishedDetailBySlug, listMoreFromAuthor, toOwnedArticle } from "../queries/articles.js";
+import { findArticleById, findOwnedArticle, findSlugByShortCode, getPublishedDetailBySlug, listMoreFromAuthor, toOwnedArticle } from "../queries/articles.js";
 import { createFlag } from "../queries/flags.js";
 import { storyPressMeet } from "../queries/press-meets.js";
 import { ogImage, shareImage } from "../queries/share-image.js";
@@ -41,6 +43,15 @@ export function articleRoutes({ limiter }: RouteDeps) {
       if (!hit.allowed) {
         c.header("Retry-After", String(hit.retryAfterSec));
         throw new ApiError(429, "rate_limited", "You're creating stories too quickly. Try again later.");
+      }
+    }
+    // The Editor Desk editing another reporter's story (owner 2026-10-31): saved as that author's, and logged.
+    if (input.id && viewer.role === "admin") {
+      const target = await findArticleById(input.id);
+      if (target && target.authorId !== viewer.id) {
+        const result = await saveArticle({ id: target.authorId, needsReview: false, editorId: viewer.id }, input);
+        await writeAudit(db, { actorId: viewer.id, action: "story.edit", targetType: "article", targetId: target.id, targetLabel: input.title ?? target.title });
+        return c.json(result, 200);
       }
     }
     const groupWriter = viewer.actor ? { id: viewer.actor.id, role: viewer.actor.role } : undefined;
@@ -97,7 +108,8 @@ export function articleRoutes({ limiter }: RouteDeps) {
   // GET /api/articles/:id — owner only (composer / drafts). Others get 404.
   app.get("/:id", requireUser, async (c) => {
     const viewer = mustViewer(c);
-    const row = await findOwnedArticle(c.req.param("id"), viewer.id);
+    // The Editor Desk can open anyone's story in the composer (owner 2026-10-31).
+    const row = viewer.role === "admin" ? await findArticleById(c.req.param("id")) : await findOwnedArticle(c.req.param("id"), viewer.id);
     if (!row) throw notFound("Story not found");
     const pressMeet = row.pressMeetId ? await storyPressMeet(row.pressMeetId, viewer.id, row.id) : null;
     return c.json({ article: { ...toOwnedArticle(row), pressMeet } });

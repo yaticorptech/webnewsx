@@ -2,15 +2,8 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 export type DropdownItem =
@@ -47,6 +40,11 @@ export type DropdownMenuProps = {
   /** Controlled: open from outside (e.g. right after an action), told about every open / close. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Draw the panel on top of the page, fixed under the trigger (owner 2026-10-31): for triggers inside a scrolling /
+   * clipped box (the Editor Desk's tables), where the panel would otherwise be cut off.
+   */
+  floating?: boolean;
 };
 
 /**
@@ -65,6 +63,7 @@ export function DropdownMenu({
   menuClassName,
   open: openProp,
   onOpenChange,
+  floating = false,
 }: DropdownMenuProps) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -81,8 +80,7 @@ export function DropdownMenu({
   const focusOnOpen = useRef<"first" | "last">("first");
   const menuId = useId();
 
-  const menuItems = () =>
-    Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])') ?? []);
+  const menuItems = () => Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])') ?? []);
 
   const close = useCallback(
     (restoreFocus: boolean) => {
@@ -106,16 +104,40 @@ export function DropdownMenu({
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) close(false);
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) close(false);
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open, close]);
 
+  const [place, setPlace] = useState<{
+    top: number;
+    left?: number;
+    right?: number;
+  } | null>(null);
   const openWith = (where: "first" | "last") => {
     focusOnOpen.current = where;
+    if (floating && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPlace(
+        align === "end" ? { top: rect.bottom + 8, right: window.innerWidth - rect.right } : { top: rect.bottom + 8, left: rect.left },
+      );
+    }
     setOpen(true);
   };
+
+  // A floating panel stays put under its trigger only while nothing scrolls.
+  useEffect(() => {
+    if (!open || !floating) return;
+    const onMove = () => close(false);
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [open, floating, close]);
 
   const onTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
@@ -167,6 +189,109 @@ export function DropdownMenu({
       disabled && "pointer-events-none opacity-45",
     );
 
+  const panel = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={menuRef}
+          id={menuId}
+          role="menu"
+          aria-label={label}
+          onKeyDown={onMenuKeyDown}
+          initial={{ opacity: 0, scale: 0.96, y: -6 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{
+            opacity: 0,
+            scale: 0.97,
+            y: -4,
+            transition: { duration: 0.12 },
+          }}
+          transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+          style={
+            floating && place
+              ? {
+                  position: "fixed",
+                  top: place.top,
+                  left: place.left,
+                  right: place.right,
+                }
+              : undefined
+          }
+          className={cn(
+            "z-80 min-w-56 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 shadow-pop",
+            floating ? (align === "end" ? "origin-top-right" : "origin-top-left") : "absolute top-full mt-2",
+            !floating && (align === "end" ? "right-0 origin-top-right" : "left-0 origin-top-left"),
+            menuClassName,
+          )}
+        >
+          {header &&
+            (headerHref ? (
+              <Link
+                href={headerHref}
+                role="menuitem"
+                tabIndex={-1}
+                className="block rounded-md px-3 pb-2 pt-2.5 outline-none transition-colors hover:bg-tint focus-visible:bg-tint"
+                onClick={() => close(false)}
+              >
+                {header}
+              </Link>
+            ) : (
+              <div className="px-3 pb-2 pt-2.5">{header}</div>
+            ))}
+          {items.map((item, i) => {
+            if (item.type === "separator") {
+              return <div key={`sep-${i}`} role="separator" className="-mx-1.5 my-1.5 h-px bg-border" />;
+            }
+            if (item.type === "label") {
+              return (
+                <div key={`label-${i}`} role="presentation" className="kicker px-3 pb-1 pt-2 text-muted">
+                  {item.label}
+                </div>
+              );
+            }
+            const content = (
+              <>
+                {item.icon}
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+              </>
+            );
+            if (item.href && !item.disabled) {
+              return (
+                <Link
+                  key={i}
+                  href={item.href}
+                  role="menuitem"
+                  tabIndex={-1}
+                  className={itemClass(item.danger)}
+                  onClick={() => close(false)}
+                >
+                  {content}
+                </Link>
+              );
+            }
+            return (
+              <button
+                key={i}
+                type="button"
+                role="menuitem"
+                tabIndex={-1}
+                aria-disabled={item.disabled || undefined}
+                className={itemClass(item.danger, item.disabled)}
+                onClick={() => {
+                  if (item.disabled) return;
+                  close(true);
+                  item.onSelect?.();
+                }}
+              >
+                {content}
+              </button>
+            );
+          })}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <div ref={rootRef} className={cn("relative inline-flex", className)}>
       <button
@@ -183,90 +308,7 @@ export function DropdownMenu({
         {trigger}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            ref={menuRef}
-            id={menuId}
-            role="menu"
-            aria-label={label}
-            onKeyDown={onMenuKeyDown}
-            initial={{ opacity: 0, scale: 0.96, y: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: -4, transition: { duration: 0.12 } }}
-            transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
-            className={cn(
-              "absolute top-full z-80 mt-2 min-w-56 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 shadow-pop",
-              align === "end" ? "right-0 origin-top-right" : "left-0 origin-top-left",
-              menuClassName,
-            )}
-          >
-            {header &&
-              (headerHref ? (
-                <Link
-                  href={headerHref}
-                  role="menuitem"
-                  tabIndex={-1}
-                  className="block rounded-md px-3 pb-2 pt-2.5 outline-none transition-colors hover:bg-tint focus-visible:bg-tint"
-                  onClick={() => close(false)}
-                >
-                  {header}
-                </Link>
-              ) : (
-                <div className="px-3 pb-2 pt-2.5">{header}</div>
-              ))}
-            {items.map((item, i) => {
-              if (item.type === "separator") {
-                return <div key={`sep-${i}`} role="separator" className="-mx-1.5 my-1.5 h-px bg-border" />;
-              }
-              if (item.type === "label") {
-                return (
-                  <div key={`label-${i}`} role="presentation" className="kicker px-3 pb-1 pt-2 text-muted">
-                    {item.label}
-                  </div>
-                );
-              }
-              const content = (
-                <>
-                  {item.icon}
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                </>
-              );
-              if (item.href && !item.disabled) {
-                return (
-                  <Link
-                    key={i}
-                    href={item.href}
-                    role="menuitem"
-                    tabIndex={-1}
-                    className={itemClass(item.danger)}
-                    onClick={() => close(false)}
-                  >
-                    {content}
-                  </Link>
-                );
-              }
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  role="menuitem"
-                  tabIndex={-1}
-                  aria-disabled={item.disabled || undefined}
-                  className={itemClass(item.danger, item.disabled)}
-                  onClick={() => {
-                    if (item.disabled) return;
-                    close(true);
-                    item.onSelect?.();
-                  }}
-                >
-                  {content}
-                </button>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {floating && typeof document !== "undefined" ? createPortal(panel, document.body) : panel}
     </div>
   );
 }

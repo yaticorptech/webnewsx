@@ -38,10 +38,10 @@ type CoverFields = Pick<ArticleRecord, "coverUrl" | "coverKey" | "coverWidth" | 
 const NO_COVER: CoverFields = { coverUrl: null, coverKey: null, coverWidth: null, coverHeight: null, coverBlur: null };
 
 /** Validates a client-sent cover: it must be one of the author's own uploads. URL is rebuilt from the key. */
-function resolveCover(cover: SaveArticleData["cover"], authorId: string): CoverFields {
+function resolveCover(cover: SaveArticleData["cover"], owners: readonly string[]): CoverFields {
   if (!cover) return NO_COVER;
   const invalid = () => validationError({ cover: "Please upload the cover image again" });
-  if (!KEY_PATTERN.test(cover.key) || !cover.key.startsWith(`covers/${authorId}/`)) throw invalid();
+  if (!KEY_PATTERN.test(cover.key) || !owners.some((o) => cover.key.startsWith(`covers/${o}/`))) throw invalid();
   if (cover.url !== storage.urlFor(cover.key)) throw invalid();
   if (cover.blurDataUrl !== null && !cover.blurDataUrl.startsWith("data:image/")) throw invalid();
   return {
@@ -61,10 +61,10 @@ const NO_VIDEO: VideoFields = { videoUrl: null, videoKey: null, videoWidth: null
  * Validates a client-sent video (lib/video.ts output): one of the author's own `videos/` uploads, URL rebuilt from
  * the key. A video story needs its poster as the cover (the upload returns both).
  */
-function resolveVideo(video: SaveArticleData["video"], authorId: string, cover: CoverFields): VideoFields {
+function resolveVideo(video: SaveArticleData["video"], owners: readonly string[], cover: CoverFields): VideoFields {
   if (!video) return NO_VIDEO;
   const invalid = () => validationError({ video: "Please upload the video again" });
-  if (!KEY_PATTERN.test(video.key) || !video.key.startsWith(`videos/${authorId}/`)) throw invalid();
+  if (!KEY_PATTERN.test(video.key) || !owners.some((o) => video.key.startsWith(`videos/${o}/`))) throw invalid();
   if (video.url !== storage.urlFor(video.key)) throw invalid();
   if (!cover.coverKey) throw invalid();
   return {
@@ -90,10 +90,10 @@ const NO_ARTICLE_IMAGE: ArticleImageFields = {
 };
 
 /** The full article's 16:9 image (or its video's poster): one of the author's own `covers/` uploads, like the cover. */
-function resolveArticleImage(image: SaveArticleData["articleImage"], authorId: string): ArticleImageFields {
+function resolveArticleImage(image: SaveArticleData["articleImage"], owners: readonly string[]): ArticleImageFields {
   if (!image) return NO_ARTICLE_IMAGE;
   const invalid = () => validationError({ articleImage: "Please upload the article image again" });
-  if (!KEY_PATTERN.test(image.key) || !image.key.startsWith(`covers/${authorId}/`)) throw invalid();
+  if (!KEY_PATTERN.test(image.key) || !owners.some((o) => image.key.startsWith(`covers/${o}/`))) throw invalid();
   if (image.url !== storage.urlFor(image.key)) throw invalid();
   if (image.blurDataUrl !== null && !image.blurDataUrl.startsWith("data:image/")) throw invalid();
   return {
@@ -119,10 +119,10 @@ const NO_ARTICLE_VIDEO: ArticleVideoFields = {
 };
 
 /** The full article's video: one of the author's own `videos/` uploads; its poster is the article image. */
-function resolveArticleVideo(video: SaveArticleData["articleVideo"], authorId: string, image: ArticleImageFields): ArticleVideoFields {
+function resolveArticleVideo(video: SaveArticleData["articleVideo"], owners: readonly string[], image: ArticleImageFields): ArticleVideoFields {
   if (!video) return NO_ARTICLE_VIDEO;
   const invalid = () => validationError({ articleVideo: "Please upload the article video again" });
-  if (!KEY_PATTERN.test(video.key) || !video.key.startsWith(`videos/${authorId}/`)) throw invalid();
+  if (!KEY_PATTERN.test(video.key) || !owners.some((o) => video.key.startsWith(`videos/${o}/`))) throw invalid();
   if (video.url !== storage.urlFor(video.key)) throw invalid();
   if (!image.articleImageKey) throw invalid();
   return {
@@ -198,10 +198,12 @@ function checkGroupWriter(writer: GroupWriter | undefined, existing: Pick<Articl
 }
 
 export async function saveArticle(
-  author: { id: string; needsReview: boolean; groupWriter?: GroupWriter },
+  author: { id: string; needsReview: boolean; groupWriter?: GroupWriter; editorId?: string },
   input: SaveArticleData,
 ): Promise<SaveArticleResponse> {
   const authorId = author.id;
+  // The Editor Desk editing someone's story (owner 2026-10-31): images it uploads sit in its own folder.
+  const owners = author.editorId ? [authorId, author.editorId] : [authorId];
   const groupWriter = author.groupWriter;
   // Checked first so the author hears why, whatever else the form still lacks (re-checked under the row lock below).
   if (input.id && input.action !== "draft" && isUuid(input.id)) {
@@ -219,10 +221,10 @@ export async function saveArticle(
     throw validationError({ bodyHtml: `Keep the story under ${LIMITS.bodyTextMax.toLocaleString("en-US")} characters` });
   }
   const title = (input.title ?? "").trim() || null;
-  const cover = resolveCover(input.cover, authorId);
-  const video = resolveVideo(input.video, authorId, cover);
-  const articleImage = resolveArticleImage(input.articleImage, authorId);
-  const articleVideo = resolveArticleVideo(input.articleVideo, authorId, articleImage);
+  const cover = resolveCover(input.cover, owners);
+  const video = resolveVideo(input.video, owners, cover);
+  const articleImage = resolveArticleImage(input.articleImage, owners);
+  const articleVideo = resolveArticleVideo(input.articleVideo, owners, articleImage);
   const linkUrl = input.linkUrl ? input.linkUrl : null;
   const category = input.category ?? null;
   // Only Karnataka stories carry a district; a draft keeps one only while it is valid.

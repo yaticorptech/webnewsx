@@ -11,6 +11,7 @@ import {
   IdCard,
   MessageSquareWarning,
   Package,
+  PenLine,
   Pin,
   PinOff,
   ShieldCheck,
@@ -110,6 +111,7 @@ export function describeAudit(entry: AuditEntry): Described {
       const section = isCategory(to) ? categoryLabel(to, str(meta.district)) : "another section";
       return { icon: FolderInput, tone: "muted", text: <>moved {quoted} to <Target>{section}</Target></> };
     },
+    "story.edit": () => ({ icon: PenLine, tone: "muted", text: <>edited {quoted}</> }),
     "flags.resolve": () => {
       const count = num(meta.flags) ?? 0;
       const reports = `${count} report${count === 1 ? "" : "s"}`;

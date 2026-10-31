@@ -1955,6 +1955,7 @@ export type AuditAction =
   | "story.unpin"
   | "story.pins_reorder"
   | "story.category"
+  | "story.edit"
   | "flags.resolve"
   | "user.role"
   | "user.auto_admin"
