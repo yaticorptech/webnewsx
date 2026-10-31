@@ -10,6 +10,8 @@ export type ProfileAvatarProps = {
   src: string | null;
   name: string;
   className?: string;
+  /** "card": a rounded square in a white frame, like the Press Pass photo (owner 2026-10-31); default the ringed circle. */
+  shape?: "circle" | "card";
 };
 
 /** Where the photo sits in the ring, relative to the enlarged photo centred on screen. */
@@ -42,7 +44,9 @@ const EASE = [0.2, 0.8, 0.2, 1] as const;
  * Owner 2026-09-29: tapping the photo lifts it out of the ring into a large circle over a dimmed page; a tap
  * anywhere (or Esc) puts it back.
  */
-export function ProfileAvatar({ src, name, className }: ProfileAvatarProps) {
+export function ProfileAvatar({ src, name, className, shape = "circle" }: ProfileAvatarProps) {
+  const card = shape === "card";
+  const round = card ? "rounded-2xl" : "rounded-full";
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showImage = Boolean(src) && failedSrc !== src;
   const photoRef = useRef<HTMLButtonElement>(null);
@@ -78,9 +82,15 @@ export function ProfileAvatar({ src, name, className }: ProfileAvatarProps) {
   }, [open]);
 
   return (
-    <div className={cn("ring-draw relative shrink-0 self-start rounded-full p-0.75 sm:p-1", className)}>
-      <div className="rounded-full bg-surface p-0.75 sm:p-1">
-        <div className="relative flex size-24 items-center justify-center overflow-hidden rounded-full bg-tint sm:size-33">
+    <div
+      className={cn(
+        "relative shrink-0 self-start",
+        card ? "rounded-[1.15rem] bg-surface p-1 shadow-[0_10px_24px_-10px_rgb(120_10_20/0.45)] ring-1 ring-black/5" : "ring-draw rounded-full p-0.75 sm:p-1",
+        className,
+      )}
+    >
+      <div className={cn(round, "bg-surface", card ? "p-0" : "p-0.75 sm:p-1")}>
+        <div className={cn("relative flex size-24 items-center justify-center overflow-hidden bg-tint sm:size-33", round)}>
           <span
             aria-hidden
             className={cn(
@@ -97,7 +107,7 @@ export function ProfileAvatar({ src, name, className }: ProfileAvatarProps) {
               onClick={show}
               aria-label={`View ${name}’s profile photo`}
               aria-haspopup="dialog"
-              className="absolute inset-0 rounded-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+              className={cn("absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand", round)}
             >
               <img
                 src={src}
