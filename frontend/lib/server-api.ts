@@ -108,6 +108,8 @@ export type ServerFetchInit = Omit<RequestInit, "body"> & {
   timeoutMs?: number;
   /** Forward the incoming cookie / user-agent headers and the client address (default true). */
   forwardRequestHeaders?: boolean;
+  /** Keep an admin's own identity (the Editor Desk editing a story in the composer) instead of fetching as a visitor. */
+  asAdmin?: boolean;
 };
 
 function isBodyInit(value: unknown): value is BodyInit {
@@ -128,7 +130,7 @@ function isBodyInit(value: unknown): value is BodyInit {
  * Returns `undefined` for 204.
  */
 export async function serverFetch<T>(path: string, init: ServerFetchInit = {}): Promise<T> {
-  const { timeoutMs = DEFAULT_TIMEOUT_MS, forwardRequestHeaders = true, body, headers: extra, signal, ...rest } = init;
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, forwardRequestHeaders = true, asAdmin = false, body, headers: extra, signal, ...rest } = init;
 
   const outgoing = new Headers(extra);
   if (!outgoing.has("accept")) outgoing.set("accept", "application/json");
@@ -147,7 +149,7 @@ export async function serverFetch<T>(path: string, init: ServerFetchInit = {}): 
     // data is fetched as one. The console's own calls (/api/admin/*) and the viewer lookup itself are left alone.
     // Only a request carrying a session can be an admin's, so logged-out traffic never waits for the lookup.
     const hasSession = incoming.get("cookie")?.includes("session_token") ?? false;
-    if (hasSession && path !== "/api/me" && !path.startsWith("/api/admin") && (await getViewer())?.role === "admin") {
+    if (hasSession && !asAdmin && path !== "/api/me" && !path.startsWith("/api/admin") && (await getViewer())?.role === "admin") {
       outgoing.set(VIEW_AS_VISITOR_HEADER, "visitor");
     }
   }
@@ -322,7 +324,8 @@ export async function getUserDrafts(username: string, cursor?: string | null): P
  */
 export const getOwnedArticle = cache(
   async (id: string): Promise<OwnedArticle | null> =>
-    orNull(async () => (await serverFetch<{ article: OwnedArticle }>(`/api/articles/${enc(id)}`)).article, true),
+    // asAdmin: the Editor Desk opens anyone's story here (owner 2026-10-31).
+    orNull(async () => (await serverFetch<{ article: OwnedArticle }>(`/api/articles/${enc(id)}`, { asAdmin: true })).article, true),
 );
 
 export async function getFollowers(username: string, cursor?: string | null): Promise<Page<UserRow>> {

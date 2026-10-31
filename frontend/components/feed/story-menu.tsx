@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, FolderInput, Sparkles, Trash2 } from "lucide-react";
+import { BarChart3, FolderInput, PenLine, Sparkles, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { DeleteStoryDialog } from "@/components/article/delete-story-button";
@@ -74,8 +74,11 @@ export function StoryMenu({
       setCategoryOpen(true);
     },
   };
+  // Edit in the composer (owner 2026-10-31): the story's own reporter, and the Editor Desk on anyone's.
+  const editItem: DropdownItem = { label: "Edit story", icon: <PenLine aria-hidden />, href: `/publish/${article.id}` };
   if (isOwn) {
     if (canPublish(viewer)) {
+      items.push(editItem);
       if (!article.hidden) {
         items.push({
           label: "Spotlight this story",
@@ -102,7 +105,7 @@ export function StoryMenu({
       });
     }
   } else if (isEditorDesk(viewer)) {
-    items.push(moveItem);
+    items.push(editItem, moveItem);
   }
   if (leadItems.length > 0) items.unshift(...leadItems, ...(items.length > 0 ? [{ type: "separator" } satisfies DropdownItem] : []));
   if (items.length === 0) return null;
