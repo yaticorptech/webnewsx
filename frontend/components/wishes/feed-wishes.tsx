@@ -101,7 +101,7 @@ function QuickWishes({ wish }: { wish: Wish }) {
 }
 
 /** A wish in a feed: the card, its quick wishes, and Remove for its author / the Editor Desk. */
-export function FeedWish({ wish, className }: { wish: Wish; className?: string }) {
+export function FeedWish({ wish, compact = false, className }: { wish: Wish; compact?: boolean; className?: string }) {
   const queryClient = useQueryClient();
   return (
     <WishCard
@@ -109,6 +109,7 @@ export function FeedWish({ wish, className }: { wish: Wish; className?: string }
       canDelete={wish.canDelete}
       className={className}
       extra={<QuickWishes wish={wish} />}
+      compact={compact}
       onDelete={async () => {
         try {
           await api.wishes.remove(wish.id);

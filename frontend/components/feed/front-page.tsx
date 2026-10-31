@@ -134,7 +134,7 @@ export function FrontPage({
                 )}
               >
                 {isWish(article) ? (
-                  <FeedWish wish={article} />
+                  <FeedWish wish={article} compact />
                 ) : lockedIds.has(article.id) ? (
                   <LockedGridCard article={article} />
                 ) : (

@@ -472,9 +472,12 @@ export function WishCard({
   canDelete = false,
   onDelete,
   extra,
+  compact = false,
   className,
 }: {
   data: WishCardData;
+  /** In a grid of story cards (desktop Home): a narrower card, so the row isn't stretched taller than the stories. */
+  compact?: boolean;
   canDelete?: boolean;
   onDelete?: () => Promise<void>;
   /** Under the card (the feed's quick wishes). */
@@ -493,7 +496,7 @@ export function WishCard({
       }
       className={cn("card overflow-hidden p-2.5", className)}
     >
-      <WishArt data={data} />
+      <WishArt data={data} className={compact ? "mx-auto max-w-[15.5rem]" : undefined} />
       {extra}
       <div className="flex items-center gap-2.5 px-1.5 pb-0.5 pt-3">
         <Link href={`/${data.author.username}`} className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink hover:text-brand">
