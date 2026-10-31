@@ -319,7 +319,6 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
         counts={counts}
         onOpenList={openList}
         onShowArticles={showArticles}
-        press={profile.press}
       />
       {isSelf && selfViewer && !reporter && (
         <PressPassPromo
