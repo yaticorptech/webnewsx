@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
-import { Heart, MessageCircle, Reply, Send, Trash2, X } from "lucide-react";
+import { Heart, MessageCircle, Reply, Send, Smile, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { UserHandle } from "@/components/brand/user-handle";
@@ -19,8 +19,12 @@ import { formatNumber } from "@/lib/format";
 import { qk } from "@/lib/query-keys";
 import { COMMENT_MAX, MENTION_REGEX, type ArticleCard, type ArticleComment, type CommentGif, type Page } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
+import { EmojiPicker } from "./emoji-picker";
 import { GifPicker } from "./gif-picker";
 import { MentionTextarea } from "./mention-textarea";
+
+/** GIFs in comments (built 2026-10-31, switched off for now — owner: emojis instead). */
+const GIFS_ON = false;
 
 type CommentPages = InfiniteData<Page<ArticleComment>, string | null>;
 
@@ -200,6 +204,7 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
   const [body, setBody] = useState(initial);
   const [gif, setGif] = useState<CommentGif | null>(null);
   const [picking, setPicking] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -221,6 +226,7 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
       setBody("");
       setGif(null);
       setPicking(false);
+      setEmojiOpen(false);
     } catch (err) {
       if (isApiError(err) && err.fields?.body) setError(err.fields.body);
       else toast.error("Couldn't post your comment", { id: "comment-error", description: errorMessage(err) });
@@ -248,6 +254,22 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
   }
 
   const canSend = Boolean(body.trim() || gif);
+
+  /** Puts the emoji where the cursor is (or at the end) and keeps the cursor after it; the picker stays open. */
+  const insertEmoji = (emoji: string) => {
+    const el = textarea.current;
+    const start = el?.selectionStart ?? body.length;
+    const end = el?.selectionEnd ?? body.length;
+    const next = `${body.slice(0, start)}${emoji}${body.slice(end)}`;
+    if (next.length > COMMENT_MAX) return;
+    setBody(next);
+    if (error) setError(null);
+    const caret = start + emoji.length;
+    requestAnimationFrame(() => {
+      el?.focus({ preventScroll: true });
+      el?.setSelectionRange(caret, caret);
+    });
+  };
 
   /*
    * One box (owner 2026-10-31: "proper aligned"): the text, the chosen GIF and a toolbar — GIF on the left, Cancel /
@@ -328,19 +350,40 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
           )}
 
           <div className="flex items-center gap-2 px-2 pt-1 pb-2">
+            {/* GIFs are switched off for now (owner 2026-10-31: "remove GIF temporarily, add emojis"); set GIFS_ON to bring them back. */}
+            {GIFS_ON && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEmojiOpen(false);
+                  setPicking((open) => !open);
+                }}
+                aria-expanded={picking}
+                aria-label={gif ? "Change GIF" : "Add a GIF"}
+                className={cn(
+                  "inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-[0.75rem] font-black tracking-wide transition-colors",
+                  picking ? "bg-tint text-brand" : "text-muted hover:bg-tint hover:text-brand",
+                )}
+              >
+                <span aria-hidden className="rounded-[5px] border-[1.5px] border-current px-1 py-px leading-none">
+                  GIF
+                </span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setPicking((open) => !open)}
-              aria-expanded={picking}
-              aria-label={gif ? "Change GIF" : "Add a GIF"}
+              onClick={() => {
+                setPicking(false);
+                setEmojiOpen((open) => !open);
+              }}
+              aria-expanded={emojiOpen}
+              aria-label="Add an emoji"
               className={cn(
-                "inline-flex h-9 items-center gap-1 rounded-full px-2.5 text-[0.75rem] font-black tracking-wide transition-colors",
-                picking ? "bg-tint text-brand" : "text-muted hover:bg-tint hover:text-brand",
+                "inline-flex size-9 items-center justify-center rounded-full transition-colors",
+                emojiOpen ? "bg-tint text-brand" : "text-muted hover:bg-tint hover:text-brand",
               )}
             >
-              <span aria-hidden className="rounded-[5px] border-[1.5px] border-current px-1 py-px leading-none">
-                GIF
-              </span>
+              <Smile aria-hidden className="size-5" />
             </button>
             {body.length > COMMENT_MAX * 0.8 && (
               <span className={cn("text-xs tabular-nums", body.length >= COMMENT_MAX * 0.95 ? "font-semibold text-brand-strong" : "text-muted")}>
@@ -360,7 +403,17 @@ function CommentComposer({ articleId, parentId, initial = "", compact = false, a
           </div>
         </div>
 
-        {picking && (
+        {emojiOpen && (
+          <EmojiPicker
+            onPick={insertEmoji}
+            onClose={() => {
+              setEmojiOpen(false);
+              textarea.current?.focus({ preventScroll: true });
+            }}
+          />
+        )}
+
+        {GIFS_ON && picking && (
           <GifPicker
             onPick={(picked) => {
               setGif(picked);
