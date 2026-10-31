@@ -29,6 +29,7 @@ import { mediaRoutes } from "./routes/media.js";
 import { meRoutes } from "./routes/me.js";
 import { membershipRoutes } from "./routes/memberships.js";
 import { gifRoutes } from "./routes/gifs.js";
+import { importRoutes } from "./routes/import.js";
 import { wishRoutes } from "./routes/wishes.js";
 import { marketRoutes } from "./routes/market.js";
 import { aiRoutes } from "./routes/ai.js";
@@ -172,6 +173,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route("/api/press-meets", pressMeetRoutes(deps));
   app.route("/api/places", placeRoutes());
   app.route("/api/gifs", gifRoutes());
+  app.route("/api/import", importRoutes());
   app.route("/api/wishes", wishRoutes(deps));
   app.route("/api/newsroom", newsroomRoutes());
   app.route("/api/spotlight", spotlightRoutes(deps));

@@ -101,6 +101,12 @@ const schema = z.object({
    */
   META_APP_ID: optionalString,
   META_APP_SECRET: optionalString,
+  /**
+   * Story import (owner 2026-10-31): the secret the scheduled 9 am run sends to POST /api/import/story, and the account
+   * its stories are published under. Unset token = the endpoint is off.
+   */
+  IMPORT_TOKEN: optionalString,
+  IMPORT_AUTHOR_USERNAME: z.preprocess(blankToUndefined, z.string().default("webnews.in")),
   /** GIFs in comments (owner 2026-10-31): a GIPHY API key (developers.giphy.com → Create an API key). */
   GIPHY_API_KEY: optionalString,
   INSTAGRAM_APP_ID: optionalString,
