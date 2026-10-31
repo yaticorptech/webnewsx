@@ -57,7 +57,7 @@ export function SiteHomeBody({ latest, trending, breaking, sections, ads, city, 
 
   return (
     <>
-      <section className="mt-6 grid grid-cols-1 gap-y-8 border-y border-gray-200 py-6 lg:grid-cols-12">
+      <section className="mt-6 grid grid-cols-1 gap-y-8 border-b border-gray-200 pb-6 lg:grid-cols-12">
         <div className="order-2 flex flex-col lg:order-none lg:col-span-3 lg:border-r lg:border-gray-200 lg:pr-8">
           <div className="flex flex-1 flex-col gap-5">
             {left.map((card) => (
