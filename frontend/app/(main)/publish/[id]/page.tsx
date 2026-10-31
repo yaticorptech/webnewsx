@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { ComposerRoot } from "@/components/composer/composer-root";
 import { Button } from "@/components/ui/button";
 import { getOwnedArticle } from "@/lib/server-api";
-import { canPublish, publishesToReview, requireOnboardedViewer } from "@/lib/session";
+import { canPublish, getViewer, publishesToReview, requireOnboardedViewer, type OnboardedViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Edit draft",
@@ -21,7 +21,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  */
 export default async function EditDraftPage({ params }: PageProps<"/publish/[id]">) {
   const { id } = await params;
-  const viewer = await requireOnboardedViewer(`/publish/${id}`);
+  // The Editor Desk edits anyone's story here (owner 2026-10-31) — on the rest of the site an admin counts as a visitor.
+  const signedIn = await getViewer();
+  const desk = signedIn?.role === "admin" && signedIn.onboarded && signedIn.username ? (signedIn as OnboardedViewer) : null;
+  const viewer = desk ?? (await requireOnboardedViewer(`/publish/${id}`));
   if (!UUID.test(id)) notFound();
 
   // Ownership first (someone else's draft is a 404 for everyone), then the role: a Reader — e.g. a
