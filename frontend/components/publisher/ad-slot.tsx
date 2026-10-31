@@ -1,24 +1,15 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { SITE_AD_POSITIONS, SITE_AD_ROTATE_MS, type SiteAdPosition, type SiteAdsByPosition } from "@/lib/shared/contracts";
+import { SITE_AD_POSITIONS, SITE_AD_ROTATE_MS, type SiteAdPosition, type SiteAdsByPosition, type SiteLanguage } from "@/lib/shared/contracts";
 
-/** Where an empty position's "Advertise here" card leads (the site's contact, from SiteChrome); null: not a link. */
-const AdBookingContext = createContext<string | null>(null);
+/**
+ * What the "Advertise here" card needs from the site (SiteChrome): where it books (mail to the site; null in the
+ * setup preview: not a link) and the site's logo / name, shown in place of WebNEWS's (owner 2026-10-31).
+ */
+export type AdBookingInfo = { href: string | null; logoUrl: string | null; name: string; lang: SiteLanguage };
+const AdBookingContext = createContext<AdBookingInfo>({ href: null, logoUrl: null, name: "", lang: "en" });
 export const AdBooking = AdBookingContext.Provider;
-
-/** webnews.in's "Advertise here" cards (its public/ad-*.svg, owner 2026-10-30: "same like that"), one per shape. */
-const BANNERS: Partial<Record<SiteAdPosition, string>> = {
-  "logo-left": "/pub-ads/ad-logo.svg",
-  "logo-right": "/pub-ads/ad-logo.svg",
-  "article-strip": "/pub-ads/ad-logo.svg",
-  "hero-left": "/pub-ads/ad-hero.svg",
-  "hero-right": "/pub-ads/ad-hero.svg",
-  "mid-page": "/pub-ads/ad-newsletter.svg",
-  "newsletter-left": "/pub-ads/ad-newsletter.svg",
-  "trending-sidebar": "/pub-ads/ad-trending.svg",
-  "in-article": "/pub-ads/ad-article.svg",
-};
 
 /**
  * One webnews.in ad position (its AdSlotView): the live ads there rotate every few seconds. Empty: webnews.in's
@@ -98,40 +89,57 @@ function LogoBanners({ side, ads, className }: { side: "left" | "right"; ads: Si
   );
 }
 
-function AdRotation({ position, ads, preview, className }: { position: SiteAdPosition; ads: SiteAdsByPosition; preview: boolean; className?: string }) {
-  const list = ads[position] ?? [];
-  const spec = SITE_AD_POSITIONS.find((p) => p.key === position)!;
-  const bookHref = useContext(AdBookingContext);
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (list.length < 2) return;
-    const timer = window.setInterval(() => setIndex((i) => (i + 1) % list.length), SITE_AD_ROTATE_MS);
-    return () => window.clearInterval(timer);
-  }, [list.length]);
-
-  if (list.length === 0) {
-    const banner = (
-      <img
-        src={BANNERS[position] ?? "/pub-ads/ad-hero.svg"}
-        alt={preview ? `Ad space · ${spec.recW}×${spec.recH}` : "Advertise here — click to book this spot"}
-        className="size-full object-cover"
-      />
-    );
-    return (
-      <div className={`overflow-hidden rounded-lg ${className ?? ""}`} style={{ aspectRatio: spec.ratio }}>
-        {bookHref && !preview ? (
-          <a href={bookHref} className="block size-full transition hover:opacity-90">
-            {banner}
-          </a>
-        ) : (
-          banner
-        )}
+/**
+ * webnews.in's "Advertise here" card (owner 2026-10-31: with the site's own logo in place of WebNEWS's): soft pink
+ * card, red bar with a shine, "Advertise Here", "Book this spot in seconds" and the red "Click to Book" button.
+ */
+function AdvertiseCard() {
+  const { logoUrl, name, lang } = useContext(AdBookingContext);
+  const kn = lang === "kn";
+  return (
+    <div className="pub-adcard">
+      <span aria-hidden className="pub-adcard__bar" />
+      <span aria-hidden className="pub-adcard__blob" style={{ width: "62%", aspectRatio: "1", top: "-18%", right: "-18%" }} />
+      <span aria-hidden className="pub-adcard__blob" style={{ width: "58%", aspectRatio: "1", bottom: "-24%", left: "-16%", animationDelay: "-3s" }} />
+      <span aria-hidden className="pub-adcard__blob" style={{ width: "30%", aspectRatio: "1", top: "44%", left: "36%", animationDelay: "-5s", opacity: 0.05 }} />
+      <span aria-hidden className="pub-adcard__spark" style={{ top: "40%", left: "20%" }}>
+        ✦
+      </span>
+      <span aria-hidden className="pub-adcard__spark" style={{ top: "40%", right: "16%", animationDelay: "-1s" }}>
+        ✦
+      </span>
+      <span aria-hidden className="pub-adcard__spark" style={{ top: "58%", right: "20%", animationDelay: "-2s" }}>
+        ✦
+      </span>
+      <div className="pub-adcard__body">
+        {logoUrl ? <img src={logoUrl} alt={name} className="pub-adcard__logo" /> : name ? <span className="pub-adcard__name">{name}</span> : null}
+        <span className="pub-adcard__title">{kn ? "ಜಾಹೀರಾತು ನೀಡಿ" : "Advertise Here"}</span>
+        <span className="pub-adcard__sub">{kn ? "ಈ ಸ್ಥಳವನ್ನು ಕ್ಷಣಗಳಲ್ಲಿ ಕಾಯ್ದಿರಿಸಿ" : "Book this spot in seconds"}</span>
+        <span className="pub-adcard__cta">
+          {kn ? "ಕಾಯ್ದಿರಿಸಿ" : "Click to Book"} <span aria-hidden>→</span>
+        </span>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  const ad = list[index % list.length]!;
+/** The card as a link that books the spot (not a link in the setup preview). */
+function BookCard({ preview, label }: { preview: boolean; label: string }) {
+  const { href } = useContext(AdBookingContext);
+  return href && !preview ? (
+    <a href={href} aria-label="Advertise here — click to book this spot" className="block size-full rounded-[inherit]">
+      <AdvertiseCard />
+    </a>
+  ) : (
+    <div role="img" aria-label={label} className="size-full rounded-[inherit]">
+      <AdvertiseCard />
+    </div>
+  );
+}
+
+type PositionAd = NonNullable<SiteAdsByPosition[SiteAdPosition]>[number];
+
+function AdCreative({ ad }: { ad: PositionAd }) {
   const body = ad.creativeUrl ? (
     ad.video ? (
       <video src={ad.creativeUrl} autoPlay muted loop playsInline className="size-full bg-black object-contain" />
@@ -141,9 +149,8 @@ function AdRotation({ position, ads, preview, className }: { position: SiteAdPos
   ) : (
     <span className="flex size-full items-center justify-center bg-pub/5 p-3 text-center font-pub-head text-base font-bold text-pub-ink">{ad.title}</span>
   );
-
   return (
-    <div className={`relative overflow-hidden rounded border border-gray-200 ${className ?? ""}`} style={{ aspectRatio: spec.ratio }}>
+    <div className="relative size-full overflow-hidden rounded-[inherit] border border-gray-200">
       {ad.targetUrl ? (
         <a href={ad.targetUrl} target="_blank" rel="noopener noreferrer sponsored" className="block size-full">
           {body}
@@ -152,6 +159,33 @@ function AdRotation({ position, ads, preview, className }: { position: SiteAdPos
         body
       )}
       <span className="absolute right-1 top-1 rounded bg-black/50 px-1 text-[9px] font-semibold uppercase tracking-wider text-white">Ad</span>
+    </div>
+  );
+}
+
+/**
+ * A position's cards: its booked ads one after another, then the "Advertise here" card (owner 2026-10-31: "show ads
+ * then flip and this card"), each flipping in after SITE_AD_ROTATE_MS. With no ads only the card shows.
+ */
+function AdRotation({ position, ads, preview, className }: { position: SiteAdPosition; ads: SiteAdsByPosition; preview: boolean; className?: string }) {
+  const list = ads[position] ?? [];
+  const spec = SITE_AD_POSITIONS.find((p) => p.key === position)!;
+  const slides = list.length + 1;
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (slides < 2) return;
+    const timer = window.setInterval(() => setIndex((i) => (i + 1) % slides), SITE_AD_ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [slides]);
+
+  const at = index % slides;
+  const ad = at < list.length ? list[at] : undefined;
+  return (
+    <div className={`overflow-hidden rounded-lg ${className ?? ""}`} style={{ aspectRatio: spec.ratio }}>
+      <div key={`${at}-${slides}`} className={`size-full rounded-[inherit] ${slides > 1 ? "pub-adflip" : ""}`}>
+        {ad ? <AdCreative ad={ad} /> : <BookCard preview={preview} label={`Ad space · ${spec.recW}×${spec.recH}`} />}
+      </div>
     </div>
   );
 }

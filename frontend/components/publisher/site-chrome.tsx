@@ -109,7 +109,7 @@ export function SiteChrome({
   const more = categories.slice(DIRECT_CATEGORIES);
 
   return (
-    <AdBooking value={preview ? null : bookHref}>
+    <AdBooking value={{ href: preview ? null : bookHref, logoUrl: site.logoUrl, name: site.title || site.domain, lang }}>
     <div lang={lang} className={`${PUB_FONTS} min-h-dvh bg-white font-pub-sans text-pub-ink`}>
       <header className="border-b border-gray-200 bg-white">
         <div className="border-b border-gray-100 bg-white">
