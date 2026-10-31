@@ -33,6 +33,8 @@ export type UserFilters = {
   q?: string | undefined;
   role?: Role | undefined;
   status?: "active" | "suspended" | undefined;
+  /** Only accounts Claude created (owner 2026-10-31). */
+  added?: "claude" | undefined;
   cursor: string | undefined;
   limit: number;
   viewerId: string;
@@ -48,6 +50,7 @@ export async function listUsers(filters: UserFilters): Promise<Page<AdminUserRow
     conditions.push(or(ilike(user.username, pattern), ilike(user.name, pattern), ilike(user.email, pattern)) as SQL);
   }
   if (filters.role) conditions.push(eq(user.role, filters.role));
+  if (filters.added) conditions.push(isNotNull(user.addedBy));
   if (filters.status === "suspended") conditions.push(isNotNull(user.suspendedAt));
   if (filters.status === "active") conditions.push(isNull(user.suspendedAt));
   if (cursor) conditions.push(sql`(${user.createdAt}, ${user.id}) < (${cursor.at.toISOString()}::timestamptz, ${cursor.id}::text)`);

@@ -2339,7 +2339,8 @@ export type AdminStoriesQuery = {
   cursor?: string | null;
   limit?: number;
 };
-export type AdminUsersQuery = { q?: string; role?: Role; status?: "active" | "suspended"; cursor?: string | null; limit?: number };
+/** `added: "claude"` = accounts Claude created (owner 2026-10-31: Readers → Added by Claude). */
+export type AdminUsersQuery = { q?: string; role?: Role; status?: "active" | "suspended"; added?: "claude"; cursor?: string | null; limit?: number };
 /** `level: "added"` = accounts Claude created for reporters (owner 2026-10-31). */
 export type AdminReportersQuery = { level?: ReporterLevel | "revoked" | "added"; q?: string; cursor?: string | null; limit?: number };
 export type AdminFlagsStatus = "open" | "resolved";

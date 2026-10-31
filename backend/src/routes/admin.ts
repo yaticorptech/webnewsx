@@ -85,6 +85,7 @@ const usersQuery = z.object({
   q: optionalQuery(z.string().trim().max(100)),
   role: optionalQuery(z.enum(ROLE_VALUES)),
   status: optionalQuery(z.enum(["active", "suspended"])),
+  added: optionalQuery(z.enum(["claude"])),
 });
 const reportersQuery = z.object({
   level: optionalQuery(z.enum(["trainee", "verified", "revoked", "added"])),

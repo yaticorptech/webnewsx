@@ -17,6 +17,7 @@ export default async function AdminPeoplePage({ searchParams }: PageProps<"/admi
     // Readers only (owner 2026-10-31); reporters are under Reporters.
     role: "reader",
     status: status === "any" ? undefined : status,
+    added: param(sp.added) === "claude" ? "claude" : undefined,
   };
   return <PeopleView initialFilters={filters} initial={await getAdminUsers(filters)} />;
 }

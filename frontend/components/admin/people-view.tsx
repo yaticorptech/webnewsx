@@ -13,7 +13,7 @@ import { ROLE_LABELS, ROLE_VALUES, type AdminUserRow, type Page, type Role } fro
 import { ActionDialog } from "./action-dialog";
 import { Chip, LevelChip, RoleChip } from "./chips";
 import { DeskDate } from "./desk-date";
-import { ListEmpty, ListError, ListLoading, LiveCount, LoadMore, SearchBox, SelectFilter } from "./list-parts";
+import { ListEmpty, ListError, ListLoading, LiveCount, LoadMore, SearchBox, Segmented, SelectFilter } from "./list-parts";
 import { PersonCell } from "./person";
 import { SectionHeader } from "./section-header";
 import { TBody, THead, Table, Td, Th, Tr } from "./table";
@@ -22,7 +22,13 @@ import { useDeskAction } from "./use-desk-action";
 import { patchLists, useDeskList } from "./use-desk-list";
 import { useUndo } from "./use-story-actions";
 
-export type PeopleFilters = { q?: string; role?: Role; status?: "active" | "suspended" };
+export type PeopleFilters = { q?: string; role?: Role; status?: "active" | "suspended"; added?: "claude" };
+
+const SOURCES = [
+  { value: "all", label: "All readers" },
+  // Accounts Claude created (owner 2026-10-31).
+  { value: "claude", label: "Added by Claude" },
+] as const;
 
 
 const ROLE_EFFECT: Record<Role, string> = {
@@ -148,7 +154,12 @@ export function PeopleView({ initialFilters, initial }: { initialFilters: People
         description="Readers on WebNEWS (reporters are under Reporters). Change roles, and suspend accounts that break the rules — suspended people are signed out and can't sign in."
       />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-<span />
+<Segmented
+          label="Readers"
+          options={SOURCES}
+          value={filters.added ?? "all"}
+          onChange={(added) => setFilters({ added: added === "all" ? undefined : added })}
+        />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <SelectFilter
             label="Status"
