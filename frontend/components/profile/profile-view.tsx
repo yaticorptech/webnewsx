@@ -22,7 +22,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SpeedLinesLoader } from "@/components/ui/speed-lines-loader";
 import { TabPanel, Tabs, type TabItem } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
-import { useNativeApp } from "@/lib/hooks/use-native-app";
 import { useSwipe } from "@/lib/hooks/use-swipe";
 import { useStartAtTop } from "@/lib/hooks/use-start-at-top";
 import { qk } from "@/lib/query-keys";
@@ -177,8 +176,7 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
   const draftItems = flattenPages(drafts.data);
   // Readers can't write; their Desk only appears if they still have drafts from a former pass. In the app, Drafts is
   // an option in Settings instead (owner 2026-10-09), so no tab here.
-  const inApp = useNativeApp();
-  const hasDesk = isSelf && !inApp && (reporter || draftItems.length > 0);
+  const hasDesk = isSelf && (reporter || draftItems.length > 0);
 
   /* ─────────── Tabs (URL: ?tab=drafts) ─────────── */
 

@@ -5,7 +5,7 @@ import type { Editor } from "@tiptap/react";
 import { ArrowLeft, ArrowRight, Check, CircleDot, Crown, Eye, FilePen, Link2, Lock, Save, Send, Trash2 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { draftsPath, useNativeApp } from "@/lib/hooks/use-native-app";
+import { draftsPath } from "@/lib/hooks/use-native-app";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BackButton } from "@/components/layout/back-button";
 import { UserHandle } from "@/components/brand/user-handle";
@@ -146,9 +146,7 @@ const FIELD_DOM_ID: Record<FieldKey, string> = {
  */
 export function Composer({ author, draft, review: trainee = false, pressMeetId = null, needsPressPass = false }: ComposerProps) {
   const router = useRouter();
-  // In the app, Drafts lives in Settings (owner 2026-10-09); on the website, on the profile.
-  const inApp = useNativeApp();
-  const draftsHref = draftsPath(author.username, inApp);
+  const draftsHref = draftsPath(author.username);
   const queryClient = useQueryClient();
   const reduceMotion = useReducedMotion();
   /** The byline badge readers will see on this story (posters + preview). */
@@ -527,9 +525,7 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
           ? "It's a draft again — submit it for review when you're ready."
           : takenBack
             ? "It's a draft again — send it to the organiser when you're ready."
-            : inApp
-              ? "It's in Drafts, under Settings — only you can see it."
-              : "It's in Drafts on your profile — only you can see it.",
+            : "It's in Drafts on your profile — only you can see it.",
       });
       return id;
     } catch (error) {

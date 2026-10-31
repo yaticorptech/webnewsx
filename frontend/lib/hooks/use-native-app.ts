@@ -11,9 +11,9 @@ export function useNativeApp(): boolean {
 }
 
 /**
- * Where the viewer's drafts live (owner 2026-10-09): in the app, Drafts is an option in Settings (not a tab on the
- * profile); on the website it's the profile's Drafts tab.
+ * Where the viewer's drafts live: the profile's Drafts tab, in the app too (owner 2026-10-31, was Settings-only in the
+ * app since 2026-10-09; Settings → Drafts stays as well).
  */
-export function draftsPath(username: string, inApp: boolean): string {
-  return inApp ? "/settings?section=drafts" : `/${username}?tab=drafts`;
+export function draftsPath(username: string): string {
+  return `/${username}?tab=drafts`;
 }
