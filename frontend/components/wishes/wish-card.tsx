@@ -220,7 +220,7 @@ function PartyArt({ data, className }: { data: WishCardData; className?: string 
     ));
   return (
     <div
-      className={cn("relative isolate flex aspect-[4/5] w-full flex-col items-center overflow-hidden rounded-2xl bg-[#fff3c4]", className)}
+      className={cn("relative isolate flex aspect-[4/5] w-full flex-col items-center overflow-hidden rounded-2xl bg-[#fff3c4] [container-type:inline-size]", className)}
     >
       {/* Confetti and the balloon bunches. */}
       <svg aria-hidden viewBox="0 0 400 500" preserveAspectRatio="none" className="absolute inset-0 -z-10 size-full">
