@@ -2,23 +2,11 @@
 
 import { domToBlob } from "modern-screenshot";
 import { createRoot } from "react-dom/client";
+import { sameOriginMediaUrl } from "@/lib/media-url";
 import type { PosterTemplate } from "@/lib/shared/contracts";
 import { StoryPoster, type PosterStory } from "./story-poster";
 
 const WIDTH = 360;
-
-/** Where uploads live (R2's public address etc.; build-time list, like the CSP's). */
-const MEDIA_ORIGINS = (process.env.NEXT_PUBLIC_MEDIA_HOSTS ?? "")
-  .split(/[\s,]+/)
-  .filter(Boolean)
-  .map((host) => {
-    try {
-      return new URL(host.includes("://") ? host : `https://${host}`).origin;
-    } catch {
-      return "";
-    }
-  })
-  .filter(Boolean);
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -34,18 +22,10 @@ function blobToDataUrl(blob: Blob): Promise<string> {
  * read its images, so the screenshot got only the blurred placeholder behind the photo. Others: the normal fetch.
  */
 async function sameOriginMedia(url: string): Promise<string | false> {
-  let parsed: URL;
+  const local = sameOriginMediaUrl(url);
+  if (!local) return false;
   try {
-    parsed = new URL(url, window.location.href);
-  } catch {
-    return false;
-  }
-  const own = parsed.origin === window.location.origin && parsed.pathname.startsWith("/media/");
-  const uploaded = MEDIA_ORIGINS.includes(parsed.origin) || parsed.hostname.endsWith(".r2.dev");
-  if (!own && !uploaded) return false;
-  const key = own ? parsed.pathname.slice("/media/".length) : parsed.pathname.replace(/^\/+/, "");
-  try {
-    const response = await fetch(`/media/${key}?inline=1`);
+    const response = await fetch(local);
     if (!response.ok) return false;
     return await blobToDataUrl(await response.blob());
   } catch {

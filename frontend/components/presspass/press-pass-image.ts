@@ -1,5 +1,6 @@
 import { initialsOf } from "@/lib/utils";
 import QRCode from "qrcode";
+import { sameOriginMediaUrl } from "@/lib/media-url";
 import { isNativeApp, nativeSharePlugin, shareFileUri } from "@/lib/native-app";
 import { barcodeBars, languageLabels, passDate } from "./press-format";
 import type { PressPassCardData } from "./press-pass-card";
@@ -120,7 +121,7 @@ export async function renderPressPassPng(data: PressPassCardData): Promise<Blob>
   await Promise.all(
     ["900 44px", "800 28px", "700 22px", "700 16px"].map((spec) => document.fonts?.load(`${spec} ${family}`).catch(() => undefined)),
   );
-  const [art, portrait] = await Promise.all([loadImage(CARD_ART, false), data.holder.image ? loadImage(data.holder.image) : Promise.resolve(null)]);
+  const [art, portrait] = await Promise.all([loadImage(CARD_ART, false), data.holder.image ? loadImage(sameOriginMediaUrl(data.holder.image) ?? data.holder.image, !sameOriginMediaUrl(data.holder.image)) : Promise.resolve(null)]);
   if (!art) throw new Error("Couldn't load the card artwork");
 
   const revoked = data.status === "revoked";
