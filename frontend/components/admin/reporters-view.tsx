@@ -41,6 +41,8 @@ const LEVELS = [
   { value: "trainee", label: "Trainee" },
   { value: "verified", label: "Verified" },
   { value: "revoked", label: "Revoked" },
+  // Accounts Claude created for reporters joining (owner 2026-10-31).
+  { value: "added", label: "Added by Claude" },
 ] as const;
 
 const COPY: Record<ReporterAction, { title: string; description: string; confirm: string; icon: ReactNode; done: string }> = {

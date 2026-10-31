@@ -117,6 +117,8 @@ export const user = pgTable(
     phoneNumberVerified: boolean("phone_number_verified").notNull().default(false),
     /** "group" = a group account (owner 2026-10-23): nobody signs in to it; its members post as it (group_member). */
     accountType: text("account_type", { enum: ACCOUNT_TYPE_VALUES }).notNull().default("person"),
+    /** Set when the account was created for the person by Claude (owner 2026-10-31): Editor Desk → Reporters → Added by Claude. */
+    addedBy: text("added_by"),
   },
   (t) => [
     check("user_username_format", sql`${t.username} ~ ${sql.raw(`'${USERNAME_REGEX.source}'`)}`),

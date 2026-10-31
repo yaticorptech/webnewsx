@@ -231,7 +231,7 @@ export async function unsuspendUser(actor: Actor, userId: string): Promise<void>
 /* ─────────────── Reporters (Press Pass holders) ─────────────── */
 
 export type ReporterFilters = {
-  level?: ReporterLevel | "revoked" | undefined;
+  level?: ReporterLevel | "revoked" | "added" | undefined;
   q?: string | undefined;
   cursor: string | undefined;
   limit: number;
@@ -240,7 +240,8 @@ export type ReporterFilters = {
 export async function listReporters(filters: ReporterFilters): Promise<Page<AdminReporterRow>> {
   const cursor = decodeCursor(filters.cursor);
   const conditions: SQL[] = [];
-  if (filters.level === "revoked") conditions.push(isNotNull(pressPass.revokedAt));
+  if (filters.level === "added") conditions.push(isNotNull(user.addedBy));
+  else if (filters.level === "revoked") conditions.push(isNotNull(pressPass.revokedAt));
   else if (filters.level) conditions.push(and(isNull(pressPass.revokedAt), eq(pressPass.level, filters.level)) as SQL);
   if (filters.q) {
     const pattern = likePattern(filters.q.replace(/^@/, ""));

@@ -554,6 +554,13 @@
       "when": 1793435263508,
       "tag": "0078_wish_comment_one_per_user",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1793443423925,
+      "tag": "0079_user_added_by",
+      "breakpoints": true
     }
   ]
 }

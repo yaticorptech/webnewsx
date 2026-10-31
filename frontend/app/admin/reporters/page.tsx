@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Reporters" };
 
-const LEVELS = ["all", "trainee", "verified", "revoked"] as const;
+const LEVELS = ["all", "trainee", "verified", "revoked", "added"] as const;
 
 export default async function AdminReportersPage({ searchParams }: PageProps<"/admin/reporters">) {
   await requireAdmin();
