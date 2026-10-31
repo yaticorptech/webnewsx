@@ -3,8 +3,7 @@
 import { House, LayoutDashboard, LogIn, Search, SquarePlay, SquarePlus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type MouseEvent, type ReactNode } from "react";
-import { PressPassGate } from "@/components/composer/press-pass-gate";
+import { type MouseEvent, type ReactNode } from "react";
 import { isFeedPath } from "@/components/feed/feed-views";
 import { useFeedLayout } from "@/components/providers/feed-layout-provider";
 import { useViewer } from "@/components/providers/viewer-provider";
@@ -159,32 +158,17 @@ const NEW_POST_CLASS =
 
 /**
  * The "+" in the bar: a plain icon like the others (owner 2026-10-07: not highlighted). New story for reporters; a
- * reader without a Press Pass gets "You don't have a Press Pass yet" there and then (owner 2026-10-08), with the way
- * to get one; otherwise the step that comes first (log in, profile).
+ * member without a Press Pass gets the birthday wish composer (owner 2026-10-31); otherwise the step that comes first
+ * (log in, profile).
  */
 function NewPostTab() {
   const viewer = useViewer();
   const action = publishActionFor(viewer);
-  const [gateOpen, setGateOpen] = useState(false);
-  if (action.kind === "press-pass") {
-    return (
-      <li className="flex">
-        <button type="button" aria-label="New story" title="Post" data-tour="tab-post" onClick={() => setGateOpen(true)} className={NEW_POST_CLASS}>
-          <SquarePlus aria-hidden strokeWidth={2} />
-          <span aria-hidden className="size-1.25" />
-        </button>
-        <PressPassGate
-          open={gateOpen}
-          onOpenChange={setGateOpen}
-          title="You don't have a Press Pass yet"
-          description="Get your Press Pass to publish stories on WebNEWS. It takes a minute — then continue with your story."
-          cta="Get Press Pass"
-        />
-      </li>
-    );
-  }
-  const href = action.kind === "login" ? "/login" : action.href;
-  const label = action.kind === "publish" ? "New story" : action.kind === "login" ? "Log in to post a story" : action.label;
+  // A member without a Press Pass posts birthday wishes from here (owner 2026-10-31): + opens /publish, which shows them
+  // the birthday designs — no "get a Press Pass" stop any more.
+  const href = action.kind === "login" ? "/login" : action.kind === "press-pass" ? "/publish" : action.href;
+  const label =
+    action.kind === "publish" ? "New story" : action.kind === "press-pass" ? "Post a birthday wish" : action.kind === "login" ? "Log in to post" : action.label;
   return (
     <li className="flex">
       <Link
