@@ -1004,42 +1004,22 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
             required
             error={errors.blurb}
             flash={flash}
-            aside={<Counter value={blurb.length} max={BLURB.max} label="Blurb characters" overOnly />}
           >
-            {/* Past 100 characters is allowed but shown in red (owner 2026-10-15): the text is drawn by the mirror under the
-                (transparent) textarea, which grows with it so the two never scroll apart. */}
-            <div className="relative">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-px overflow-hidden whitespace-pre-wrap px-3.5 py-3 text-[0.9375rem] leading-relaxed text-ink [overflow-wrap:anywhere]"
-              >
-                {blurb.slice(0, BLURB.max)}
-                {blurb.length > BLURB.max && (
-                  <span className="text-brand underline decoration-brand/50 decoration-wavy underline-offset-4">{blurb.slice(BLURB.max)}</span>
-                )}
-              </div>
-              <Textarea
-                id="composer-blurb"
-                rows={3}
-                autoGrow
-                maxLength={BLURB.hardMax}
-                showCount={false}
-                placeholder="A short line that sums up the story — readers see it under the headline and on the cards."
-                value={blurb}
-                aria-invalid={Boolean(errors.blurb) || undefined}
-                textareaClassName="overflow-hidden whitespace-pre-wrap text-transparent caret-ink [overflow-wrap:anywhere] selection:bg-brand/20 placeholder:text-muted-2"
-                onChange={(event) => {
-                  setBlurb(event.target.value);
-                  touch();
-                  clearError("blurb", event.target.value.trim().length < BLURB.min);
-                }}
-              />
-            </div>
-            {blurb.length > BLURB.max && (
-              <p className="text-xs font-semibold text-brand">
-                {blurb.length - BLURB.max} over {BLURB.max} characters — allowed, but shorter reads better on the cards.
-              </p>
-            )}
+            <Textarea
+              id="composer-blurb"
+              rows={3}
+              autoGrow
+              maxLength={BLURB.hardMax}
+              showCount={false}
+              placeholder="A short line that sums up the story — readers see it under the headline and on the cards."
+              value={blurb}
+              aria-invalid={Boolean(errors.blurb) || undefined}
+              onChange={(event) => {
+                setBlurb(event.target.value);
+                touch();
+                clearError("blurb", event.target.value.trim().length < BLURB.min);
+              }}
+            />
             {blurb.trim().length < BLURB.min && !errors.blurb && (
               <p className="text-xs text-muted">{BLURB.min - blurb.trim().length} more characters to go</p>
             )}

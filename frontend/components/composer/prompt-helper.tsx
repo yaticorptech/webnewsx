@@ -65,7 +65,7 @@ ${lang}
 One line, at most ${TITLE_SOFT_MAX} characters (never more than ${LIMITS.titleMax}). Clear and factual, no clickbait, no quotation marks, no full stop at the end.
 
 5. BLURB
-A short summary of the story in ONE sentence. STRICT LIMIT: at least ${BLURB.min} and at most ${BLURB.max} characters in total, counting letters, spaces and punctuation. Count the characters before you answer; if it is longer than ${BLURB.max}, shorten it. Never go over ${BLURB.max}.
+A short summary of the story in one or two sentences (at least ${BLURB.min} characters).
 
 6. DESCRIPTION
 The full story in 4 to 8 short paragraphs (at least 150 words). Start with the most important facts (who, what, where, when, why). Neutral news tone. Plain text only: no headings, no bullet points, no markdown symbols like # or *.
@@ -153,7 +153,7 @@ export function parseStoryAnswer(answer: string): FilledStory {
   const headline = clean(parts.HEADLINE)?.split("\n").map((l) => l.trim()).filter(Boolean).join(" ");
   if (headline) result.headline = headline.slice(0, LIMITS.titleMax);
   const blurb = clean(parts.BLURB)?.split("\n").map((l) => l.trim()).filter(Boolean).join(" ");
-  // Never over BLURB.max (owner 2026-10-16: AI answers overshoot): cut at the last whole word that fits.
+  // Kept whole (owner 2026-10-31: the cut blurbs lost their ending); only the hard limit applies.
   if (blurb) result.blurb = fitBlurb(blurb);
 
   const description = clean(parts.DESCRIPTION);

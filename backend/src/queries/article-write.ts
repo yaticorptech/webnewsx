@@ -259,7 +259,7 @@ export async function saveArticle(
     bodyHtml: bodyHtml || (linkUrl ? "" : null),
     bodyText: bodyText || null,
     // The cards' text: the blurb when there is one, else the start of the story.
-    excerpt: blurb ?? (bodyText ? makeExcerpt(htmlToExcerptText(bodyHtml)) : null),
+    excerpt: blurb ? makeExcerpt(blurb) : bodyText ? makeExcerpt(htmlToExcerptText(bodyHtml)) : null,
     readingMinutes: bodyText ? readingMinutes(bodyText) : null,
     linkUrl,
     linkDomain: extractDomain(linkUrl),

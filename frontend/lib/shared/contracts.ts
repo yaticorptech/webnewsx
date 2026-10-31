@@ -377,10 +377,10 @@ export function subcategoryError(category: Category | null | undefined, subcateg
 
 /** The blurb (owner 2026-10-14): the 2-line summary under the headline, also the feed cards' text. */
 /**
- * Blurb length in characters (owner 2026-10-15): at least 50; aim for at most 100 — longer is allowed (the composer shows
- * the part past 100 in red) up to `hardMax`, the cards' text limit (LIMITS.excerptMax).
+ * Blurb length in characters: at least 50. No length target any more (owner 2026-10-31: "remove the blurb length
+ * restriction, the full blurb isn't showing"): up to `hardMax` is kept whole; the cards' text is cut to LIMITS.excerptMax.
  */
-export const BLURB = { min: 50, max: 100, hardMax: 280 } as const;
+export const BLURB = { min: 50, max: 1000, hardMax: 1000 } as const;
 
 export function isCategory(value: unknown): value is Category {
   return typeof value === "string" && (CATEGORY_VALUES as readonly string[]).includes(value);
