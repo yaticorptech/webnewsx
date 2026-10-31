@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, MapPin, PenLine, Presentation } from "lucide-react";
+import { PenLine, Presentation } from "lucide-react";
 import { motion } from "motion/react";
 import { useLayoutEffect, useRef } from "react";
 import { UserHandle } from "@/components/brand/user-handle";
@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/brand/verified-badge";
 import type { ProfileData } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
-import { languageLabels, regionLabel } from "@/components/presspass/press-format";
 import { ProfileAvatar } from "./profile-avatar";
+import { ProfileCardMobile } from "./profile-card-mobile";
 import { BackButton } from "@/components/layout/back-button";
 import { ShareProfileButton } from "./share-profile-button";
 import { ProfileStats, type FollowListKind } from "./stats-band";
@@ -27,7 +27,7 @@ export type ProfileHeaderProps = {
   counts: ProfileData["counts"];
   onOpenList: (kind: FollowListKind) => void;
   onShowArticles?: () => void;
-  /** The Press Pass details (region, languages): a reporter's profile is styled like their pass (owner 2026-10-31). */
+  /** Region and languages for the phone card (owner 2026-10-31). */
   press?: ProfileData["press"];
 };
 
@@ -48,106 +48,93 @@ export function ProfileHeader({
   onShowArticles,
   press = null,
 }: ProfileHeaderProps) {
-  // Styled like the Press Pass (owner 2026-10-31: "similar, not a copy"): the red side strip with its vertical label,
-  // the portrait in a framed square, a role line over the name and (no background art: the owner is designing one),
-  // for reporters, region and languages in the pass's row.
-  const region = press ? regionLabel(press) : null;
-  const languages = press ? languageLabels(press.languages) : [];
-  const role = user.role === "admin" ? "Editor Desk" : press ? (press.level === "verified" ? "Verified reporter" : "Reporter") : user.accountType === "group" ? "News outlet" : "Reader";
   return (
-    <section aria-labelledby="profile-name" className="card relative isolate overflow-hidden py-4 pl-12 pr-4 sm:py-6 sm:pl-20 sm:pr-8">
-      <div aria-hidden className="absolute inset-y-0 left-0 -z-10 flex w-8 items-center justify-center bg-[linear-gradient(180deg,#e30613_0%,#b10712_55%,#5c0a10_100%)] sm:w-12">
-        <span className="rotate-180 whitespace-nowrap text-[0.6rem] font-semibold uppercase tracking-[0.45em] text-white/90 [writing-mode:vertical-rl] sm:text-[0.7rem]">
-          {press ? "Global press pass" : "WebNEWS profile"}
-        </span>
+    <>
+      {/* Phones and the app (owner 2026-10-31): the designed profile card; tablets and computers: the white header below. */}
+      <div className="md:hidden">
+        <ProfileCardMobile
+          user={user}
+          isSelf={isSelf}
+          initialFollowing={initialFollowing}
+          verified={verified}
+          counts={counts}
+          press={press}
+          onOpenList={onOpenList}
+          onShowArticles={onShowArticles}
+        />
       </div>
-
-      {/* The page's back arrow lives here on profiles (owner 2026-09-28; the shell's one is hidden, globals.css), in
+      <section aria-labelledby="profile-name" className="card hidden px-4 py-4 sm:px-8 sm:py-6 md:block">
+        {/* The page's back arrow lives here on profiles (owner 2026-09-28; the shell's one is hidden, globals.css), in
           a line of its own above the portrait — a plain arrow, no circle (owner 2026-10-08). Not in the Android
           app (owner 2026-10-05): the phone's back button does it. */}
-      <div data-own-back="" data-app-no-back="" className="mb-3 flex sm:mb-4">
-        <BackButton fallback="/" plain />
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className={cn(
-          "grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3",
-          "[grid-template-areas:'avatar_stats'_'name_name'_'handle_handle'_'press_press'_'bio_bio'_'actions_actions']",
-          "sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-8 sm:gap-y-3",
-          "sm:[grid-template-areas:'avatar_name_actions'_'avatar_stats_stats'_'avatar_handle_handle'_'avatar_press_press'_'avatar_bio_bio']",
-        )}
-      >
-        {/* No role badge on the portrait (owner 2026-10-08). */}
-        <ProfileAvatar src={user.image} name={user.name} shape="card" className="[grid-area:avatar]" />
-
-        {/* The name and @username always show in full (owner 2026-09-28); the role over it, like the pass's REPORTER. */}
-        <div className="flex min-w-0 flex-col [grid-area:name]">
-          <span className="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-brand">{role}</span>
-          <ProfileName name={user.name} verified={verified} />
+        <div data-own-back="" data-app-no-back="" className="mb-3 flex sm:mb-4">
+          <BackButton fallback="/" plain />
         </div>
 
-        <ProfileStats counts={counts} onOpenList={onOpenList} onShowArticles={onShowArticles} className="self-center [grid-area:stats]" />
-
-        <p className="flex min-w-0 max-w-full items-center gap-2 text-[0.9375rem] font-bold text-brand [grid-area:handle]">
-          <UserHandle username={user.username} truncate />
-          {/* A group account (owner 2026-10-23): one outlet, several members — readers see only its name. */}
-          {user.accountType === "group" && (
-            <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2">News outlet</span>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className={cn(
+            "grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3",
+            "[grid-template-areas:'avatar_stats'_'name_name'_'handle_handle'_'bio_bio'_'actions_actions']",
+            "sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-8 sm:gap-y-3.5",
+            "sm:[grid-template-areas:'avatar_name_actions'_'avatar_stats_stats'_'avatar_handle_handle'_'avatar_bio_bio']",
           )}
-        </p>
+        >
+          {/* No role badge on the portrait (owner 2026-10-08). */}
+          <ProfileAvatar src={user.image} name={user.name} className="[grid-area:avatar]" />
 
-        {(region || languages.length > 0) && (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm [grid-area:press]">
-            {region && (
-              <span className="inline-flex min-w-0 items-center gap-1.5 text-ink">
-                <MapPin aria-hidden className="size-4 shrink-0 text-brand" />
-                <span className="truncate font-semibold">{region}</span>
-              </span>
-            )}
-            {languages.length > 0 && (
-              <span className="inline-flex min-w-0 items-center gap-1.5 text-ink">
-                <Globe aria-hidden className="size-4 shrink-0 text-brand" />
-                <span className="truncate font-semibold">{languages.join(", ")}</span>
-              </span>
-            )}
+          {/* The name and @username always show in full (owner 2026-09-28). */}
+          <div className="flex min-w-0 items-center [grid-area:name]">
+            <ProfileName name={user.name} verified={verified} />
           </div>
-        )}
 
-        {user.bio && (
-          <p className="line-clamp-3 max-w-lg whitespace-pre-line text-[0.9375rem] leading-relaxed text-ink-2 wrap-anywhere [grid-area:bio]">{user.bio}</p>
-        )}
+          <ProfileStats counts={counts} onOpenList={onOpenList} onShowArticles={onShowArticles} className="self-center [grid-area:stats]" />
 
-        {/* Phones: two equal buttons and the share icon in one row; wider screens: beside the name, with labels. */}
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-2.5 [grid-area:actions] sm:flex sm:items-center sm:gap-2">
-          {isSelf ? (
-            <>
-              <Button href="/settings/profile" leftIcon={<PenLine aria-hidden />} className={PHONE_FIT}>
-                <span className="truncate">Edit profile</span>
-              </Button>
-              <Button href="/press-meet" variant="outline" leftIcon={<Presentation aria-hidden />} className={cn(PHONE_FIT, RED_OUTLINE)}>
-                <span className="truncate">Press meet</span>
-              </Button>
-            </>
-          ) : (
-            <>
-              <FollowButton username={user.username} initialFollowing={initialFollowing} className="max-sm:min-w-0" />
-              {/* Like Instagram: Follow · Message · share (just its icon on phones, where the row is tight). */}
-              <MessageButton username={user.username} className={cn("px-4 max-sm:min-w-0", RED_OUTLINE)} />
-            </>
+          <p className="flex min-w-0 max-w-full items-center gap-2 text-[0.9375rem] font-bold text-brand [grid-area:handle]">
+            <UserHandle username={user.username} truncate />
+            {/* A group account (owner 2026-10-23): one outlet, several members — readers see only its name. */}
+            {user.accountType === "group" && (
+              <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2">News outlet</span>
+            )}
+          </p>
+
+          {user.bio && (
+            <p className="line-clamp-3 max-w-lg whitespace-pre-line text-[0.9375rem] leading-relaxed text-ink-2 wrap-anywhere [grid-area:bio]">
+              {user.bio}
+            </p>
           )}
-          <ShareProfileButton
-            username={user.username}
-            name={user.name}
-            image={user.image}
-            compact
-            className="max-sm:size-10 max-sm:px-0 max-sm:[&>span]:sr-only"
-          />
-        </div>
-      </motion.div>
-    </section>
+
+          {/* Phones: two equal buttons and the share icon in one row; wider screens: beside the name, with labels. */}
+          <div className="grid grid-cols-[1fr_1fr_auto] gap-2.5 [grid-area:actions] sm:flex sm:items-center sm:gap-2">
+            {isSelf ? (
+              <>
+                <Button href="/settings/profile" leftIcon={<PenLine aria-hidden />} className={PHONE_FIT}>
+                  <span className="truncate">Edit profile</span>
+                </Button>
+                <Button href="/press-meet" variant="outline" leftIcon={<Presentation aria-hidden />} className={cn(PHONE_FIT, RED_OUTLINE)}>
+                  <span className="truncate">Press meet</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <FollowButton username={user.username} initialFollowing={initialFollowing} className="max-sm:min-w-0" />
+                {/* Like Instagram: Follow · Message · share (just its icon on phones, where the row is tight). */}
+                <MessageButton username={user.username} className={cn("px-4 max-sm:min-w-0", RED_OUTLINE)} />
+              </>
+            )}
+            <ShareProfileButton
+              username={user.username}
+              name={user.name}
+              image={user.image}
+              compact
+              className="max-sm:size-10 max-sm:px-0 max-sm:[&>span]:sr-only"
+            />
+          </div>
+        </motion.div>
+      </section>
+    </>
   );
 }
 

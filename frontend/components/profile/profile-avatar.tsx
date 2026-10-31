@@ -12,6 +12,8 @@ export type ProfileAvatarProps = {
   className?: string;
   /** "card": a rounded square in a white frame, like the Press Pass photo (owner 2026-10-31); default the ringed circle. */
   shape?: "circle" | "card";
+  /** Bigger portrait (the phone profile card, owner 2026-10-31). */
+  large?: boolean;
 };
 
 /** Where the photo sits in the ring, relative to the enlarged photo centred on screen. */
@@ -44,7 +46,7 @@ const EASE = [0.2, 0.8, 0.2, 1] as const;
  * Owner 2026-09-29: tapping the photo lifts it out of the ring into a large circle over a dimmed page; a tap
  * anywhere (or Esc) puts it back.
  */
-export function ProfileAvatar({ src, name, className, shape = "circle" }: ProfileAvatarProps) {
+export function ProfileAvatar({ src, name, className, shape = "circle", large = false }: ProfileAvatarProps) {
   const card = shape === "card";
   const round = card ? "rounded-2xl" : "rounded-full";
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
@@ -90,7 +92,7 @@ export function ProfileAvatar({ src, name, className, shape = "circle" }: Profil
       )}
     >
       <div className={cn(round, "bg-surface", card ? "p-0" : "p-0.75 sm:p-1")}>
-        <div className={cn("relative flex size-24 items-center justify-center overflow-hidden bg-tint sm:size-33", round)}>
+        <div className={cn("relative flex items-center justify-center overflow-hidden bg-tint", large ? "size-[clamp(7.5rem,36vw,10rem)]" : "size-24 sm:size-33", round)}>
           <span
             aria-hidden
             className={cn(
