@@ -10,7 +10,8 @@ import { isUuid } from "./shared.js";
  * R2, which the page can't fetch cross-origin; this hands them out same-origin, converted. Only stories the public can
  * see (published, not hidden, author not suspended). null = no such story or no cover.
  */
-export async function shareImage(id: string): Promise<Buffer | null> {
+/** The public story's cover bytes (null = no such story or no cover). */
+async function coverSource(id: string): Promise<Buffer | null> {
   if (!isUuid(id)) return null;
   const [row] = [
     ...(await db.execute<{ cover_key: string | null; cover_url: string | null }>(sql`
@@ -19,14 +20,48 @@ export async function shareImage(id: string): Promise<Buffer | null> {
     `)),
   ];
   if (!row?.cover_key && !row?.cover_url) return null;
+  if (storage instanceof LocalStorage && row.cover_key) return storage.read(row.cover_key);
+  // On R2 the key gives the bucket's address even when the stored URL is the old relative /media/… one.
+  const url = row.cover_key ? storage.urlFor(row.cover_key) : row.cover_url;
+  if (!url?.startsWith("http")) return null;
+  const response = await fetch(url, { signal: AbortSignal.timeout(8000) }).catch(() => null);
+  return response?.ok ? Buffer.from(await response.arrayBuffer()) : null;
+}
 
-  let source: Buffer | null = null;
-  if (storage instanceof LocalStorage && row.cover_key) {
-    source = await storage.read(row.cover_key);
-  } else if (row.cover_url?.startsWith("http")) {
-    const response = await fetch(row.cover_url, { signal: AbortSignal.timeout(8000) });
-    if (response.ok) source = Buffer.from(await response.arrayBuffer());
-  }
+export async function shareImage(id: string): Promise<Buffer | null> {
+  const source = await coverSource(id);
   if (!source) return null;
   return sharp(source).rotate().resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+}
+
+const OG_W = 1200;
+const OG_H = 630;
+const ogCache = new Map<string, Buffer>();
+
+/**
+ * The link-preview picture (owner 2026-10-31: WhatsApp showed shared stories blurred): WhatsApp, Facebook and X want a
+ * landscape ~1.91:1 JPEG under ~300 KB, and shrink a tall 9:16 poster to a tiny square thumbnail. So: 1200×630, the
+ * whole poster sharp in the middle over a blurred, dimmed copy of itself filling the width.
+ */
+export async function ogImage(id: string, version = ""): Promise<Buffer | null> {
+  // `version` (the cover's file name, from the page) makes a changed cover a new picture.
+  const cacheKey = `${id}|${version}`;
+  const cached = ogCache.get(cacheKey);
+  if (cached) return cached;
+  const source = await coverSource(id);
+  if (!source) return null;
+  const base = sharp(source).rotate();
+  const meta = await base.metadata();
+  const wide = (meta.width ?? 1) / (meta.height ?? 1) >= 1.5;
+  let out: Buffer;
+  if (wide) {
+    out = await base.clone().resize(OG_W, OG_H, { fit: "cover" }).jpeg({ quality: 84, mozjpeg: true }).toBuffer();
+  } else {
+    const backdrop = await base.clone().resize(OG_W, OG_H, { fit: "cover" }).blur(28).modulate({ brightness: 0.7 }).toBuffer();
+    const front = await base.clone().resize({ height: OG_H, width: OG_W, fit: "inside" }).toBuffer();
+    out = await sharp(backdrop).composite([{ input: front, gravity: "center" }]).jpeg({ quality: 84, mozjpeg: true }).toBuffer();
+  }
+  if (ogCache.size >= 200) ogCache.delete(ogCache.keys().next().value as string);
+  ogCache.set(cacheKey, out);
+  return out;
 }

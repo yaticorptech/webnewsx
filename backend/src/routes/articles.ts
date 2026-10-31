@@ -12,7 +12,7 @@ import { addComment, deleteComment, listComments, listReplies, setCommentLike } 
 import { findOwnedArticle, findSlugByShortCode, getPublishedDetailBySlug, listMoreFromAuthor, toOwnedArticle } from "../queries/articles.js";
 import { createFlag } from "../queries/flags.js";
 import { storyPressMeet } from "../queries/press-meets.js";
-import { shareImage } from "../queries/share-image.js";
+import { ogImage, shareImage } from "../queries/share-image.js";
 import { hasDisliked, recordRead, recordShare, setDislike, setLike, setSave, type Liker } from "../queries/social.js";
 import {
   SHORT_CODE_REGEX,
@@ -76,6 +76,14 @@ export function articleRoutes({ limiter }: RouteDeps) {
     const image = await shareImage(c.req.param("id"));
     if (!image) throw notFound("Story not found");
     return c.body(new Uint8Array(image), 200, { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=3600" });
+  });
+
+  // GET /api/articles/:id/og.jpg — the 1200×630 link-preview picture (og:image) for WhatsApp / Facebook / X. Public,
+  // no rate limit: link crawlers fetch it.
+  app.get("/:id/og.jpg", async (c) => {
+    const image = await ogImage(c.req.param("id"), (c.req.query("v") ?? "").slice(0, 80));
+    if (!image) throw notFound("Story not found");
+    return c.body(new Uint8Array(image), 200, { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=86400" });
   });
 
   // POST /api/articles/:id/read — the article page was opened (Newsroom "reads", unique per viewer).

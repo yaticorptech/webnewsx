@@ -100,9 +100,14 @@ export async function generateMetadata({ params }: PageProps<"/a/[slug]">): Prom
 
   const { article } = data;
   const url = absoluteUrl(`/a/${article.slug}`);
+  // The link preview (owner 2026-10-31: WhatsApp showed it blurred): a 1200×630 JPEG made from the poster, not the tall
+  // WebP poster itself (WhatsApp shrinks that to a small square). `v` changes with the cover.
+  const coverFile = article.coverUrl?.split("/").pop()?.split(".")[0] ?? "";
   const image = {
-    url: absoluteUrl(article.coverUrl),
-    ...(article.coverWidth && article.coverHeight ? { width: article.coverWidth, height: article.coverHeight } : {}),
+    url: absoluteUrl(`/api/articles/${article.id}/og.jpg${coverFile ? `?v=${encodeURIComponent(coverFile)}` : ""}`),
+    width: 1200,
+    height: 630,
+    type: "image/jpeg",
     alt: article.title,
   };
   // The story's own summary (blurb → excerpt → its first lines), never the site's default (owner 2026-10-22).
