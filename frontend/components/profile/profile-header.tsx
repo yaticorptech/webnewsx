@@ -49,7 +49,7 @@ export function ProfileHeader({
   press = null,
 }: ProfileHeaderProps) {
   // Styled like the Press Pass (owner 2026-10-31: "similar, not a copy"): the red side strip with its vertical label,
-  // the globe-and-skyline art fading in from the right, the portrait in a framed square, a role line over the name and,
+  // the portrait in a framed square, a role line over the name and (no background art: the owner is designing one),
   // for reporters, region and languages in the pass's row.
   const region = press ? regionLabel(press) : null;
   const languages = press ? languageLabels(press.languages) : [];
@@ -61,12 +61,7 @@ export function ProfileHeader({
           {press ? "Global press pass" : "WebNEWS profile"}
         </span>
       </div>
-      <img
-        src="/brand/press-pass-card.jpg"
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 -z-20 h-full w-[62%] object-cover object-right opacity-25 [mask-image:linear-gradient(to_left,black_35%,transparent)] sm:opacity-35"
-      />
+
       {/* The page's back arrow lives here on profiles (owner 2026-09-28; the shell's one is hidden, globals.css), in
           a line of its own above the portrait — a plain arrow, no circle (owner 2026-10-08). Not in the Android
           app (owner 2026-10-05): the phone's back button does it. */}
