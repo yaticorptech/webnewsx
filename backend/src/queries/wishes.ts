@@ -74,12 +74,13 @@ const columns = {
 };
 
 /** The wishes in the feed (author not suspended), newest first — the feed scatters them. They never expire (owner 2026-10-31). */
-export async function activeWishes(viewer: { id: string; role: Role } | null, limit = 30): Promise<Wish[]> {
+export async function activeWishes(viewer: { id: string; role: Role } | null, limit = 30, authorUsername?: string): Promise<Wish[]> {
   const rows = await db
     .select(columns)
     .from(wish)
     .innerJoin(user, eq(user.id, wish.authorId))
-    .where(isNull(user.suspendedAt))
+    // `authorUsername`: one person's wishes, for their profile's Wishes tab (owner 2026-11-02).
+    .where(and(isNull(user.suspendedAt), authorUsername ? eq(user.username, authorUsername) : undefined))
     .orderBy(desc(wish.createdAt))
     .limit(limit);
   const comments = await commentsFor(rows.map((row) => row.id));

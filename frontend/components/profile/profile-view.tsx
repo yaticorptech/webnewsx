@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Bookmark, Crown, FilePen, FilePlus2, Flag, LayoutGrid, PenLine, Presentation } from "lucide-react";
+import { ArrowRight, Bookmark, Cake, Crown, FilePen, FilePlus2, Flag, LayoutGrid, PenLine, Presentation } from "lucide-react";
 import { membershipHref } from "@/components/feed/premium";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -26,6 +26,7 @@ import { useSwipe } from "@/lib/hooks/use-swipe";
 import { useNativeApp } from "@/lib/hooks/use-native-app";
 import { useStartAtTop } from "@/lib/hooks/use-start-at-top";
 import { qk } from "@/lib/query-keys";
+import { FeedWish } from "@/components/wishes/feed-wishes";
 import { canPublish, type ArticleCard, type DraftCard, type Page, type ProfileData } from "@/lib/shared/contracts";
 import { ProfileGrid } from "./article-grid";
 import { ArticleTile, DraftTile } from "./article-tile";
@@ -51,7 +52,7 @@ import { type FollowListKind } from "./stats-band";
  * `reported` = the owner's reported stories (owner 2026-09-28) — URL `?tab=reported` (the bell links there).
  * `press-meet` = a reporter's press meet invitations (owner 2026-10-01) — URL `?tab=press-meet`.
  */
-export type ProfileTab = "published" | "members" | "drafts" | "saved" | "reported" | "press-meet";
+export type ProfileTab = "published" | "members" | "drafts" | "saved" | "reported" | "press-meet" | "wishes";
 
 export type ProfileViewProps = {
   profile: ProfileData;
@@ -66,10 +67,11 @@ const TABS_ID = "profile-tabs";
 /** Tiles above the fold get eager images. */
 const EAGER_TILES = 6;
 
-type TabRules = { isSelf: boolean; hasDesk: boolean; hasPressMeet: boolean; hasMembers: boolean; fallback: ProfileTab };
+type TabRules = { isSelf: boolean; hasDesk: boolean; hasPressMeet: boolean; hasMembers: boolean; hasWishes: boolean; fallback: ProfileTab };
 
-function tabFromUrl(value: string | null, { isSelf, hasDesk, hasPressMeet, hasMembers, fallback }: TabRules): ProfileTab {
+function tabFromUrl(value: string | null, { isSelf, hasDesk, hasPressMeet, hasMembers, hasWishes, fallback }: TabRules): ProfileTab {
   if (hasMembers && value === "members") return "members";
+  if (hasWishes && value === "wishes") return "wishes";
   if (isSelf && hasDesk && (value === "drafts" || value === "desk")) return "drafts";
   if (isSelf && hasPressMeet && value === "press-meet") return "press-meet";
   if (isSelf && value === "saved") return "saved";
@@ -192,7 +194,15 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
   // "Members only" (owner 2026-10-14, like YouTube): their premium stories, once they have any.
   const membership = profile.membership ?? null;
   const hasMembers = (membership?.premiumCount ?? 0) > 0;
-  const tabRules: TabRules = { isSelf, hasDesk, hasPressMeet, hasMembers, fallback };
+  // Birthday wishes & invitations they posted (owner 2026-11-02): their own tab, once they have any.
+  const { data: wishData } = useQuery({
+    queryKey: [...qk.wishes, "author", username],
+    queryFn: ({ signal }) => api.wishes.byAuthor(username, signal),
+    staleTime: 60_000,
+  });
+  const wishes = wishData?.items ?? [];
+  const hasWishes = wishes.length > 0;
+  const tabRules: TabRules = { isSelf, hasDesk, hasPressMeet, hasMembers, hasWishes, fallback };
   const urlTab = tabFromUrl(searchParams.get("tab"), tabRules);
   const [tab, setTab] = useState<ProfileTab>(urlTab);
   const [syncedUrlTab, setSyncedUrlTab] = useState<ProfileTab>(urlTab);
@@ -237,6 +247,9 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
         </TabLabel>
       ),
     });
+  }
+  if (hasWishes) {
+    tabItems.push({ value: "wishes", label: <TabLabel iconOnly={inApp} icon={<Cake aria-hidden />}>Wishes</TabLabel> });
   }
   if (isSelf) {
     tabItems.push({ value: "saved", label: <TabLabel iconOnly={inApp} icon={<Bookmark aria-hidden />}>Saved</TabLabel> });
@@ -485,6 +498,18 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
         {isSelf && (
           <TabPanel tabsId={TABS_ID} value="saved" active={tab === "saved"} className="pt-4 sm:pt-5">
             <SavedGrid saved={saved} />
+          </TabPanel>
+        )}
+
+        {hasWishes && (
+          <TabPanel tabsId={TABS_ID} value="wishes" active={tab === "wishes"} className="pt-4 sm:pt-5">
+            <ul aria-label="Wishes and invitations" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {wishes.map((w) => (
+                <li key={w.id} className="min-w-0">
+                  <FeedWish wish={w} />
+                </li>
+              ))}
+            </ul>
           </TabPanel>
         )}
 

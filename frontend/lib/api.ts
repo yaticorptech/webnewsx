@@ -599,6 +599,8 @@ export const api = {
   /** Birthday wishes & invitations (owner 2026-10-31). */
   wishes: {
     list: (signal?: AbortSignal) => request<{ items: Wish[] }>("/api/wishes", { signal }),
+    /** One person's wishes (their profile's Wishes tab). */
+    byAuthor: (username: string, signal?: AbortSignal) => request<{ items: Wish[] }>(`/api/wishes${query({ author: username })}`, { signal }),
     create: (input: WishInput) => request<{ wish: Wish }>("/api/wishes", { method: "POST", body: input }),
     remove: (id: string) => request<void>(`/api/wishes/${enc(id)}`, { method: "DELETE" }),
     /** One of the quick wishes (WISH_QUICK_COMMENTS) on a wish card. */

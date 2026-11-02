@@ -57,7 +57,8 @@ export function useSendWish(wish: Wish) {
     setSending(body);
     try {
       const result = await api.wishes.comment(wish.id, body);
-      queryClient.setQueryData<{ items: Wish[] }>(qk.wishes, (prev) =>
+      // Every list holding this wish (the feed, a profile's Wishes tab).
+      queryClient.setQueriesData<{ items: Wish[] }>({ queryKey: qk.wishes }, (prev) =>
         prev ? { items: prev.items.map((w) => (w.id === wish.id ? { ...w, ...result } : w)) } : prev,
       );
       toast.success("Wish sent", { id: "wish-comment" });
@@ -78,6 +79,8 @@ export function useRemoveWish(wish: Wish) {
     try {
       await api.wishes.remove(wish.id);
       queryClient.setQueryData<{ items: Wish[] }>(qk.wishes, (prev) => (prev ? { items: prev.items.filter((w) => w.id !== wish.id) } : prev));
+      // A profile's Wishes tab lists them under its own key.
+      void queryClient.invalidateQueries({ queryKey: qk.wishes });
       toast.success("Removed", { id: "wish-removed" });
     } catch (error) {
       toast.error("Couldn't remove it", { id: "wish-removed", description: errorMessage(error) });
@@ -138,6 +141,7 @@ export function FeedWish({ wish, compact = false, className }: { wish: Wish; com
           queryClient.setQueryData<{ items: Wish[] }>(qk.wishes, (prev) =>
             prev ? { items: prev.items.filter((w) => w.id !== wish.id) } : prev,
           );
+          void queryClient.invalidateQueries({ queryKey: qk.wishes });
           toast.success("Removed", { id: "wish-removed" });
         } catch (error) {
           toast.error("Couldn't remove it", { id: "wish-removed", description: errorMessage(error) });

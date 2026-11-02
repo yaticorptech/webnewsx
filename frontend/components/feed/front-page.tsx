@@ -259,37 +259,50 @@ function GridWishCard({ wish }: { wish: Wish }) {
   const remove = useRemoveWish(wish);
   const birthday = wish.kind === "birthday";
   const quick = WISH_QUICK_COMMENTS[wish.kind][0]!;
-  const headline = birthday ? `Happy birthday, ${wish.title}` : wish.title;
+  const name = wish.title.trim();
+  const headline = name ? (birthday ? `Happy birthday, ${name}` : name) : "";
+  // No name and no message (owner 2026-11-02): just the picture, taller, filling the text's place.
+  const hasText = Boolean(headline || wish.message);
+  const removeButton = wish.canDelete && (
+    <button
+      type="button"
+      onClick={() => void remove()}
+      aria-label="Remove from the feed"
+      className={cn(
+        "inline-flex size-8 shrink-0 items-center justify-center rounded-full",
+        headline ? "-mr-1.5 text-muted hover:bg-tint hover:text-brand" : "absolute right-2 top-2 z-10 bg-black/55 text-white hover:bg-black/75",
+      )}
+    >
+      <Trash2 aria-hidden className="size-4" />
+    </button>
+  );
   return (
-    <article aria-labelledby={titleId} className="flex h-full flex-col gap-3">
-      <div className="relative aspect-video w-full overflow-hidden bg-surface-2">
-        {wish.photoUrl && (
-          <img src={wish.photoUrl} alt="" aria-hidden className="absolute inset-0 size-full scale-110 object-cover opacity-60 blur-xl" />
-        )}
-        <div className="absolute inset-0 flex items-center justify-center py-2">
-          <WishArt data={wish} className="h-full w-auto rounded-lg shadow-[0_8px_24px_-10px_rgb(0_0_0/0.45)]" />
+    <article
+      aria-labelledby={headline ? titleId : undefined}
+      aria-label={headline ? undefined : birthday ? "Birthday wish" : "Invitation"}
+      className="flex h-full flex-col gap-3"
+    >
+      {/* Only the poster (owner 2026-11-02: no background behind it), centred in the photo's place. */}
+      <div className={cn("flex w-full justify-center", hasText ? "aspect-video" : "aspect-video min-h-0 flex-1")}>
+        <div className="relative h-full">
+          <WishArt data={wish} className="h-full w-auto rounded-lg" />
+          <span className="pointer-events-none absolute bottom-2 right-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
+            {birthday ? "🎂 Birthday" : "✉️ Invitation"}
+            <span aria-hidden className="text-white/60">·</span>
+            <TimeAgo date={wish.createdAt} className="shrink-0" />
+          </span>
+          {/* Without a headline, Remove sits on the poster's corner. */}
+          {!headline && removeButton}
         </div>
-        <span className="pointer-events-none absolute bottom-2 right-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
-          {birthday ? "🎂 Birthday" : "✉️ Invitation"}
-          <span aria-hidden className="text-white/60">·</span>
-          <TimeAgo date={wish.createdAt} className="shrink-0" />
-        </span>
       </div>
-      <div className="mt-2 flex items-start gap-2">
-        <h3 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-[1.125rem] font-semibold leading-[1.45] text-ink">
-          {headline}
-        </h3>
-        {wish.canDelete && (
-          <button
-            type="button"
-            onClick={() => void remove()}
-            aria-label="Remove from the feed"
-            className="-mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted hover:bg-tint hover:text-brand"
-          >
-            <Trash2 aria-hidden className="size-4" />
-          </button>
-        )}
-      </div>
+      {headline && (
+        <div className="mt-2 flex items-start gap-2">
+          <h3 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-[1.125rem] font-semibold leading-[1.45] text-ink">
+            {headline}
+          </h3>
+          {removeButton}
+        </div>
+      )}
       {wish.message && <p className="line-clamp-3 text-[0.9375rem] leading-[1.7] text-muted">{wish.message}</p>}
       <div className="mt-auto flex min-w-0 items-center gap-2 pt-1">
         <div className="flex min-w-0 flex-1 items-center gap-2">

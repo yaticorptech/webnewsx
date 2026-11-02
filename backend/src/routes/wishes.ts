@@ -13,9 +13,11 @@ import type { RouteDeps } from "./deps.js";
 export function wishRoutes({ limiter }: RouteDeps) {
   const app = new Hono<AppEnv>();
 
+  // GET /api/wishes[?author=<username>] — the feed's wishes, or one person's (their profile's Wishes tab).
   app.get("/", async (c) => {
     const viewer = c.get("viewer");
-    return c.json({ items: await activeWishes(viewer ? { id: viewer.id, role: viewer.role } : null) });
+    const author = c.req.query("author")?.trim().toLowerCase() || undefined;
+    return c.json({ items: await activeWishes(viewer ? { id: viewer.id, role: viewer.role } : null, author ? 60 : 30, author) });
   });
 
   app.post("/", requireOnboarded, rateLimit(limiter, "social", RATE_LIMITS.social, "user"), async (c) => {

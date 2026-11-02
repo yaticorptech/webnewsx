@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { DEMO_ALLOWED, readDemoSetting } from "./demo-engagement.js";
 import { EVENTS_CHANNEL } from "./events.js";
+import { HAS_STORY } from "../queries/demo-engagement.js";
 
 /**
  * Live demo engagement (owner 2026-11-02): while demo mode is on, the demo views / likes / shares (stories) and followers
@@ -44,9 +45,12 @@ export async function growDemoEngagement(): Promise<number> {
         sql`, `,
       )}]) as id`);
   }
+  // Followers: only demo accounts with a published story grow (owner 2026-11-02); everyone else (real people, readers)
+  // drops back to their real count.
+  await db.execute(sql`update "user" set demo_followers = 0 where demo_followers <> 0 and not ${HAS_STORY}`);
   await db.execute(sql`
     update "user" set demo_followers = least(${n(CAP.followers)}, demo_followers + floor(random() * ${n(MAX_FOLLOWERS_PER_TICK)})::int + 1)
-    where onboarded_at is not null and username is not null and suspended_at is null
+    where onboarded_at is not null and username is not null and suspended_at is null and ${HAS_STORY}
       and demo_followers < ${n(CAP.followers)}
       and random() < ${n(FOLLOW_CHANCE)}`);
   return [...updated].length;

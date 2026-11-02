@@ -6,6 +6,12 @@ import { DEMO_ALLOWED, DEMO_SETTING_KEY, readDemoSetting, type DemoSetting } fro
 import { ApiError } from "../lib/errors.js";
 import type { DemoAction, DemoEngagementStatus } from "../shared/contracts.js";
 
+/**
+ * Who may get demo followers (owner 2026-11-02): only the demo accounts ("Added by Claude", `added_by` set) that have a
+ * published, visible story — never real people, never readers.
+ */
+export const HAS_STORY = sql`("user".added_by is not null and exists (select 1 from article sa where sa.author_id = "user".id and sa.status = 'published' and sa.hidden_at is null))`;
+
 async function saveSetting(next: DemoSetting, actorId: string): Promise<void> {
   await db
     .insert(siteSetting)
@@ -45,7 +51,7 @@ export async function demoStatus(): Promise<DemoEngagementStatus> {
 
 /**
  * Editor Desk actions. Refused (403) where demo mode isn't allowed — the public site — whatever the request says.
- * generate = new random numbers for every published story and onboarded account (replaces earlier ones); reset = all
+ * generate = new random numbers for every published story and every account with one (replaces earlier ones); reset = all
  * demo numbers to 0.
  * Real counts are never written.
  */
@@ -64,10 +70,11 @@ export async function runDemoAction(action: DemoAction, actorId: string): Promis
       from (select id, (floor(random() * 200)::int + 1) as views from article where status = 'published') v
       where article.id = v.id
       returning article.id`);
-    // Followers 1–200 for every onboarded account (people and groups).
+    // Followers 1–200 only for demo accounts with a published story (owner 2026-11-02: not real people, not readers).
+    await db.execute(sql`update "user" set demo_followers = 0 where demo_followers <> 0 and not ${HAS_STORY}`);
     const accounts = await db.execute<{ id: string }>(sql`
       update "user" set demo_followers = floor(random() * 200)::int + 1
-      where onboarded_at is not null and username is not null and suspended_at is null
+      where onboarded_at is not null and username is not null and suspended_at is null and ${HAS_STORY}
       returning id`);
     await saveSetting(
       { ...current, generatedAt: new Date().toISOString(), stories: [...updated].length, accounts: [...accounts].length },
