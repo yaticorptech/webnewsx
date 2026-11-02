@@ -45,11 +45,11 @@ function appDonePage(c: Context<AppEnv>, provider: SocialProvider, result: Outco
   const ok = result === "connected";
   const title = ok ? `${name} connected` : result === "cancelled" ? "Not connected" : `Couldn't connect ${name}`;
   const body = ok
-    ? "Go back to the WebNEWS app — your next story will be posted there automatically."
-    : escapeHtml(reason ?? "You closed the login. Go back to the WebNEWS app and tap Connect to try again.");
+    ? "Go back to the WebNewsX app — your next story will be posted there automatically."
+    : escapeHtml(reason ?? "You closed the login. Go back to the WebNewsX app and tap Connect to try again.");
   return c.html(
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
-      `<title>${escapeHtml(title)} · WebNEWS</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;` +
+      `<title>${escapeHtml(title)} · WebNewsX</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;` +
       `font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#16181d}main{max-width:22rem;padding:2rem;text-align:center}` +
       `.mark{width:56px;height:56px;border-radius:50%;margin:0 auto 1rem;display:grid;place-items:center;color:#fff;font-size:28px;` +
       `background:${ok ? "#1f8a4c" : "#e30613"}}h1{font-size:1.35rem;margin:0 0 .5rem}p{color:#6b7079;line-height:1.5;margin:0}` +

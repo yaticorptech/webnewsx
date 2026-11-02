@@ -1,8 +1,10 @@
+import { LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BrandLockup } from "@/components/brand/brand-lockup";
 import { SpeedBarsSvg, SpeedLines } from "@/components/brand/speed-lines";
 import { BackButton } from "@/components/layout/back-button";
+import { COMPANY } from "@/lib/company";
 import { BrandPanel, type BrandPanelCopy } from "./brand-panel";
 
 export type AuthShellProps = {
@@ -12,7 +14,7 @@ export type AuthShellProps = {
 
 /**
  * Split screen for /login, /signup and the password reset pages: the sticky pink brand panel with the 3D globe
- * (≥1024px) + the form column. Below 1024px (owner 2026-10-08: "looks basic" on phones): a WebNEWS-red hero — back
+ * (≥1024px) + the form column. Below 1024px (owner 2026-10-08: "looks basic" on phones): a WebNewsX-red hero — back
  * arrow, white lockup, the page's kicker and headline over the logo's slanted bars — then the form on a white sheet with
  * rounded top corners that rides up over it. Owner 2026-09-29: no live headlines and no site footer on these pages.
  */
@@ -23,15 +25,16 @@ export function AuthShell({ panel, children }: AuthShellProps) {
       <AuthHero />
 
       <div className="relative z-10 -mt-8 flex min-w-0 flex-1 flex-col overflow-hidden rounded-t-[2rem] bg-bg shadow-[0_-14px_36px_-14px_rgb(0_0_0/0.35)] lg:mt-0 lg:rounded-none lg:shadow-none">
-        {/* Two soft red glows drifting behind the form (owner 2026-10-02: livelier; still under reduced motion). */}
-        <style>{`@keyframes wn-auth-float{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(var(--dx),var(--dy),0) scale(1.12)}}`}</style>
+        {/* A quiet backdrop (owner 2026-11-02: professional): a faint dot grid fading out towards the edges. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full bg-brand/12 blur-3xl animate-[wn-auth-float_14s_ease-in-out_infinite] [--dx:-40px] [--dy:50px] motion-reduce:animate-none"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-28 -left-20 size-96 rounded-full bg-brand/8 blur-3xl animate-[wn-auth-float_18s_ease-in-out_infinite] [--dx:60px] [--dy:-40px] motion-reduce:animate-none"
+          className="pointer-events-none absolute inset-0 hidden lg:block"
+          style={{
+            backgroundImage: "radial-gradient(rgb(22 24 29 / 0.07) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+            maskImage: "radial-gradient(70% 60% at 50% 45%, #000, transparent)",
+            WebkitMaskImage: "radial-gradient(70% 60% at 50% 45%, #000, transparent)",
+          }}
         />
         {/* The sheet's grab line (phones). */}
         <span aria-hidden className="mx-auto mt-3 h-1 w-10 rounded-full bg-border-strong lg:hidden" />
@@ -45,24 +48,42 @@ export function AuthShell({ panel, children }: AuthShellProps) {
           tabIndex={-1}
           className="flex flex-1 justify-center px-5 pt-6 pb-14 outline-none sm:px-8 sm:pt-8 sm:pb-20 lg:items-center lg:px-10 lg:pt-4"
         >
-          <div className="relative w-full max-w-108 animate-fade-up sm:max-w-120 lg:rounded-[1.75rem] lg:border lg:border-border lg:bg-surface/85 lg:p-8 lg:shadow-pop lg:backdrop-blur-md">
-            {children}
+          <div className="relative w-full max-w-108 animate-fade-up sm:max-w-120">
+            <div className="lg:rounded-3xl lg:border lg:border-border lg:bg-surface lg:p-10 lg:shadow-[0_1px_2px_rgb(16_18_24/0.05),0_24px_60px_-28px_rgb(16_18_24/0.28)]">
+              {children}
+            </div>
+            <p className="mt-5 flex items-center justify-center gap-1.5 text-xs font-semibold text-muted">
+              <LockKeyhole aria-hidden className="size-3.5" />
+              Secure sign-in · your details stay private
+            </p>
           </div>
         </main>
+        <footer className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-5 pb-8 text-xs text-muted lg:pb-6">
+          <span>© {new Date().getFullYear()} {COMPANY.legalName}</span>
+          <Link href="/terms" className="hover:text-ink">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-ink">
+            Privacy
+          </Link>
+          <a href={`mailto:${COMPANY.email}`} className="hover:text-ink">
+            Help
+          </a>
+        </footer>
       </div>
     </div>
   );
 }
 
 /**
- * The phones' hero (<1024px): WebNEWS red with the logo's slanted bars as a soft pattern, the back arrow and the
+ * The phones' hero (<1024px): WebNewsX red with the logo's slanted bars as a soft pattern, the back arrow and the
  * lockup in white, then straight to the form (owner 2026-10-16: no clock, no headline). Extra room at the bottom for the
  * sheet to ride over.
  */
 function AuthHero() {
   return (
     <section
-      aria-label="WebNEWS"
+      aria-label="WebNewsX"
       className="relative overflow-hidden px-5 pt-[calc(var(--safe-top,0px)+0.75rem)] pb-14 text-white sm:px-8 lg:hidden"
     >
       {/* Depth: a lighter glow up top-left, the bars big and faint on the right. */}
@@ -75,7 +96,7 @@ function AuthHero() {
 
       <Link
         href="/"
-        aria-label="WebNEWS home"
+        aria-label="WebNewsX home"
         // The lockup in white: the wordmark image whitened, the tagline's ink and shine turned white / pale pink.
         className="relative mt-5 inline-flex rounded-md outline-offset-4 [--brand:#ffc2c6] [--color-ink:#fff] [--ink:#fff] [&_img]:brightness-0 [&_img]:invert"
       >

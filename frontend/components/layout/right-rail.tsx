@@ -3,7 +3,7 @@ import { SiteFooter } from "./site-footer";
 
 /**
  * Desktop (≥1280px) sticky right column beside the feeds — grid and reels (redesign 2026-10-07, like Facebook):
- * Trending now and WebNEWS's social icons (owner 2026-10-07: no "Reporters to follow").
+ * Trending now and WebNewsX's social icons (owner 2026-10-07: no "Reporters to follow").
  */
 export function RightRail() {
   return (

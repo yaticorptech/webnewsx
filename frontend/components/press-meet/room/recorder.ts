@@ -30,11 +30,11 @@ export type RecorderSources = {
 };
 
 /**
- * A reporter's recording of the room (owner 2026-10-01): the organizer's picture (with the WebNEWS mark top right —
+ * A reporter's recording of the room (owner 2026-10-01): the organizer's picture (with the WebNewsX mark top right —
  * also drawn for "camera off" and letterboxed frames) and a title strip, plus everyone's audio mixed together (the
  * organizer, the other reporters and their own mic). The pieces are saved on this device every few seconds, in order
  * (lib/local-recordings.ts, owner 2026-10-02: nothing goes to the server), so a closed tab keeps what was recorded; it
- * replays only inside WebNEWS.
+ * replays only inside WebNewsX.
  */
 export class RoomRecorder {
   private readonly canvas = document.createElement("canvas");

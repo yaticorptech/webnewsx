@@ -151,7 +151,7 @@ export function PersonalStep({ values, errors, onChange, options }: StepProps & 
         <Checkbox
           checked={values.aadhaarConsent}
           onCheckedChange={(checked) => onChange({ aadhaarConsent: checked })}
-          label="I agree to share my Aadhaar number for verification. Only its last 4 digits are saved — WebNEWS never stores the full number."
+          label="I agree to share my Aadhaar number for verification. Only its last 4 digits are saved — WebNewsX never stores the full number."
         />
       )}
     </div>
@@ -507,7 +507,7 @@ export function PledgeStep({
     <div className="flex flex-col gap-7 lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
       <div className="card relative overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-tint-border bg-tint px-4 py-3 sm:px-5">
-          <p className="kicker text-brand">The WebNEWS Reporter Pledge</p>
+          <p className="kicker text-brand">The WebNewsX Reporter Pledge</p>
           <span className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-muted">{pledge.length} promises</span>
         </div>
         <ol className="flex flex-col divide-y divide-border">
@@ -569,7 +569,7 @@ export function PledgeStep({
               onCheckedChange={(checked) => onChange({ acceptPledge: checked })}
               label={
                 <>
-                  I take the WebNEWS Reporter Pledge. I understand the Editor Desk can review, return or remove my stories and
+                  I take the WebNewsX Reporter Pledge. I understand the Editor Desk can review, return or remove my stories and
                   revoke my Press Pass if I break it.
                 </>
               }

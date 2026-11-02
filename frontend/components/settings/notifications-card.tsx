@@ -13,7 +13,7 @@ import type { AccountSettings } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 
 /**
- * Settings → Notifications (owner 2026-10-02, in the WebNEWS app): push notifications on / off for the account —
+ * Settings → Notifications (owner 2026-10-02, in the WebNewsX app): push notifications on / off for the account —
  * everything the bell shows — and, when the phone itself blocks them, how to allow them again.
  */
 export function NotificationsCard({ enabled }: { enabled: boolean }) {
@@ -86,12 +86,12 @@ export function NotificationsCard({ enabled }: { enabled: boolean }) {
 
       {enabled && permission === null && (
         <p className="mt-3 text-[0.8125rem] leading-snug text-muted">
-          Update the WebNEWS app to get notifications on this phone.
+          Update the WebNewsX app to get notifications on this phone.
         </p>
       )}
       {enabled && blocked && (
         <p className="mt-3 text-[0.8125rem] leading-snug text-brand-strong">
-          Notifications are blocked for WebNEWS on this phone. Turn them on in your phone&rsquo;s Settings → Apps → WebNEWS →
+          Notifications are blocked for WebNewsX on this phone. Turn them on in your phone&rsquo;s Settings → Apps → WebNewsX →
           Notifications.
         </p>
       )}

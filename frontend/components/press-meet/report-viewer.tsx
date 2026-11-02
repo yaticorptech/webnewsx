@@ -11,7 +11,7 @@ import { qk } from "@/lib/query-keys";
 import { fileSize } from "./new/booking-extras";
 
 /*
- * /press-meet/[id]/report (owner 2026-10-05): the organizer's press meet report inside WebNEWS, fitted to the screen —
+ * /press-meet/[id]/report (owner 2026-10-05): the organizer's press meet report inside WebNewsX, fitted to the screen —
  * a phone opening the raw file got it at full size (or, for a PDF, not at all in the app). PDF pages are drawn to the
  * screen's width (pdf.js), an image is scaled to fit, a Word file is offered as a download. Zoom in for small print.
  */

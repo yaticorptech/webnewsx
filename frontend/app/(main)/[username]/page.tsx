@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const title = `${user.name} (${handleText(user.username)})`;
   const description =
     user.bio?.replace(/\s+/g, " ").trim() ||
-    `${counts.articles} ${counts.articles === 1 ? "story" : "stories"} by ${user.name} on WebNEWS.`;
+    `${counts.articles} ${counts.articles === 1 ? "story" : "stories"} by ${user.name} on WebNewsX.`;
   const image = user.image ? absoluteUrl(user.image) : undefined;
 
   return {

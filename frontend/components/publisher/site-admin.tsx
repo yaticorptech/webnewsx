@@ -213,7 +213,7 @@ function LoginScreen({ domain, onToken }: { domain: string; onToken: (token: str
         <button type="submit" disabled={busy} className={`${primary} mt-6 w-full`}>
           {busy ? "Logging in…" : "Log in"}
         </button>
-        <p className="mt-4 text-center text-xs text-gray-400">Forgot it? The site&apos;s owner can set a new one on WebNEWS.</p>
+        <p className="mt-4 text-center text-xs text-gray-400">Forgot it? The site&apos;s owner can set a new one on WebNewsX.</p>
       </form>
     </div>
   );
@@ -560,10 +560,10 @@ function StoriesPanel({ domain, token }: { domain: string; token: string }) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="font-pub-head text-3xl font-extrabold">Stories</h1>
-          <p className="mt-1 text-sm text-gray-500">Published on WebNEWS. Breaking stories lead your home page and the ticker; hidden ones stay on WebNEWS only.</p>
+          <p className="mt-1 text-sm text-gray-500">Published on WebNewsX. Breaking stories lead your home page and the ticker; hidden ones stay on WebNewsX only.</p>
         </div>
-        {/* Owner 2026-10-30: write in the WebNEWS composer (signed in as the site's WebNEWS account); the story then shows
-            on WebNEWS and on this site at once. */}
+        {/* Owner 2026-10-30: write in the WebNewsX composer (signed in as the site's WebNewsX account); the story then shows
+            on WebNewsX and on this site at once. */}
         <a
           href={`${siteUrl}/publish`}
           target="_blank"
@@ -575,7 +575,7 @@ function StoriesPanel({ domain, token }: { domain: string; token: string }) {
         </a>
       </div>
       <p className="-mt-1 text-xs text-gray-500">
-        Opens the WebNEWS composer in a new tab — sign in there with the WebNEWS account behind this site. Published stories appear here and on your
+        Opens the WebNewsX composer in a new tab — sign in there with the WebNewsX account behind this site. Published stories appear here and on your
         site automatically.
       </p>
       {error && <p className="text-sm font-semibold text-pub">{error}</p>}

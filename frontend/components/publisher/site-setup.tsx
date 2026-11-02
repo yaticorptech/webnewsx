@@ -227,7 +227,7 @@ export function SiteSetup() {
 
   return (
     <div className="flex flex-col">
-      {/* Toolbar (WebNEWS) */}
+      {/* Toolbar (WebNewsX) */}
       <div className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
           <Link href="/settings?section=domain" aria-label="Back" className="flex size-10 items-center justify-center rounded-full text-ink hover:bg-tint-2">
@@ -246,7 +246,7 @@ export function SiteSetup() {
         </div>
       </div>
 
-      {/* Setup panel (WebNEWS) */}
+      {/* Setup panel (WebNewsX) */}
       <div className="border-b border-border bg-bg">
         {Object.keys(fieldErrors).length > 0 && (
           <div role="alert" className="mx-auto max-w-7xl px-4 pt-6">
@@ -294,7 +294,7 @@ export function SiteSetup() {
           <section className="card flex flex-col gap-4 p-5">
             <h2 className="font-wide text-lg font-extrabold text-ink">Admin login</h2>
             <p className="-mt-2 text-xs text-muted">
-              For <strong className="text-ink">{data.domain}/admin</strong> — separate from your WebNEWS login.
+              For <strong className="text-ink">{data.domain}/admin</strong> — separate from your WebNewsX login.
             </p>
             <Field label="Admin email" required error={fieldErrors.adminEmail}>
               <Input

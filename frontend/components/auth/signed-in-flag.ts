@@ -33,7 +33,7 @@ export function clearSignedInMark(): void {
 /*
  * "Welcome back" (owner 2026-10-08: an alert card after logging in): set on a log-in (email or Google), shown once as a
  * toast on the first page of the site after it (PressPassWelcome's shell). Finishing onboarding clears it — a new
- * account gets its own "Welcome to WebNEWS" there instead.
+ * account gets its own "Welcome to WebNewsX" there instead.
  */
 const WELCOME_KEY = "webnews:welcome-back";
 

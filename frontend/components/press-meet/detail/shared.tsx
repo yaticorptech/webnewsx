@@ -186,7 +186,7 @@ export function RecordingConsentDialog({
         <p className="flex gap-3 rounded-2xl border border-tint-border bg-tint px-4 py-3">
           <CircleDot aria-hidden className="mt-0.5 size-4.5 shrink-0 text-brand" />
           <span>
-            Press meets on WebNEWS are held for news coverage. Once you go live, the session is recorded — on your device
+            Press meets on WebNewsX are held for news coverage. Once you go live, the session is recorded — on your device
             and on the devices of the accredited reporters attending.
           </span>
         </p>

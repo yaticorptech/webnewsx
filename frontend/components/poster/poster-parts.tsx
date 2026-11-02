@@ -10,7 +10,7 @@ import { PosterVideo } from "./poster-video";
  * Building blocks shared by the poster designs (templates/*.tsx). Every size is in container units (cqw of the
  * poster's width — StoryPoster's root is the size container), so a design looks the same as a 110px thumbnail and
  * as a full phone screen. 100cqw = the poster's width; its height is 177.78cqw (9:16).
- * No design shows the WebNEWS logo (owner 2026-10-05) — older notes in templates/*.tsx that mention it predate that —
+ * No design shows the WebNewsX logo (owner 2026-10-05) — older notes in templates/*.tsx that mention it predate that —
  * only the small, muted three-bar mark in the top left corner (StoryPoster); the author line sits at the bottom left
  * of every design (owner 2026-10-05, later).
  */

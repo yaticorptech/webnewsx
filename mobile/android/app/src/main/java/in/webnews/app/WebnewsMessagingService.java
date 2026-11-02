@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * Instagram-style pushes (owner 2026-10-16). The backend sends data only (backend lib/push.ts); this draws it: the
  * person's photo round on the right, story pushes expanding to the story's photo like a post, chats stacked as a
- * conversation with the sender's photo, one action button ("Read now", "Reply"…), all grouped under WebNEWS in the brand
+ * conversation with the sender's photo, one action button ("Read now", "Reply"…), all grouped under WebNewsX in the brand
  * red. Tapping opens the page in the app (the push plugin hands `url` to the site, frontend lib/native-push.ts).
  * While the app is open on screen nothing is drawn: the site shows its own popup.
  */
@@ -103,7 +103,7 @@ public class WebnewsMessagingService extends MessagingService {
         NotificationManagerCompat manager = NotificationManagerCompat.from(context);
         if (!manager.areNotificationsEnabled()) return;
         manager.notify(tag, id, builder.build());
-        // The stack's summary (several WebNEWS pushes fold into one group).
+        // The stack's summary (several WebNewsX pushes fold into one group).
         manager.notify(
             "summary",
             0,
@@ -130,7 +130,7 @@ public class WebnewsMessagingService extends MessagingService {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager == null || manager.getNotificationChannel(CHANNEL_ID) != null) return;
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "WebNEWS", NotificationManager.IMPORTANCE_HIGH);
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "WebNewsX", NotificationManager.IMPORTANCE_HIGH);
         channel.setDescription("Followers, stories, likes, comments, messages and press meets");
         manager.createNotificationChannel(channel);
     }

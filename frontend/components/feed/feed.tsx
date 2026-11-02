@@ -8,7 +8,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useMetered } from "@/components/auth/read-meter";
 import { BlurredReels, splitForVisitor } from "@/components/auth/read-wall";
-import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { useRealtimeEvent, useRealtimeReconnect } from "@/components/providers/realtime-provider";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { Button } from "@/components/ui/button";
@@ -518,7 +517,7 @@ function withViewerFlags(card: ArticleCard, viewer: ViewerUser | null, following
 function EndOfFeed() {
   return (
     <div data-feed-end className="panel-tint reel-snap flex flex-col items-center gap-3 px-6 pb-6 pt-8 text-center">
-      <SpeedBarsSvg className="w-9 text-brand" />
+      <img src="/brand/x.svg" alt="" aria-hidden width={40} height={40} className="size-10" />
       <p className="kicker text-ink">You&apos;re all caught up</p>
       <p className="max-w-xs text-sm text-muted">New stories appear at the top the moment they&apos;re published.</p>
       <Button

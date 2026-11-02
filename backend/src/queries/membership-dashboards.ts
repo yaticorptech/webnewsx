@@ -16,7 +16,7 @@ import {
 /*
  * Membership dashboards (owner 2026-10-15): what a member has bought (Settings → My memberships), what a reporter
  * earns (Settings → Premium membership) and what the Editor Desk owes each reporter (Desk → Memberships), with the
- * payouts the desk records. Only `paid` payments count. Amounts in paise; net = amount − WebNEWS's fee.
+ * payouts the desk records. Only `paid` payments count. Amounts in paise; net = amount − WebNewsX's fee.
  */
 
 const iso = (value: unknown): string => new Date(value as string | number | Date).toISOString();

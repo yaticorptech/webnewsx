@@ -156,7 +156,7 @@ test.describe("Editor Desk", () => {
     await waitForHydration(page);
 
     // No way back to the site's account pages from the Desk; Log out returns to the Log in page.
-    await expect(page.getByRole("link", { name: /WebNEWS home|Back to WebNEWS|Exit|Your profile/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /WebNewsX home|Back to WebNewsX|Exit|Your profile/ })).toHaveCount(0);
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     await page.waitForURL((url) => url.pathname === "/login");
     expect(errors).toEqual([]);

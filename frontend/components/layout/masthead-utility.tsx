@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  *
  * Location (owner's pick): the reader's own, from the browser — but never a permission prompt on page load. If the
  * browser already allowed it, it is used straight away (no prompt is ever shown); otherwise the weather is Mangaluru's
- * (WebNEWS's home). The coordinates (rounded to ~1 km) go to Open-Meteo for the weather and BigDataCloud for the city name —
+ * (WebNewsX's home). The coordinates (rounded to ~1 km) go to Open-Meteo for the weather and BigDataCloud for the city name —
  * both free, keyless, cookie-less; nothing is sent to our server. The last place is remembered on this device.
  */
 

@@ -23,11 +23,11 @@ export type ShareProfileButtonProps = {
 };
 
 /**
- * Share the profile. Signed in (owner 2026-09-30): the "Send to" sheet — send it to people and chats in WebNEWS, with
+ * Share the profile. Signed in (owner 2026-09-30): the "Send to" sheet — send it to people and chats in WebNewsX, with
  * Copy link and the native sheet (touch devices; else copy with a toast) underneath. Logged out (owner 2026-09-30):
  * the log-in prompt, like Like. Uses the live origin so shared links always match the address in the browser.
  */
-/** App icons under "Outside WebNEWS" (owner 2026-10-14): each shares the profile's QR card. */
+/** App icons under "Outside WebNewsX" (owner 2026-10-14): each shares the profile's QR card. */
 /** Each app's own icon (share-glyphs.tsx) is the tile (owner 2026-10-22: "everywhere the real icons only"). */
 const APPS: { app: QrApp; label: string; icon: React.ReactNode }[] = [
   { app: "whatsapp", label: "WhatsApp", icon: <WhatsAppIcon size={40} /> },
@@ -69,7 +69,7 @@ export function ShareProfileButton({ username, name, image = null, compact = fal
           onOpenChange={setSheetOpen}
           item={{ kind: "profile", username, name, image }}
           external={
-            // Outside WebNEWS (owner 2026-10-14): the profile's QR card is what gets shared.
+            // Outside WebNewsX (owner 2026-10-14): the profile's QR card is what gets shared.
             <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar">
               {APPS.map(({ app, label, icon }) => (
                 <button

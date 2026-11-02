@@ -48,10 +48,10 @@ export type ChromeEditor = {
 
 type SiteChromeProps = {
   site: Pick<PublicSite, "domain" | "title" | "tagline" | "logoUrl" | "city" | "contactEmail" | "contactPhone" | "address"> & { footerText?: string | null };
-  /** Where the logo and Home lead (their domain; on WebNEWS's story page, back to it). */
+  /** Where the logo and Home lead (their domain; on WebNewsX's story page, back to it). */
   homeHref: string;
   ticker: ArticleCard[];
-  /** Stories open at `<articleBase>/<slug>` (WebNEWS); null in the setup preview (links go nowhere). */
+  /** Stories open at `<articleBase>/<slug>` (WebNewsX); null in the setup preview (links go nowhere). */
   articleBase: string | null;
   ads: SiteAdsByPosition;
   /** The menu after Home (owner 2026-10-30): the categories the site has stories in. */
@@ -380,7 +380,7 @@ const footLink = "text-sm leading-6 text-gray-600 transition hover:text-pub";
 /**
  * The webnews.in footer (its components/layout/Footer.tsx — owner 2026-10-30: "same layout and colors"): light grey
  * with a red rule on top; the publisher's brand · Explore · Company (Privacy, Terms, Login) · Office; then the centred bottom line with
- * "Powered by WebNEWS" and the copyright.
+ * "Powered by WebNewsX" and the copyright.
  */
 function SiteFooter({ site, homeHref, lang }: { site: SiteChromeProps["site"]; homeHref: string; lang: SiteLanguage }) {
   const hasOffice = Boolean(site.address || site.contactPhone || site.contactEmail);
@@ -447,7 +447,7 @@ function SiteFooter({ site, homeHref, lang }: { site: SiteChromeProps["site"]; h
             <a href={`${siteUrl}/terms`} className={footLink}>
               {tr(lang, "terms")}
             </a>
-            {/* A full page load: on their domain /admin is the site's own admin (proxy.ts), not a WebNEWS page. */}
+            {/* A full page load: on their domain /admin is the site's own admin (proxy.ts), not a WebNewsX page. */}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/admin" className="text-sm font-semibold leading-6 text-gray-700 transition hover:text-pub">
               {tr(lang, "login")}

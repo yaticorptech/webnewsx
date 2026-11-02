@@ -28,7 +28,7 @@ import { markSignedIn, markWelcomeBack } from "./signed-in-flag";
  *  1. The WhatsApp number → we check it (POST /api/phone-auth/check).
  *  2. Verified, with a password → the password, and in.
  *  3. Not verified yet (or Forgot password) → "This number isn't verified" with "Verify on WhatsApp": WhatsApp opens a
- *     chat with WebNEWS, a one-time code typed in; they press Send. WhatsApp tells us which number sent it and answers
+ *     chat with WebNewsX, a one-time code typed in; they press Send. WhatsApp tells us which number sent it and answers
  *     "Number verified" in that chat; this page sees it within seconds (GET /status) …
  *  4. … and asks for a password (new accounts: create one; Forgot password: a new one) → signed in. New accounts then
  *     go through onboarding (name, username).

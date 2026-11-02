@@ -13,8 +13,8 @@ export type LogoProps = {
   alt?: string;
 };
 
-/** The WebNEWS wordmark (`logo-light.png`, the only logo used — SPEC §2.1). */
-export function Logo({ height = 24, priority = false, className, alt = "WebNEWS" }: LogoProps) {
+/** The WebNewsX wordmark (`logo-light.png`, the only logo used — SPEC §2.1). */
+export function Logo({ height = 24, priority = false, className, alt = "WebNewsX" }: LogoProps) {
   const width = Math.round(height * LOGO_ASPECT);
   return (
     <span

@@ -47,11 +47,8 @@ function hash(id: string, salt: number): number {
   return h;
 }
 
-/**
- * The quick wishes under a card in Home (owner 2026-10-31: "Happy birthday", "Many more happy returns of the day" — one
- * tap, no typing; not the stories' comments): the latest few with who sent them, then the choices to tap.
- */
-function QuickWishes({ wish }: { wish: Wish }) {
+/** Sends a one-tap wish ("Happy birthday!") and updates the card; asks visitors to log in first. */
+export function useSendWish(wish: Wish) {
   const queryClient = useQueryClient();
   const authPrompt = useAuthPrompt();
   const [sending, setSending] = useState<string | null>(null);
@@ -63,12 +60,37 @@ function QuickWishes({ wish }: { wish: Wish }) {
       queryClient.setQueryData<{ items: Wish[] }>(qk.wishes, (prev) =>
         prev ? { items: prev.items.map((w) => (w.id === wish.id ? { ...w, ...result } : w)) } : prev,
       );
+      toast.success("Wish sent", { id: "wish-comment" });
     } catch (error) {
       toast.error("Couldn't send it", { id: "wish-comment", description: errorMessage(error) });
     } finally {
       setSending(null);
     }
   };
+  return { sending, send };
+}
+
+/** Removes a wish from the feed (its author / the Editor Desk). */
+export function useRemoveWish(wish: Wish) {
+  const queryClient = useQueryClient();
+  return async () => {
+    if (!window.confirm("Remove this from the feed?")) return;
+    try {
+      await api.wishes.remove(wish.id);
+      queryClient.setQueryData<{ items: Wish[] }>(qk.wishes, (prev) => (prev ? { items: prev.items.filter((w) => w.id !== wish.id) } : prev));
+      toast.success("Removed", { id: "wish-removed" });
+    } catch (error) {
+      toast.error("Couldn't remove it", { id: "wish-removed", description: errorMessage(error) });
+    }
+  };
+}
+
+/**
+ * The quick wishes under a card in Home (owner 2026-10-31: "Happy birthday", "Many more happy returns of the day" — one
+ * tap, no typing; not the stories' comments): the latest few with who sent them, then the choices to tap.
+ */
+function QuickWishes({ wish }: { wish: Wish }) {
+  const { sending, send } = useSendWish(wish);
   return (
     <div className="flex flex-col gap-2 px-1.5 pt-3">
       {wish.comments.length > 0 && (

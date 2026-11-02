@@ -31,7 +31,7 @@ export function StyleGuide() {
       <div className="relative overflow-hidden border-b border-tint-border bg-tint">
         <SpeedBarsSvg className="pointer-events-none absolute -right-10 top-1/2 w-136 max-w-[60vw] -translate-y-1/2 text-brand opacity-[0.08] lg:-right-16 lg:max-w-[42vw]" />
         <div className="relative mx-auto flex max-w-300 flex-col items-start gap-6 px-4 py-14 sm:px-6 sm:py-20">
-          <p className="kicker text-brand-strong">WebNEWS · Style guide</p>
+          <p className="kicker text-brand-strong">WebNewsX · Style guide</p>
           <BrandLockup size="sm" align="start" className="sm:lockup-lg" />
           <p className="max-w-xl text-[0.9375rem] leading-relaxed text-ink-2">
             White and crimson, modelled on the old platform: clean white pages, pink panels, grey rules and crimson

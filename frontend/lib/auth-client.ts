@@ -63,7 +63,7 @@ export async function signInWithGoogle({
 }
 
 /**
- * "Continue with Google" in the WebNEWS app (owner 2026-09-29): Google refuses its sign-in page inside app web views,
+ * "Continue with Google" in the WebNewsX app (owner 2026-09-29): Google refuses its sign-in page inside app web views,
  * so the phone's own account picker hands over an ID token and the backend verifies it (Better Auth
  * `signIn.social({ idToken })`: same account rules as the web flow — suspended and Editor Desk accounts are refused).
  * Then a full page load to `callbackURL`, or `newUserCallbackURL` for an account that hasn't onboarded yet.

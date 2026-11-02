@@ -27,7 +27,7 @@ export type SendSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: SendItem;
-  /** Other ways to share (copy link, WhatsApp…), under "Outside WebNEWS". */
+  /** Other ways to share (copy link, WhatsApp…), under "Outside WebNewsX". */
   external?: ReactNode;
 };
 
@@ -63,10 +63,10 @@ function chatTarget(chat: ConversationSummary): Target {
 const SECTIONS: Section[] = ["Results", "Recent", "Communities & groups", "You follow"];
 
 /**
- * "Dispatch" (owner 2026-09-30: WebNEWS's own look, design A — not Instagram's grid): the story (or profile) as a
+ * "Dispatch" (owner 2026-09-30: WebNewsX's own look, design A — not Instagram's grid): the story (or profile) as a
  * clipping with a red rule, a TO: line holding who's picked, people in sections (Recent · Communities & groups ·
  * You follow, or search results) with a red "Sending" stamp, an optional note, a red "Dispatch to N →" button, and
- * other ways to share under "Outside WebNEWS". Each person gets it in your direct chat with them; a group /
+ * other ways to share under "Outside WebNewsX". Each person gets it in your direct chat with them; a group /
  * community in its chat. The website and the phone app share it.
  */
 export function SendSheet({ open, onOpenChange, item, external }: SendSheetProps) {
@@ -187,8 +187,8 @@ export function SendSheet({ open, onOpenChange, item, external }: SendSheetProps
           </button>
           {external && (
             <>
-              <p className="kicker mt-4 text-[0.625rem] text-muted">Outside WebNEWS</p>
-              <div className="mt-2">{external}</div>
+              {/* No "Outside WebNewsX" label (owner 2026-11-02): the app logos say it. */}
+              <div className="mt-4">{external}</div>
             </>
           )}
         </div>
@@ -317,12 +317,12 @@ function Clipping({ item }: { item: SendItem }) {
           </span>
           <span className="min-w-0">
             <span className="line-clamp-2 font-wide text-[0.9375rem] font-extrabold leading-tight text-ink">{item.title}</span>
-            <span className="mt-1 block truncate text-xs font-semibold text-muted">{item.author ? `by ${item.author} · WebNEWS` : "WebNEWS story"}</span>
+            <span className="mt-1 block truncate text-xs font-semibold text-muted">{item.author ? `by ${item.author} · WebNewsX` : "WebNewsX story"}</span>
           </span>
         </>
       ) : (
         <>
-          {/* The person, then their profile QR big and centred, the WebNEWS bars in its middle (owner 2026-10-15). */}
+          {/* The person, then their profile QR big and centred, the WebNewsX bars in its middle (owner 2026-10-15). */}
           <span className="flex w-full flex-col items-center gap-3">
             <span className="flex w-full min-w-0 items-center gap-3">
               <Avatar src={item.image} name={item.name} size={44} decorative />
@@ -340,7 +340,7 @@ function Clipping({ item }: { item: SendItem }) {
   );
 }
 
-/** One "Outside WebNEWS" square (copy link, WhatsApp, X…): the label is its tooltip and accessible name. */
+/** One "Outside WebNewsX" square (copy link, WhatsApp, X…): the label is its tooltip and accessible name. */
 export function ExternalShareButton({ label, icon, onClick }: { label: string; icon: ReactNode; onClick: () => void }) {
   return (
     <button
@@ -348,7 +348,7 @@ export function ExternalShareButton({ label, icon, onClick }: { label: string; i
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border-strong text-ink transition-colors hover:border-brand hover:text-brand [&_svg]:size-[1.05rem]"
+      className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border-strong text-ink transition-colors hover:border-brand hover:text-brand [&_img]:size-8 [&_svg]:size-8"
     >
       {icon}
     </button>

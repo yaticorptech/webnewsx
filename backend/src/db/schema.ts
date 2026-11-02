@@ -67,7 +67,7 @@ import {
 const tsMs = (name: string) => timestamp(name, { withTimezone: true, precision: 3, mode: "date" });
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
 
-/* ─────────────── Better Auth core tables (+ WebNEWS profile columns on "user") ─────────────── */
+/* ─────────────── Better Auth core tables (+ WebNewsX profile columns on "user") ─────────────── */
 
 export const user = pgTable(
   "user",
@@ -190,7 +190,7 @@ export const verification = pgTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-/* ─────────────── WebNEWS tables ─────────────── */
+/* ─────────────── WebNewsX tables ─────────────── */
 
 export const article = pgTable(
   "article",
@@ -1018,7 +1018,7 @@ export const notification = pgTable(
 );
 
 /**
- * Contact us (owner 2026-10-02): a signed-in member's message to WebNEWS. The email and username are copied from the
+ * Contact us (owner 2026-10-02): a signed-in member's message to WebNewsX. The email and username are copied from the
  * account when it's sent (so the message still says who wrote it if they change them later).
  */
 export const contactMessage = pgTable(
@@ -1041,7 +1041,7 @@ export const contactMessage = pgTable(
 );
 
 /**
- * A phone that gets push notifications (owner 2026-10-02): the WebNEWS app's FCM token, registered after login. A
+ * A phone that gets push notifications (owner 2026-10-02): the WebNewsX app's FCM token, registered after login. A
  * token belongs to one account at a time (logging in as someone else moves it); tokens FCM rejects are deleted.
  */
 export const pushDevice = pgTable(
@@ -1290,7 +1290,7 @@ export const pressMeetFeePayment = pgTable(
  * Premium membership payments (owner 2026-10-14): a reader pays a reporter's monthly price for MEMBERSHIP_DAYS of
  * their members-only stories. `created` = a Razorpay order waiting for payment; `paid` = verified (or `test`, no money
  * moved). A paid row's period starts where the member's previous one ends, so a membership is active while any paid
- * row's `periodEnd` is in the future. `feePaise` = WebNEWS's MEMBERSHIP_FEE_PERCENT, taken from the reporter's share.
+ * row's `periodEnd` is in the future. `feePaise` = WebNewsX's MEMBERSHIP_FEE_PERCENT, taken from the reporter's share.
  */
 export const membershipPayment = pgTable(
   "membership_payment",
@@ -1542,12 +1542,12 @@ export const publisherSite = pgTable(
     contactEmail: text("contact_email"),
     contactPhone: text("contact_phone"),
     address: text("address"),
-    /** The site admin's own login (`<domain>/admin`), separate from WebNEWS accounts. scrypt `salt:hash`. */
+    /** The site admin's own login (`<domain>/admin`), separate from WebNewsX accounts. scrypt `salt:hash`. */
     adminEmail: text("admin_email").notNull(),
     adminPasswordHash: text("admin_password_hash").notNull(),
     /** Bumped on a password change: older admin tokens stop working. */
     adminTokenVersion: integer("admin_token_version").notNull().default(0),
-    /** Stories the admin took off the site / marked Breaking (they stay on WebNEWS). */
+    /** Stories the admin took off the site / marked Breaking (they stay on WebNewsX). */
     hiddenArticleIds: uuid("hidden_article_ids").array().notNull().default(sql`'{}'::uuid[]`),
     breakingArticleIds: uuid("breaking_article_ids").array().notNull().default(sql`'{}'::uuid[]`),
     /** Added to the Vercel project (the domain then serves the site once its DNS points at Vercel). */

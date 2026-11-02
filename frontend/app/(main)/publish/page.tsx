@@ -8,7 +8,7 @@ import { publishesToReview, requireOnboardedViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Publish article",
-  description: "Write and publish a news story on WebNEWS.",
+  description: "Write and publish a news story on WebNewsX.",
   robots: { index: false, follow: false },
 };
 

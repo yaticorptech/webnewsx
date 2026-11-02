@@ -4,7 +4,7 @@ import { getMessaging } from "firebase-admin/messaging";
 import { env } from "../env.js";
 
 /*
- * Phone push notifications (owner 2026-10-02) through Firebase Cloud Messaging — the WebNEWS app (mobile/) registers
+ * Phone push notifications (owner 2026-10-02) through Firebase Cloud Messaging — the WebNewsX app (mobile/) registers
  * its FCM token after login. Off without a service account (env.pushEnabled): the worker then leaves the queue alone.
  */
 

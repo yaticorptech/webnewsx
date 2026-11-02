@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /*
- * WebNEWS for Android and iOS (owner 2026-09-28: "same exact UI and features"): a native shell that loads the
+ * WebNewsX for Android and iOS (owner 2026-09-28: "same exact UI and features"): a native shell that loads the
  * website, so every screen and feature is the site's own and stays in sync with it.
  *
  * WEBNEWS_URL = the site the app opens. Store builds: the deployed https domain. Default: the local dev server —
@@ -17,11 +17,11 @@ writeFileSync(join(process.cwd(), "www", "app-url.js"), `window.WEBNEWS_URL = ${
 
 const config: CapacitorConfig = {
   appId: "in.webnews.app",
-  appName: "WebNEWS",
+  appName: "WebNewsX",
   webDir: "www",
   backgroundColor: "#FFFFFF",
   // Lets the site recognise the app (lib/native-app.ts also checks window.Capacitor).
-  appendUserAgent: "WebNEWSApp",
+  appendUserAgent: "WebNewsXApp",
   server: {
     url,
     // Plain http only for the local dev server.

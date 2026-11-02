@@ -1,7 +1,7 @@
 /**
  * Kannada stories from Dakshina Kannada for local development (owner 2026-10-10: "add Kannada articles for Dakshina
  * Kannada, a source image is a must"). No openly licensed Kannada news covers the district, so these are features
- * about its well-known places and traditions, written for WebNEWS, each with a photo from Wikimedia Commons under an
+ * about its well-known places and traditions, written for WebNewsX, each with a photo from Wikimedia Commons under an
  * open licence (CC BY / CC BY-SA / CC0 / public domain) and the credit those licences ask for: the author, the
  * licence and a link to the file. Filed by the Verified reporters who write in Kannada, in turn. Idempotent: a story
  * already there (same title) is skipped. Local development only.
@@ -20,7 +20,7 @@ import { newImageKey, storage } from "../src/lib/storage.js";
 import { POSTER_TEMPLATE_VALUES, type Category } from "../src/shared/contracts.js";
 
 const COMMONS = "https://commons.wikimedia.org/w/api.php";
-const HEADERS = { "User-Agent": "WebNEWS-local-dev-seed/1.0" };
+const HEADERS = { "User-Agent": "WebNewsX-local-dev-seed/1.0" };
 const OPEN = /^(CC BY(-SA)? [\d.]+|CC0|Public domain)/i;
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const escape = (text: string) => text.replace(/[&<>"]/g, (ch) => `&#${ch.charCodeAt(0)};`);

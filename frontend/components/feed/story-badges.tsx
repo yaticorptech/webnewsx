@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const PILL = "kicker inline-flex h-6 shrink-0 items-center gap-1 rounded-full pl-2 pr-2.5 leading-none [&_svg]:size-3.5";
 
 export const SPOTLIGHT_EXPLAINER = "Spotlight: the reporter paid to boost this story. It ranks higher in For You while the boost runs.";
-export const EDITORS_PICK_EXPLAINER = "Editor's Pick: chosen by the WebNEWS Editor Desk.";
+export const EDITORS_PICK_EXPLAINER = "Editor's Pick: chosen by the WebNewsX Editor Desk.";
 
 export function EditorsPickLabel({ className }: { className?: string }) {
   return (

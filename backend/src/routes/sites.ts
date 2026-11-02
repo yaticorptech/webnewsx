@@ -49,7 +49,7 @@ const bearer = (c: Context<AppEnv>) => c.req.header("authorization")?.replace(/^
 export function siteRoutes({ limiter }: RouteDeps) {
   const app = new Hono<AppEnv>();
 
-  /* ── The owner's setup (WebNEWS /site-setup) ── */
+  /* ── The owner's setup (WebNewsX /site-setup) ── */
 
   // GET /api/sites/mine?source=<id> — the site (null until saved), the verified domain, sources, DNS records, preview stories.
   app.get("/mine", requireOnboarded, async (c) => c.json(await mySite(sitePerson(c), c.req.query("source"))));

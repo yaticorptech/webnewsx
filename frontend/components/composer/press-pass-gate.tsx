@@ -14,7 +14,7 @@ export function PressPassGate({
   open,
   onOpenChange,
   title = "Create a Press Pass to publish",
-  description = "Only Press Pass holders can file stories on WebNEWS. Create yours — it takes a minute — then publish your story.",
+  description = "Only Press Pass holders can file stories on WebNewsX. Create yours — it takes a minute — then publish your story.",
   cta = "Create",
 }: {
   open: boolean;

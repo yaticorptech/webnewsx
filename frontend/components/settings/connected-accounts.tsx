@@ -96,7 +96,7 @@ export function ConnectedAccounts() {
         Connected accounts
       </h2>
       <p className="mt-1 text-[0.9375rem] leading-relaxed text-muted">
-        Connect your Instagram and Facebook once — every story you publish on WebNEWS is then posted there automatically.
+        Connect your Instagram and Facebook once — every story you publish on WebNewsX is then posted there automatically.
       </p>
 
       <ul className="mt-5 flex flex-col gap-3">

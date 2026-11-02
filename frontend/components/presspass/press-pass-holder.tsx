@@ -225,7 +225,7 @@ export function PressPassHolder({ pass, justIssued = false, editorDesk = false, 
                   Complete your Press Pass
                 </h2>
                 <p className="mt-1 text-sm leading-relaxed text-muted">
-                  WebNEWS now keeps every reporter&apos;s personal details — your full name, date of birth, address and a
+                  WebNewsX now keeps every reporter&apos;s personal details — your full name, date of birth, address and a
                   government ID — plus your mobile number and reporting background. Only the Editor Desk sees them.
                 </p>
               </div>

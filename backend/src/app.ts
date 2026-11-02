@@ -31,6 +31,7 @@ import { membershipRoutes } from "./routes/memberships.js";
 import { gifRoutes } from "./routes/gifs.js";
 import { stagingReadOnly } from "./middleware/staging.js";
 import { importRoutes } from "./routes/import.js";
+import { appVersionRoutes } from "./routes/app-version.js";
 import { wishRoutes } from "./routes/wishes.js";
 import { marketRoutes } from "./routes/market.js";
 import { aiRoutes } from "./routes/ai.js";
@@ -176,6 +177,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route("/api/places", placeRoutes());
   app.route("/api/gifs", gifRoutes());
   app.route("/api/import", importRoutes());
+  app.route("/api/app", appVersionRoutes());
   app.route("/api/wishes", wishRoutes(deps));
   app.route("/api/newsroom", newsroomRoutes());
   app.route("/api/spotlight", spotlightRoutes(deps));

@@ -13,7 +13,7 @@ type Tab = "members" | "payments" | "payouts";
 
 /**
  * Settings → Premium membership, under the price (owner 2026-10-15): the reporter's members and money — active and
- * total members, earnings after WebNEWS's fee, what's been paid out and what's still due, six months of earnings, then
+ * total members, earnings after WebNewsX's fee, what's been paid out and what's still due, six months of earnings, then
  * Members · Payments · Payouts.
  */
 export function EarningsDashboard() {
@@ -62,7 +62,7 @@ export function EarningsDashboard() {
             Members &amp; earnings
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-muted">
-            Who joined your membership and what you&rsquo;ve earned. Your share is the price minus WebNEWS&rsquo;s {e.feePercent}% fee; the Editor
+            Who joined your membership and what you&rsquo;ve earned. Your share is the price minus WebNewsX&rsquo;s {e.feePercent}% fee; the Editor
             Desk pays it out to you.
           </p>
         </div>
@@ -82,7 +82,7 @@ export function EarningsDashboard() {
         <div className="flex flex-col gap-2 rounded-2xl border border-border p-4 text-sm">
           <p className="font-bold text-ink">How it adds up</p>
           <Row label="Members paid" value={inr(e.grossPaise)} />
-          <Row label={`WebNEWS fee (${e.feePercent}%)`} value={`− ${inr(e.feePaise)}`} muted />
+          <Row label={`WebNewsX fee (${e.feePercent}%)`} value={`− ${inr(e.feePaise)}`} muted />
           <Row label="Your earnings" value={inr(e.netPaise)} strong />
           <Row label="Paid out" value={`− ${inr(e.paidOutPaise)}`} muted />
           <Row label="Balance due" value={inr(e.balancePaise)} strong brand />

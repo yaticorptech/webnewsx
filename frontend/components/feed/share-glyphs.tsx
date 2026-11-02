@@ -1,7 +1,7 @@
 /**
  * The share menu's icons (owner 2026-10-22: "the real icons"): each app's own logo in its brand colour, as the round
  * badges people know from their phones — WhatsApp green, X black, Facebook and LinkedIn blue, Telegram light blue — plus
- * matching badges for Email, Copy link (WebNEWS red) and the phone's own share sheet. 24×24 SVGs with explicit colours
+ * matching badges for Email, Copy link (WebNewsX red) and the phone's own share sheet. 24×24 SVGs with explicit colours
  * (lucide v1 ships no brand icons); `size` sets the rendered box (an inline size, so a menu's `[&_svg]` sizing doesn't
  * shrink them).
  */
@@ -104,7 +104,7 @@ export const EmailIcon = (props: IconProps) => {
   );
 };
 
-/** Copy link: the link glyph on a WebNEWS-red disc. */
+/** Copy link: the link glyph on a WebNewsX-red disc. */
 export const CopyLinkIcon = (props: IconProps) => (
   <Badge {...props}>
     <circle cx="12" cy="12" r="12" fill="var(--brand)" />

@@ -12,7 +12,7 @@ const TITLE_SIZES = [
 ] as const;
 
 /**
- * Magazine (owner 2026-10-02): a cover — the WebNEWS logo large as the masthead on a white band with a red rule, the
+ * Magazine (owner 2026-10-02): a cover — the WebNewsX logo large as the masthead on a white band with a red rule, the
  * photo filling the rest, and at the bottom a big serif headline and the author line (owner 2026-10-07: no "Cover story"
  * chip — every reporter would pick it).
  * The serif's optical size is pinned so a thumbnail wraps like the full poster (as on Newspaper).

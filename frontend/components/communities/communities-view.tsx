@@ -209,7 +209,7 @@ function useJoin(community: CommunitySummary) {
 
 /**
  * The community's photo (uploaded when it was created or edited) as a cover (object-cover), or — without one — the
- * WebNEWS red with the logo's bars. `children`
+ * WebNewsX red with the logo's bars. `children`
  * sit over it (it clips its own corners: pass the rounding in `className`).
  */
 function Cover({ community, className, children }: { community: CommunitySummary; className?: string; children?: ReactNode }) {

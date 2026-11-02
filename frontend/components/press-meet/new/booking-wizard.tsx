@@ -39,7 +39,7 @@ type Errors = { title?: string; meetUrl?: string };
 
 /**
  * /press-meet/new (owner 2026-10-01): 1. date & time on the shared calendar → 2. who can join: Verified reporters you
- * invite (with their prices), or public — any reporter, free, first come first served (owner 2026-10-07) → 3. title, the press meet report, WebNEWS Live or Google Meet and the platform fee (report and fee required,
+ * invite (with their prices), or public — any reporter, free, first come first served (owner 2026-10-07) → 3. title, the press meet report, WebNewsX Live or Google Meet and the platform fee (report and fee required,
  * owner 2026-10-05) → Schedule press meet (only once the report is uploaded and the fee paid; no summary card, owner
  * 2026-10-05). The bar along the bottom keeps the choice so far and the total in view.
  */
@@ -234,9 +234,9 @@ export function BookingWizard() {
                     active={platform === "webnews"}
                     onSelect={() => setPlatform("webnews")}
                     icon={<MonitorPlay aria-hidden />}
-                    title="WebNEWS Live"
+                    title="WebNewsX Live"
                     badge="Recommended"
-                    text="Our built-in room: you on camera with the WebNEWS mark, reporters ask questions by mic and can record it."
+                    text="Our built-in room: you on camera with the WebNewsX mark, reporters ask questions by mic and can record it."
                   />
                   <PlatformOption
                     active={platform === "google_meet"}

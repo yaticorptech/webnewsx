@@ -109,7 +109,7 @@ export function ControlsSection() {
           <Avatar name="Maya Okafor" size="sm" ring />
           <Avatar name="Grid Watch" size="md" />
           <Avatar name="Ada Lindqvist" size="lg" src={BROKEN_IMAGE} />
-          <Avatar name="WebNEWS" size="xl" src="/icons/maskable-512.png" />
+          <Avatar name="WebNewsX" size="xl" src="/icons/maskable-512.png" />
         </Demo>
       </div>
 

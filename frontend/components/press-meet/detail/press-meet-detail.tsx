@@ -196,7 +196,7 @@ function Hero({ meet }: { meet: PressMeetDetail }) {
             <span aria-hidden className="h-5 w-px bg-ink/15 max-sm:hidden" />
             <span className="inline-flex items-center gap-2 text-base font-bold text-ink sm:text-[0.9375rem] [&_svg]:size-5 [&_svg]:text-[#d10101]">
               {meet.platform === "google_meet" ? <Video aria-hidden /> : <Radio aria-hidden strokeWidth={2.25} />}
-              {meet.platform === "google_meet" ? "Google Meet" : "WebNEWS Live"}
+              {meet.platform === "google_meet" ? "Google Meet" : "WebNewsX Live"}
             </span>
           </div>
           <h1 id="pm-title" className="mt-1 font-wide text-[1.625rem] leading-tight font-black tracking-tight text-ink wrap-anywhere sm:mt-3 sm:text-[2.25rem]">
@@ -334,7 +334,7 @@ function EventDetails({ meet, className }: { meet: PressMeetDetail; className?: 
     { icon: CalendarDays, label: "Date", value: meetDayLong(meet.startsAt) },
     { icon: Clock3, label: "Time", value: `${meetRange(meet.startsAt, meet.endsAt)} IST` },
     { icon: Hourglass, label: "Duration", value: durationLong(meet.durationMinutes) },
-    { icon: meet.platform === "google_meet" ? Video : MonitorPlay, label: "Platform", value: meet.platform === "google_meet" ? "Google Meet" : "WebNEWS Live" },
+    { icon: meet.platform === "google_meet" ? Video : MonitorPlay, label: "Platform", value: meet.platform === "google_meet" ? "Google Meet" : "WebNewsX Live" },
     { icon: Tag, label: "Category", value: meet.visibility === "public" ? "Public press meet" : "Private press meet" },
     {
       icon: Users,

@@ -74,7 +74,7 @@ const DESCRIPTIONS: Record<PosterTemplate, string> = {
   quote: "Full photo with a big red quote mark and the headline as an italic pull quote.",
   highlight: "Full photo; each line of the headline sits on its own white highlighter bar.",
   glass: "Full photo with the white headline on a frosted-glass panel near the bottom.",
-  "red-fade": "Full photo fading into WebNEWS red at the bottom, with a big white headline.",
+  "red-fade": "Full photo fading into WebNewsX red at the bottom, with a big white headline.",
 };
 
 /**
@@ -136,12 +136,12 @@ export type StoryPosterProps = {
   className?: string;
   /** `id` for the headline element, so a wrapping card can point `aria-labelledby` at it. */
   titleId?: string;
-  /** The small WebNEWS mark in the top left corner (poster images that are shared or auto-posted). */
+  /** The small WebNewsX mark in the top left corner (poster images that are shared or auto-posted). */
   mark?: boolean;
 };
 
 /**
- * The small WebNEWS three-bar mark in a design's top left corner — only on the poster images that leave WebNEWS
+ * The small WebNewsX three-bar mark in a design's top left corner — only on the poster images that leave WebNewsX
  * (shares, auto-posts: `mark`), not on screen, where a phone's full-screen reel crops the poster's sides (owner
  * 2026-10-05). Muted, never highlighted. Where a design has text or a frame up there, it lines up with its margin.
  */

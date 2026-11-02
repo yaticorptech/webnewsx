@@ -4,7 +4,7 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
- * WebNEWS design tokens — docs/SPEC.md §2.2 (retheme 2026-09-24).
+ * WebNewsX design tokens — docs/SPEC.md §2.2 (retheme 2026-09-24).
  * The light theme: white + crimson, modelled on the owner's previous platform (near-black is used for TEXT only).
  * Dark mode (owner 2026-09-30, the masthead's moon button → <html data-theme="dark">) swaps these tokens below; the
  * brand red stays the logo red, and story posters keep their light look.
@@ -73,7 +73,7 @@
   /* The phones' bottom bar (bottom-tab-bar.tsx): 3.25rem (owner 2026-10-05: a little smaller) + its 1px top border
      (the safe area is added where used). */
   --tabbar-h: calc(3.25rem + 1px);
-  /* Status bar / notch height in the WebNEWS app (edge to edge); 0 in browsers. Counted in --nav-h. */
+  /* Status bar / notch height in the WebNewsX app (edge to edge); 0 in browsers. Counted in --nav-h. */
   --safe-top: env(safe-area-inset-top, 0px);
   color-scheme: light;
 }
@@ -200,6 +200,10 @@ html[data-theme="dark"] [data-poster] {
 
   /* Heartbeat ("lub-dub", SPEC §2.1): the dot beats, a soft ring ripples out on each beat. */
   --animate-heartbeat: heartbeat 1.4s ease-in-out infinite;
+  /* The WebNewsX "X" breathing while something loads (owner 2026-11-02; same as the app's loading screen). */
+  --animate-x-breathe: x-breathe 1.4s ease-in-out infinite;
+  /* A toast's "time left" line (components/ui/toast.tsx); its duration is set per toast. */
+  --animate-toast-time: toast-time 5s linear forwards;
   --animate-heartbeat-ring: heartbeat-ring 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
   --animate-pulse-dot: heartbeat-ring 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
@@ -218,6 +222,27 @@ html[data-theme="dark"] [data-poster] {
      person is left with a feature before the next step (its duration is set per step, inline). */
   --animate-tour-pulse: tour-pulse 1.6s ease-out infinite;
   --animate-tour-fill: tour-fill 2s linear forwards;
+
+  @keyframes toast-time {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes x-breathe {
+    0%,
+    100% {
+      transform: scale(0.92);
+      opacity: 0.75;
+    }
+    50% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 
   @keyframes heartbeat {
     0%,
@@ -666,6 +691,11 @@ html:has([data-chat-screen]) [data-back-to-top] {
   .vb-bar-red {
     fill: var(--brand);
   }
+  /* The logo X before it fills (verified-badge.tsx). */
+  .vb-x-grey {
+    filter: grayscale(1) brightness(1.9);
+    opacity: 0.7;
+  }
   .vb-disc {
     fill: var(--vb-blue);
     transform-origin: 50px 50px;
@@ -697,6 +727,11 @@ html:has([data-chat-screen]) [data-back-to-top] {
   .vb-idle .vb-sheet,
   .vb-play .vb-sheet {
     transform: translateX(62px);
+  }
+  /* The logo X's sheet covers the whole badge: it starts further right. */
+  .vb-idle .vb-sheet-x,
+  .vb-play .vb-sheet-x {
+    transform: translateX(100px);
   }
   .vb-idle .vb-disc,
   .vb-play .vb-disc {
@@ -735,13 +770,16 @@ html:has([data-chat-screen]) [data-back-to-top] {
   .vb-play .vb-sheet-0 {
     animation-delay: 0.15s;
   }
+  .vb-play .vb-sheet-x {
+    animation-duration: 0.75s;
+  }
   .vb-play .vb-sheet-1 {
     animation-delay: 0.35s;
   }
   .vb-play .vb-sheet-2 {
     animation-delay: 0.55s;
   }
-  /* 0.15–1.05s bars fill · 1.1s check draws · 1.55s ring draws · 2.1s blue fills the circle · 2.55s pop. */
+  /* 0.15–0.85s the X fills · 1.1s check draws · 1.55s ring draws · 2.1s blue fills the circle · 2.55s pop. */
   .vb-play .vb-check {
     animation:
       vb-draw 0.4s cubic-bezier(0.65, 0, 0.25, 1) 1.1s forwards,
@@ -910,24 +948,6 @@ html:has([data-chat-screen]) [data-back-to-top] {
    * Speed-lines loader: the icon's three bars (SVG polygons, viewBox "8 9 52 45") sweeping
    * through in sequence. The SVG clips them to the icon box.
    */
-  .speed-loader {
-    display: inline-block;
-    flex-shrink: 0;
-    width: var(--sl-w, 22px);
-    height: auto;
-    aspect-ratio: 52 / 45;
-    overflow: hidden;
-  }
-  .speed-loader polygon {
-    transform-box: fill-box;
-    animation: var(--animate-speed-lines);
-  }
-  .speed-loader polygon:nth-child(2) {
-    animation-delay: 120ms;
-  }
-  .speed-loader polygon:nth-child(3) {
-    animation-delay: 240ms;
-  }
 
   /* Skeleton block with a GPU-friendly shimmer sweep. */
   .skeleton {
@@ -1352,10 +1372,6 @@ html:has([data-chat-screen]) [data-back-to-top] {
   .marquee-track {
     animation-duration: calc(var(--marquee-duration, 60s) * 1.6);
   }
-  .speed-loader polygon {
-    transform: none;
-    animation: speed-fade 1.4s ease-in-out infinite;
-  }
   .animate-fade-up {
     animation: none;
   }
@@ -1389,7 +1405,7 @@ html:has([data-chat-screen]) [data-back-to-top] {
 }
 
 /*
- * The WebNEWS app (mobile/, Capacitor) draws the page edge to edge (viewport-fit=cover). The page starts below the
+ * The WebNewsX app (mobile/, Capacitor) draws the page edge to edge (viewport-fit=cover). The page starts below the
  * status bar / notch (--safe-top), sticky bars stick under it, and a solid strip keeps scrolled content from showing
  * behind the clock and icons. Browsers report 0, so the website is unchanged.
  * The Android app keeps the page below the status bar itself (mobile/…/MainActivity.java): there --safe-top is 0, or

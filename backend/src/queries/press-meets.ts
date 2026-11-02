@@ -605,8 +605,8 @@ function emailInvitations(organizerName: string, meet: InviteMailMeet, reporterI
       heading: `${organizerName} has invited you to cover their press meet.`,
       lines: [
         `“${meet.title}”`,
-        `${meetWhen(meet.startsAt)} · ${meet.durationMinutes} minutes · ${meet.platform === "google_meet" ? "Google Meet" : "WebNEWS Live"}`,
-        "Please accept or decline the invitation on WebNEWS so the organizer can plan accordingly.",
+        `${meetWhen(meet.startsAt)} · ${meet.durationMinutes} minutes · ${meet.platform === "google_meet" ? "Google Meet" : "WebNewsX Live"}`,
+        "Please accept or decline the invitation on WebNewsX so the organizer can plan accordingly.",
       ],
       cta: "View invitation",
       url: meetLink(meet.id),
@@ -920,7 +920,7 @@ export async function startPressMeet(meetId: string, viewer: Viewer): Promise<vo
       name: person.name,
       subject: `Live now: ${meet.title}`,
       heading: `${viewer.name} has started the press meet. Please join now.`,
-      lines: [`“${meet.title}”`, meet.platform === "google_meet" ? "It's on Google Meet — the link is on the press meet page." : "Join the WebNEWS Live room from the press meet page."],
+      lines: [`“${meet.title}”`, meet.platform === "google_meet" ? "It's on Google Meet — the link is on the press meet page." : "Join the WebNewsX Live room from the press meet page."],
       cta: "Join press meet",
       url: meetLink(meet.id),
     }),
@@ -1159,7 +1159,7 @@ async function publishStory(tx: Transaction, invite: LockedInvite): Promise<stri
   return story.title;
 }
 
-/** The organizer records that they paid the reporter (outside WebNEWS, for now). */
+/** The organizer records that they paid the reporter (outside WebNewsX, for now). */
 export async function releasePayment(meetId: string, inviteId: string, viewer: Viewer, reference: string | null): Promise<void> {
   await db.transaction(async (tx) => {
     const meet = await lockOwnMeet(tx, meetId, viewer.id);
@@ -1221,7 +1221,7 @@ export async function sendDueReminders(): Promise<void> {
         name: person.name,
         subject: `Today: ${meet.title}`,
         heading: "A reminder about today's press meet.",
-        lines: [`“${meet.title}”`, `${meetWhen(meet.starts_at)} · ${meet.platform === "google_meet" ? "Google Meet" : "WebNEWS Live"}`],
+        lines: [`“${meet.title}”`, `${meetWhen(meet.starts_at)} · ${meet.platform === "google_meet" ? "Google Meet" : "WebNewsX Live"}`],
         cta: "Open press meet",
         url: meetLink(meet.id),
       }),
@@ -1243,7 +1243,7 @@ export async function sendDueReminders(): Promise<void> {
 }
 
 /**
- * Closes press meets left running: a live WebNEWS Live one as soon as its slot has ended and the organizer is no longer
+ * Closes press meets left running: a live WebNewsX Live one as soon as its slot has ended and the organizer is no longer
  * in the room (owner 2026-10-08: they closed the tab without pressing End — reporters opening the page saw "Live now"
  * and Join for another half hour); any live one 30 minutes past its slot end; never-started ones an hour past it.
  * Room tabs that stopped beating are swept just before this (press-meet-worker), so press_meet_peer is who's there now.

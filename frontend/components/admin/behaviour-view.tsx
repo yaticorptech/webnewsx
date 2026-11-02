@@ -60,7 +60,7 @@ export function BehaviourView() {
         title="Analytics"
         description={
           <>
-            Every tap on WebNEWS, with who made it: which features people use, the buttons and pages they use most, and each person&rsquo;s
+            Every tap on WebNewsX, with who made it: which features people use, the buttons and pages they use most, and each person&rsquo;s
             activity. <LiveTag updatedAt={updatedAt} />
           </>
         }
@@ -251,7 +251,7 @@ function Overview({ data }: { data: BehaviourOverview }) {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile label="Taps & actions" value={formatNumber(totals.events)} icon={<MousePointerClick aria-hidden />} tone="brand" />
         <StatTile label="Active people" value={formatNumber(totals.people)} hint={`${formatNumber(totals.signedIn)} signed in · ${formatNumber(totals.visitors)} visitors`} icon={<UsersRound aria-hidden />} />
-        <StatTile label="On the app" value={formatNumber(totals.app)} hint="People using the WebNEWS app" icon={<Smartphone aria-hidden />} />
+        <StatTile label="On the app" value={formatNumber(totals.app)} hint="People using the WebNewsX app" icon={<Smartphone aria-hidden />} />
         <StatTile label="On the website" value={formatNumber(totals.web)} icon={<Activity aria-hidden />} />
       </div>
 
@@ -391,7 +391,7 @@ export function PersonBehaviourView({ username }: { username: string }) {
         title={query.data ? query.data.person.name : `@${username}`}
         description={
           <>
-            Everything this person has done on WebNEWS while signed in, latest first. <LiveTag updatedAt={updatedAt} />
+            Everything this person has done on WebNewsX while signed in, latest first. <LiveTag updatedAt={updatedAt} />
           </>
         }
         actions={

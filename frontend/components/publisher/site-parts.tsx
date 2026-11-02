@@ -4,8 +4,8 @@ import { categoryName, dateLocale, tr } from "./site-i18n";
 
 /*
  * The webnews.in building blocks (its app/[lang]/page.tsx, components/home/Magazine.tsx, news/ArticleCard.tsx), drawn
- * with a publisher's own stories (owner 2026-10-29). Every story links to `href(card)` — WebNEWS's story page in the
- * same layout, so views count on WebNEWS.
+ * with a publisher's own stories (owner 2026-10-29). Every story links to `href(card)` — WebNewsX's story page in the
+ * same layout, so views count on WebNewsX.
  */
 
 export type StoryHref = (card: ArticleCard) => string;
@@ -28,7 +28,7 @@ export function relativeTime(iso: string, lang: SiteLanguage): string {
   return d.toLocaleDateString(dateLocale(lang), { day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
-/** A plain `<a>`: their site and WebNEWS are different origins, so no client-side navigation between them. */
+/** A plain `<a>`: their site and WebNewsX are different origins, so no client-side navigation between them. */
 export function StoryLink({ card, href, className, children }: { card: ArticleCard; href: StoryHref; className?: string; children: ReactNode }) {
   return (
     <a href={href(card)} className={className}>

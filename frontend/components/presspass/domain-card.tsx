@@ -127,7 +127,7 @@ export function DomainCard({ domain, onChange }: { domain: PressDomain | null; o
             {site && (
               <p className="mt-1 flex items-center gap-1.5 text-sm">
                 <span aria-hidden className={`size-2 rounded-full ${site === "live" ? "bg-success" : "bg-muted-2"}`} />
-                {site === "live" ? "Your website is live." : "Your website is saved — it opens once your DNS points to WebNEWS (Set up website shows the records)."}
+                {site === "live" ? "Your website is live." : "Your website is saved — it opens once your DNS points to WebNewsX (Set up website shows the records)."}
               </p>
             )}
           </div>

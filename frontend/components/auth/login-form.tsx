@@ -156,7 +156,7 @@ export function LoginForm({
       </form>
 
       <p className="text-center text-sm text-muted">
-        New to WebNEWS?{" "}
+        New to WebNewsX?{" "}
         <Link href={withNext("/signup", next)} className="font-bold text-brand underline-offset-4 hover:underline">
           Create an account
         </Link>

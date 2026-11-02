@@ -11,7 +11,7 @@ import { assertMeetId, getPressMeetDetail, pingMeet } from "./press-meets.js";
 
 /*
  * Reporters' recordings of the built-in room (owner 2026-10-01: "replay it in the platform only — no download"). The
- * browser records the room (organizer's video with the WebNEWS mark + everyone's audio) and uploads a piece every few
+ * browser records the room (organizer's video with the WebNewsX mark + everyone's audio) and uploads a piece every few
  * seconds, so closing the tab keeps what was recorded. Once stopped (or quiet for a few minutes) the pieces become one
  * MP4 in RECORDINGS_DIR — never public: only the reporter who recorded it streams it, through the API.
  */
@@ -32,7 +32,7 @@ function assertId(id: string): string {
   }
 }
 
-/** Starts a recording: a reporter who accepted, in a live WebNEWS Live press meet. */
+/** Starts a recording: a reporter who accepted, in a live WebNewsX Live press meet. */
 export async function startRecording(meetId: string, viewer: Viewer, sourceType: string): Promise<{ id: string }> {
   const meet = await getPressMeetDetail(meetId, viewer.id);
   if (meet.role !== "reporter" || meet.myInvite?.status !== "accepted") throw forbidden("Only reporters covering this press meet can record it");

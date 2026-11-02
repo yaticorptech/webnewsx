@@ -4,15 +4,15 @@
  * (sign-in responses and session refreshes) passes through here and loses that lifetime, so the browser keeps the
  * cookie only for the browsing session. Deletions (Max-Age=0, log out) are left alone. The server-side session still
  * expires on its own (admins after DESK_SESSION_HOURS).
- * The WebNEWS app is the exception (owner 2026-10-01): it stays logged in until Log out, so its cookies keep their
+ * The WebNewsX app is the exception (owner 2026-10-01): it stays logged in until Log out, so its cookies keep their
  * lifetime (`fromNativeApp`). An admin's email + password sign-in is never remembered there either (auth.ts).
  */
 
 const SESSION_COOKIE = /^(?:__Secure-)?[\w.-]*session_token=/;
 
-/** A request from the WebNEWS app: Capacitor appends "WebNEWSApp" to its WebView's user agent (mobile/capacitor.config.ts). */
+/** A request from the WebNewsX app: Capacitor appends "WebNewsXApp" to its WebView's user agent (mobile/capacitor.config.ts). */
 export function fromNativeApp(userAgent: string | undefined): boolean {
-  return /\bWebNEWSApp\b/.test(userAgent ?? "");
+  return /\bWebNewsXApp\b/.test(userAgent ?? "");
 }
 
 export function toBrowserSessionCookie(setCookie: string): string {

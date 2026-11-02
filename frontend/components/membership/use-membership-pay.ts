@@ -58,7 +58,7 @@ export function useMembershipPay(username: string, reporterImage: string | null 
       order_id: order.orderId,
       amount: order.amountPaise,
       currency: order.currency,
-      name: "WebNEWS",
+      name: "WebNewsX",
       description: order.description,
       image: reporterImage ?? undefined,
       prefill: { email: order.email, name: order.name },

@@ -60,7 +60,7 @@ export function PressMeetBanner({ meet, className }: PressMeetBannerProps) {
           For {meetLink}.{" "}
           {waiting
             ? "It goes live once they verify it. Saving it as a draft takes it back; sending it again sends your changes."
-            : `When it's ready, send it to ${organizer} — it goes live on WebNEWS once they verify it, and can't be changed after that.`}
+            : `When it's ready, send it to ${organizer} — it goes live on WebNewsX once they verify it, and can't be changed after that.`}
         </p>
       </div>
     </section>

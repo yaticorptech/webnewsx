@@ -20,7 +20,7 @@ import { SectionHeader } from "./section-header";
 type Tab = "due" | "payments" | "payouts";
 
 /**
- * Desk → Memberships (owner 2026-10-15): everything readers paid for reporters' memberships — WebNEWS's fee, what each
+ * Desk → Memberships (owner 2026-10-15): everything readers paid for reporters' memberships — WebNewsX's fee, what each
  * reporter has earned, what's been paid out and what's still due — and "Record payout" when money is sent.
  */
 export function MembershipsView() {
@@ -58,7 +58,7 @@ export function MembershipsView() {
     <div className="animate-fade-up flex flex-col gap-8">
       <SectionHeader
         title="Memberships"
-        description={`What readers paid for reporters' memberships, WebNEWS's ${MEMBERSHIP_FEE_PERCENT}% fee, and what each reporter is owed. Record a payout when you send them money.`}
+        description={`What readers paid for reporters' memberships, WebNewsX's ${MEMBERSHIP_FEE_PERCENT}% fee, and what each reporter is owed. Record a payout when you send them money.`}
       />
 
       {/* Who may start one (owner 2026-10-16): the Desk's editable rules. */}
@@ -92,7 +92,7 @@ export function MembershipsView() {
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <StatTile label="Collected from members" value={inr(data.totals.grossPaise)} hint={`${data.totals.payments} payments`} icon={<Receipt aria-hidden />} />
-            <StatTile label={`WebNEWS fee (${MEMBERSHIP_FEE_PERCENT}%)`} value={inr(data.totals.feePaise)} hint="Platform revenue" tone="good" icon={<Wallet aria-hidden />} />
+            <StatTile label={`WebNewsX fee (${MEMBERSHIP_FEE_PERCENT}%)`} value={inr(data.totals.feePaise)} hint="Platform revenue" tone="good" icon={<Wallet aria-hidden />} />
             <StatTile label="Active memberships" value={data.totals.activeMemberships} hint="Member × reporter pairs" icon={<Crown aria-hidden />} />
             <StatTile label="Earned by reporters" value={inr(data.totals.netPaise)} hint="After the fee" icon={<Banknote aria-hidden />} />
             <StatTile label="Paid out" value={inr(data.totals.paidOutPaise)} hint={`${data.payouts.length} payouts recorded`} icon={<Landmark aria-hidden />} />
@@ -100,7 +100,7 @@ export function MembershipsView() {
           </div>
 
           <div className="card p-5">
-            <MonthlyBars data={monthly} label="WebNEWS fee by month (last 6 months)" />
+            <MonthlyBars data={monthly} label="WebNewsX fee by month (last 6 months)" />
           </div>
 
           <div className="flex flex-col gap-4">
@@ -170,7 +170,7 @@ export function MembershipsView() {
               (data.recent.length === 0 ? (
                 <EmptyNote>No payments yet.</EmptyNote>
               ) : (
-                <SimpleTable head={["Date", "Member", "Reporter", "Paid", "WebNEWS fee", "To reporter", ""]}>
+                <SimpleTable head={["Date", "Member", "Reporter", "Paid", "WebNewsX fee", "To reporter", ""]}>
                   {data.recent.map((p) => (
                     <tr key={p.id}>
                       <td className="whitespace-nowrap px-4 py-2.5 text-muted">{dateText(p.paidAt)}</td>

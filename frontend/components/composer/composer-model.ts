@@ -250,13 +250,13 @@ export function firstInvalid(errors: FieldErrors): FieldKey | null {
 /** Stand-in headline while the story has none yet (preview card, posters). */
 export const PLACEHOLDER_TITLE = "Your headline goes here";
 
-/** Neutral 16:9 stand-in while there is no cover (light panel with the speed-line bars). */
+/** Neutral 16:9 stand-in while there is no cover (light panel with a faint X, owner 2026-11-02). */
 export const PLACEHOLDER_COVER =
   "data:image/svg+xml," +
   encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900"><rect width="1600" height="900" fill="#F6F7F9"/>` +
-      `<g fill="#E5E6EA" transform="translate(704 342) scale(3.7)"><polygon points="20,9 60,9 48,20 8,20"/>` +
-      `<polygon points="20,26 60,26 48,37 8,37"/><polygon points="20,43 60,43 48,54 8,54"/></g></svg>`,
+      `<g fill="#E5E6EA" transform="translate(704 342) scale(3.7)"><polygon points="7,8 19,8 57,56 45,56"/>` +
+      `<polygon points="6,57 16,57 58,9 49,7"/></g></svg>`,
   );
 
 /** The full article's stand-in while it has no image or video yet: the neutral 16:9 panel. */

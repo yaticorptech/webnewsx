@@ -51,7 +51,7 @@ export function articleKeywords(article: ArticleDetail, max = 12): string[] {
     if (out.length >= max) break;
     add(word);
   }
-  add("WebNEWS");
+  add("WebNewsX");
   return out.slice(0, max);
 }
 

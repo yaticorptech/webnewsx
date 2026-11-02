@@ -79,7 +79,7 @@ export function PublishSuccess({ title, onDone, variant = "live", reviewer = "th
           className="kicker mb-10 flex items-center gap-2 text-muted"
         >
           <PulseDot size="sm" />
-          {review ? `Sent to ${reviewer}` : "Published to WebNEWS"}
+          {review ? `Sent to ${reviewer}` : "Published to WebNewsX"}
         </motion.p>
 
         <motion.div

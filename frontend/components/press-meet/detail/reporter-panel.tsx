@@ -317,7 +317,7 @@ function StoryAndPayment({ meet }: { meet: PressMeetDetail }) {
           <div className="min-w-0 flex-1">
             <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-muted">
               {invite.review === "approved"
-                ? "Verified · live on WebNEWS"
+                ? "Verified · live on WebNewsX"
                 : invite.review === null
                   ? "Draft · not sent yet"
                   : `Sent ${invite.submittedAt ? formatDate(invite.submittedAt, "short") : ""}`}
@@ -341,7 +341,7 @@ function StoryAndPayment({ meet }: { meet: PressMeetDetail }) {
         <div className="flex flex-col gap-3 rounded-xl bg-surface-2 px-4 py-4 sm:flex-row sm:items-center">
           <p className="min-w-0 flex-1 text-sm leading-relaxed text-ink-2">
             {story ? "Finish your story" : "Write your story about this press meet"} and send it to {meet.organizer.name}. It goes live on
-            WebNEWS once they verify it — and can&rsquo;t be changed after that.
+            WebNewsX once they verify it — and can&rsquo;t be changed after that.
           </p>
           <Button href={editHref} leftIcon={<FilePen aria-hidden />} className="shrink-0 self-start sm:self-auto">
             {story ? "Continue your story" : "Write your story"}
@@ -353,12 +353,12 @@ function StoryAndPayment({ meet }: { meet: PressMeetDetail }) {
         </Button>
       ) : invite.review === "pending" ? (
         <p className="text-sm text-muted">
-          Waiting for {meet.organizer.name} to verify your story. It goes live on WebNEWS once they do.
+          Waiting for {meet.organizer.name} to verify your story. It goes live on WebNewsX once they do.
         </p>
       ) : invite.payment === "unpaid" ? (
         <p className="flex items-center gap-2 text-sm font-semibold text-success-strong">
           <BadgeCheck aria-hidden className="size-5" />
-          {invite.price === 0 ? "Verified and live on WebNEWS." : <>Verified and live — {meet.organizer.name} will release your {inr(invite.price)}.</>}
+          {invite.price === 0 ? "Verified and live on WebNewsX." : <>Verified and live — {meet.organizer.name} will release your {inr(invite.price)}.</>}
         </p>
       ) : invite.payment === "released" ? (
         <div className="flex flex-col gap-3 rounded-xl bg-success-soft px-4 py-3.5">

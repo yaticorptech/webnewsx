@@ -54,7 +54,7 @@ export function ForgotPasswordForm() {
         <div role="status" className="flex items-start gap-3 rounded-2xl border border-tint-border bg-tint p-4 text-sm leading-relaxed text-ink">
           <MailCheck aria-hidden className="mt-0.5 size-5 shrink-0 text-brand" />
           <p>
-            If there&apos;s a WebNEWS account for <strong className="font-bold wrap-anywhere">{sentTo}</strong>, we&apos;ve
+            If there&apos;s a WebNewsX account for <strong className="font-bold wrap-anywhere">{sentTo}</strong>, we&apos;ve
             emailed it a link to choose a new password. It works for 60 minutes. Can&apos;t find it? Check your spam folder.
           </p>
         </div>

@@ -14,7 +14,7 @@ const TITLE_SIZES = [
 
 /**
  * Ticker (owner 2026-10-02, for tall 9:16 photos): the whole poster is the photo; at the bottom the headline in white on
- * a full-width red bar, with the author line on a dark strip under it. (Owner 2026-10-07: no "NOW · WebNEWS • Latest"
+ * a full-width red bar, with the author line on a dark strip under it. (Owner 2026-10-07: no "NOW · WebNewsX • Latest"
  * crawl strip.)
  */
 export function TickerPoster({ story, priority, titleId }: PosterDesignProps) {

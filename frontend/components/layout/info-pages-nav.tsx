@@ -11,12 +11,12 @@ const PAGES: { key: InfoPage; href: string; label: string }[] = [
 ];
 
 /**
- * The pills between WebNEWS's own pages (owner 2026-10-02): About · Terms · Privacy · Contact us, in each one's hero;
+ * The pills between WebNewsX's own pages (owner 2026-10-02): About · Terms · Privacy · Contact us, in each one's hero;
  * the page you're on is the red one. Server-safe.
  */
 export function InfoPagesNav({ current, className }: { current: InfoPage; className?: string }) {
   return (
-    <nav aria-label="About WebNEWS" className={cn("flex flex-wrap items-center justify-center gap-2", className)}>
+    <nav aria-label="About WebNewsX" className={cn("flex flex-wrap items-center justify-center gap-2", className)}>
       {PAGES.map((page) => (
         <Link
           key={page.key}

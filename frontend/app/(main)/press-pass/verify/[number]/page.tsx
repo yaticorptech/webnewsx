@@ -29,7 +29,7 @@ export default async function VerifyPressPassPage({ params }: PageProps<"/press-
       >
         {valid ? <BadgeCheck aria-hidden className="mt-0.5 size-5 shrink-0" /> : <ShieldX aria-hidden className="mt-0.5 size-5 shrink-0" />}
         <div>
-          <p className="font-bold">{valid ? "Valid WebNEWS Press Pass" : "This Press Pass is no longer valid"}</p>
+          <p className="font-bold">{valid ? "Valid WebNewsX Press Pass" : "This Press Pass is no longer valid"}</p>
           <p className="mt-0.5 text-sm opacity-90">
             {pass.passNumber} · {pass.level === "verified" ? "Verified reporter" : "Trainee reporter"}
             {valid ? "" : " · revoked"}

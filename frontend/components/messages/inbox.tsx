@@ -104,7 +104,7 @@ export function Inbox({ pane = false }: { pane?: boolean }) {
               size="sm"
               icon={<SquarePen aria-hidden />}
               title="Your messages"
-              description="Send a message, share a story or start a group with people on WebNEWS."
+              description="Send a message, share a story or start a group with people on WebNewsX."
               action={<Button onClick={() => setComposing(true)}>Send message</Button>}
             />
           ) : (

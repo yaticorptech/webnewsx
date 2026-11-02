@@ -52,7 +52,7 @@ export const DESK_SECTIONS: readonly DeskSection[] = [
   { key: "spotlight", href: "/admin/spotlight", label: "Spotlight", short: "Spotlight", icon: Sparkles, pending: (k) => k.spotlightRequests, group: "Revenue" },
   // The press meet platform fee + every press meet with its report (owner 2026-10-05).
   { key: "press-meets", href: "/admin/press-meets", label: "Press meets", short: "Meets", icon: Presentation, group: "Revenue" },
-  // Membership money, WebNEWS's fee and payouts to reporters (owner 2026-10-15).
+  // Membership money, WebNewsX's fee and payouts to reporters (owner 2026-10-15).
   { key: "memberships", href: "/admin/memberships", label: "Memberships", short: "Members", icon: Crown, group: "Revenue" },
   // Every tap on the site with who made it (owner 2026-10-16).
   { key: "behaviour", href: "/admin/behaviour", label: "Analytics", short: "Analytics", icon: Activity, group: "Overview" },

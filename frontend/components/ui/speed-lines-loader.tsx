@@ -1,5 +1,4 @@
-import type { CSSProperties } from "react";
-import { SPEED_BARS, SPEED_VIEWBOX } from "@/components/brand/speed-lines";
+import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { cn } from "@/lib/utils";
 
 export type SpeedLinesLoaderProps = {
@@ -13,26 +12,18 @@ export type SpeedLinesLoaderProps = {
 
 const WIDTHS: Record<NonNullable<SpeedLinesLoaderProps["size"]>, number> = { xs: 14, sm: 18, md: 26, lg: 40, xl: 64 };
 
-/** The brand loader: the icon's three bars sweeping through in sequence (see `.speed-loader`). */
+/** The brand loader (owner 2026-11-02: the WebNewsX "X" instead of the three bars): the X breathing, in the text colour. */
 export function SpeedLinesLoader({ size = "md", label = "Loading", className }: SpeedLinesLoaderProps) {
+  const w = WIDTHS[size];
   return (
     <span
       role={label ? "status" : undefined}
       aria-label={label ?? undefined}
       aria-hidden={label ? undefined : true}
       className={cn("inline-flex text-brand", className)}
+      style={{ width: w, height: w }}
     >
-      <svg
-        viewBox={SPEED_VIEWBOX}
-        aria-hidden
-        focusable="false"
-        className="speed-loader"
-        style={{ "--sl-w": `${WIDTHS[size]}px` } as CSSProperties}
-      >
-        {SPEED_BARS.map((points) => (
-          <polygon key={points} points={points} fill="currentColor" />
-        ))}
-      </svg>
+      <SpeedBarsSvg className="size-full animate-x-breathe" />
     </span>
   );
 }

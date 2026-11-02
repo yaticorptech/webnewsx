@@ -80,7 +80,7 @@ export function importRoutes() {
 
     const url = new URL(input.imageUrl);
     if (url.protocol !== "https:" || !IMAGE_HOSTS.has(url.hostname)) throw new ApiError(400, "image_not_allowed", "Images must come from an openly licensed source");
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { "User-Agent": "Mozilla/5.0 (WebNEWS import)" } }).catch(() => null);
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { "User-Agent": "Mozilla/5.0 (WebNewsX import)" } }).catch(() => null);
     if (!res?.ok) throw new ApiError(400, "image_unavailable", "Couldn't download the image");
     const image = await processImage(Buffer.from(await res.arrayBuffer()), "article");
     const key = newImageKey("cover", author.id);

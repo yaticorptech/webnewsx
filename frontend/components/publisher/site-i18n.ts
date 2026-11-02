@@ -77,7 +77,7 @@ export const WEATHER_KN: Record<string, string> = {
   Weather: "ಹವಾಮಾನ",
 };
 
-/** "Advertise here" / "Get in touch" book by mail to the site (its contact, else WebNEWS). */
+/** "Advertise here" / "Get in touch" book by mail to the site (its contact, else WebNewsX). */
 export const siteBookHref = (site: { contactEmail: string | null; title: string; domain: string }) =>
   `mailto:${site.contactEmail || COMPANY.email}?subject=${encodeURIComponent(`Advertise on ${site.title || site.domain}`)}`;
 

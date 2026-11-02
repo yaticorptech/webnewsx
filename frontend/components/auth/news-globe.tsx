@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { SPEED_BARS } from "@/components/brand/speed-lines";
+import { X_MARK } from "@/components/brand/speed-lines";
 import { cn } from "@/lib/utils";
 
 /*
  * The auth pages' 3D scene (owner 2026-10-02: "attractive, animated 3D models" on login / register, then a glossy red
  * glass globe like the owner's reference, on white): a red glass sphere — deep crimson at the edges, bright red where
  * the light falls — with white-to-pink continents (the land mask public/earth/water.jpg) and
- * white latitude / longitude lines, live pulses over India and white news arcs flying out to world cities, a "WebNEWS"
+ * white latitude / longitude lines, live pulses over India and white news arcs flying out to world cities, a "WebNewsX"
  * band circling it and the logo's three bars as floating 3D shapes. Drag (or swipe sideways) to spin it; it carries on
  * by itself after you let go. three.js and the mask (~45 KB) load only when the scene is on screen; the loop pauses off
  * screen and in hidden tabs; under reduced motion it only moves when dragged.
@@ -37,7 +37,7 @@ const CITIES = [
   { lat: -1.3, lon: 36.8 }, // Nairobi
 ];
 
-/** The "WebNEWS ● PULSE OF PEOPLE" band, repeated around a wide strip (wrapped onto a ring). */
+/** The "WebNewsX ● PULSE OF PEOPLE" band, repeated around a wide strip (wrapped onto a ring). */
 function bandCanvas(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = 2048;
@@ -48,12 +48,17 @@ function bandCanvas(): HTMLCanvasElement {
   for (let i = 0; i < 3; i++) {
     let x = i * unit + 24;
     g.font = "900 54px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    // WebNewsX (owner 2026-11-02): "Web" ink, "News" red, "X" ink — the logo's colours.
     g.fillStyle = "#16181d";
     g.fillText("Web", x, 50);
     x += g.measureText("Web").width;
     g.fillStyle = "#e30613";
-    g.fillText("NEWS", x, 50);
-    x += g.measureText("NEWS").width + 28;
+    g.fillText("News", x, 50);
+    x += g.measureText("News").width;
+    g.fillStyle = "#16181d";
+    g.fillText("X", x, 50);
+    x += g.measureText("X").width + 28;
+    g.fillStyle = "#e30613";
     g.beginPath();
     g.arc(x, 49, 7, 0, Math.PI * 2);
     g.fill();
@@ -65,14 +70,14 @@ function bandCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
-/** The logo's three slanted bars (SVG polygons) as shapes, centred and scaled to ~1 unit. */
+/** The logo's "X" (two strokes, owner 2026-11-02; was the three bars) as shapes, centred and scaled to ~1 unit. */
 function speedBarShapes(THREE: typeof import("three")) {
-  return SPEED_BARS.map((points) => {
+  return X_MARK.map((points) => {
     const pairs = points.split(" ").map((p) => p.split(",").map(Number) as [number, number]);
     const shape = new THREE.Shape();
     pairs.forEach(([x, y], i) => {
-      const px = (x - 34) / 45;
-      const py = -(y - 31.5) / 45;
+      const px = (x - 32) / 48;
+      const py = -(y - 32) / 48;
       if (i === 0) shape.moveTo(px, py);
       else shape.lineTo(px, py);
     });
@@ -292,7 +297,7 @@ export function NewsGlobe({ className, compact = false }: { className?: string; 
         return { curve, traveller, speed: 0.16 + (i % 3) * 0.05, offset: i / CITIES.length };
       });
 
-      // ── The "WebNEWS" band circling the globe ──
+      // ── The "WebNewsX" band circling the globe ──
       const bandTexture = track(new THREE.CanvasTexture(bandCanvas()));
       bandTexture.colorSpace = THREE.SRGBColorSpace;
       bandTexture.anisotropy = maxAniso;

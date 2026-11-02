@@ -1,6 +1,6 @@
 /**
  * Fresh Kannada and English stories for local development (owner 2026-10-22: "add new articles in Kannada and
- * English"). Original features written for WebNEWS about Karnataka and India — places, seasons, transport, sport, the
+ * English"). Original features written for WebNewsX about Karnataka and India — places, seasons, transport, sport, the
  * arts — across the categories, each with a photo from Wikimedia Commons under an open licence (CC BY / CC BY-SA /
  * CC0 / public domain) and the credit those licences ask for. Filed, in turn, by the demo Verified reporters who write
  * in that language (@demo.webnews.local — never real accounts), dated over the last day and a half so they lead the
@@ -21,7 +21,7 @@ import { newImageKey, storage } from "../src/lib/storage.js";
 import type { Category, PosterTemplate, PressLanguage } from "../src/shared/contracts.js";
 
 const COMMONS = "https://commons.wikimedia.org/w/api.php";
-const HEADERS = { "User-Agent": "WebNEWS-local-dev-seed/1.0" };
+const HEADERS = { "User-Agent": "WebNewsX-local-dev-seed/1.0" };
 const OPEN = /^(CC BY(-SA)? [\d.]+|CC0|Public domain)/i;
 /** Designs that need nothing but the photo (no reporter's own frame). */
 const TEMPLATES: PosterTemplate[] = ["classic", "full-bleed", "red-band", "split", "slant", "magazine", "breaking"];

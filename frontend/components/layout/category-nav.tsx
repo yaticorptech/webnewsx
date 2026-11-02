@@ -197,7 +197,7 @@ function CategoryNavView({ active, className, trail }: CategoryNavProps & { acti
         {/* Scrolled down, the masthead slides away (nav-frame.tsx data-compact): a small logo appears here instead. */}
         <Link
           href="/"
-          aria-label="WebNEWS home"
+          aria-label="WebNewsX home"
           className="hidden shrink-0 animate-fade-up items-center rounded-md outline-offset-2 in-data-compact:flex"
         >
           <img src="/brand/logo-light.png" alt="" width={139} height={28} decoding="async" draggable={false} className="block h-7 w-auto" />

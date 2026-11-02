@@ -295,7 +295,7 @@ export async function inviteMember(owner: Person, groupId: string, username: str
     .from(user)
     .where(eq(user.username, username))
     .limit(1);
-  if (!target || !target.onboardedAt || target.suspendedAt) throw validationError({ username: "No WebNEWS account has that username" });
+  if (!target || !target.onboardedAt || target.suspendedAt) throw validationError({ username: "No WebNewsX account has that username" });
   if (target.accountType === "group") throw validationError({ username: "That's a group account — invite a person" });
   if (target.id === owner.id) throw validationError({ username: "You're already in the group" });
   const [{ n } = { n: 0 }] = await db.select({ n: count() }).from(groupMember).where(eq(groupMember.groupId, groupId));

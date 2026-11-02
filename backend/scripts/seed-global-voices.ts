@@ -33,7 +33,7 @@ const FEED = `${GV}${option("feed") ?? "/-/world/south-asia/india/feed/"}`;
 const LANGUAGE = (option("language") ?? "en") as PressLanguage;
 const FALLBACK = (option("category") ?? "national") as Category;
 const ALL_REPORTERS = process.argv.includes("--all-reporters");
-const HEADERS = { "User-Agent": "Mozilla/5.0 (WebNEWS local dev seed)" };
+const HEADERS = { "User-Agent": "Mozilla/5.0 (WebNewsX local dev seed)" };
 const PAUSE_MS = 1500;
 /** A caption that names one of these is an openly licensed photo. */
 const OPEN_LICENCE = /\bCC[ -]?(BY|0)\b|Creative Commons|public domain|Pixabay|Unsplash|Pexels|क्रिएटिव कॉमन्स|सार्वजनिक डोमेन/i;

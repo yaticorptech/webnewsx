@@ -8,7 +8,7 @@ import { requireOnboardedViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Edit profile",
-  description: "Change your WebNEWS name, username, photo and bio.",
+  description: "Change your WebNewsX name, username, photo and bio.",
   robots: { index: false },
 };
 

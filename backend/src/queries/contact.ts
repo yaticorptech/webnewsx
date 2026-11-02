@@ -71,9 +71,9 @@ export async function replyContactMessage(actor: { id: string }, id: string, rep
     .join("\n");
   void sendMail({
     to: row.email,
-    subject: "Reply from the WebNEWS team",
-    text: `Hi ${row.name},\n\n${reply}\n\n— The WebNEWS team\n\nYou wrote:\n${quoted}`,
-    html: `<p>Hi ${escape(row.name)},</p><p style="white-space:pre-wrap">${escape(reply)}</p><p>— The WebNEWS team</p><hr><p style="color:#6b7079">You wrote:</p><blockquote style="white-space:pre-wrap;color:#6b7079">${escape(row.body)}</blockquote>`,
+    subject: "Reply from the WebNewsX team",
+    text: `Hi ${row.name},\n\n${reply}\n\n— The WebNewsX team\n\nYou wrote:\n${quoted}`,
+    html: `<p>Hi ${escape(row.name)},</p><p style="white-space:pre-wrap">${escape(reply)}</p><p>— The WebNewsX team</p><hr><p style="color:#6b7079">You wrote:</p><blockquote style="white-space:pre-wrap;color:#6b7079">${escape(row.body)}</blockquote>`,
   }).catch((error) => console.warn("[contact] reply email failed:", error instanceof Error ? error.message : error));
 
   const { items } = await listContactMessages("all");

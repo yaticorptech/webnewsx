@@ -74,7 +74,7 @@ export function OrganizerStart({ meet }: { meet: PressMeetDetail }) {
  * The organizer's reporters: every invited reporter — their answer, the story they sent and their fee. Start / end /
  * cancel is OrganizerStart (owner 2026-10-12: on computers it sits under the organizer card). Their stories: Read ·
  * Verify & publish · Ask for changes (owner 2026-10-07: it isn't live until they verify it); fees: Release payment →
- * they confirm — paid outside WebNEWS for now (owner 2026-10-01), recorded with an optional UPI / bank reference.
+ * they confirm — paid outside WebNewsX for now (owner 2026-10-01), recorded with an optional UPI / bank reference.
  */
 export function OrganizerPanel({ meet }: { meet: PressMeetDetail }) {
   const active = meet.invites.filter((i) => i.status !== "declined");
@@ -111,13 +111,13 @@ export function OrganizerPanel({ meet }: { meet: PressMeetDetail }) {
         {over && isPublic && (
           <p className="mb-4 rounded-xl bg-tint px-3.5 py-3 text-sm leading-relaxed text-ink-2 ring-1 ring-inset ring-tint-border">
             Each reporter writes their story and sends it here — it isn&rsquo;t published until you <strong className="font-bold">verify</strong> it.
-            Read it, then verify it (that publishes it on WebNEWS) or ask for changes.
+            Read it, then verify it (that publishes it on WebNewsX) or ask for changes.
           </p>
         )}
         {over && !isPublic && (
           <p className="mb-4 rounded-xl bg-tint px-3.5 py-3 text-sm leading-relaxed text-ink-2 ring-1 ring-inset ring-tint-border">
             Each reporter writes their story and sends it here — it isn&rsquo;t published until you{" "}
-            <strong className="font-bold">verify</strong> it. Read it, verify it (that publishes it on WebNEWS) or ask for changes, then{" "}
+            <strong className="font-bold">verify</strong> it. Read it, verify it (that publishes it on WebNewsX) or ask for changes, then{" "}
             <strong className="font-bold">release their fee</strong> — paid directly to them; record the UPI or bank reference so both of
             you have it.
             {owed > paid && (
@@ -169,8 +169,8 @@ function InviteRow({ meet, invite }: { meet: PressMeetDetail; invite: PressMeetI
       toast.success(approve ? "Story verified and published" : "Changes requested", {
         description: approve
           ? invite.price === 0
-            ? "It's live on WebNEWS."
-            : `It's live on WebNEWS. Now release ${inr(invite.price)} to ${invite.reporter.name}.`
+            ? "It's live on WebNewsX."
+            : `It's live on WebNewsX. Now release ${inr(invite.price)} to ${invite.reporter.name}.`
           : `${invite.reporter.name} has been told what to change.`,
       });
     },

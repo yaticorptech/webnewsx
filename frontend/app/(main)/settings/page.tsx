@@ -5,7 +5,7 @@ import { requireOnboardedViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Settings",
-  description: "Your WebNEWS settings: Newsroom, Spotlight, advertorial price, connected accounts, password and help.",
+  description: "Your WebNewsX settings: Newsroom, Spotlight, advertorial price, connected accounts, password and help.",
   robots: { index: false },
 };
 

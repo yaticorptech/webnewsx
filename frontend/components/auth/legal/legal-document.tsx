@@ -55,7 +55,7 @@ export function LegalDocument({ title, lede, version, updated, summary, sections
     <article data-grid-page="" className="flex flex-col gap-10 sm:gap-12 lg:gap-14">
       <header className="panel-tint relative isolate overflow-hidden px-6 py-10 text-center sm:px-10 sm:py-14 lg:py-16">
         <SpeedBarsSvg className="pointer-events-none absolute -right-8 -bottom-6 -z-10 w-40 text-brand opacity-[0.07] sm:w-56 lg:w-80" />
-        <Link href="/" aria-label="WebNEWS home" className="inline-flex rounded-md outline-offset-4">
+        <Link href="/" aria-label="WebNewsX home" className="inline-flex rounded-md outline-offset-4">
           <BrandLockup size="xs" className="sm:lockup-sm" />
         </Link>
         <p className="kicker mt-8 text-brand-strong">Legal</p>

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Dev-only living style guide for the WebNEWS design system. 404 in production builds. */
+/** Dev-only living style guide for the WebNewsX design system. 404 in production builds. */
 export default function StyleGuidePage() {
   if (process.env.NODE_ENV === "production") notFound();
   return <StyleGuide />;

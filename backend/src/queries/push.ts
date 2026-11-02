@@ -238,10 +238,10 @@ function toMessage(row: QueuedRow): PushMessage | null {
       // Who and where only — never what the message says (owner 2026-09-30).
       if (row.conv_kind && row.conv_kind !== "direct") {
         const group = row.conv_name || "your group";
-        return { title: count > 1 ? `${count} new messages in ${group}` : `${who} sent a message in ${group}`, body: "Open WebNEWS to read it", url, tag };
+        return { title: count > 1 ? `${count} new messages in ${group}` : `${who} sent a message in ${group}`, body: "Open WebNewsX to read it", url, tag };
       }
       if (row.conv_request) return { title: `${who} wants to send you a message`, body: "It's in your message requests", url, tag };
-      return { title: `${who} sent you ${count > 1 ? `${count} messages` : "a message"}`, body: "Open WebNEWS to read it", url, tag };
+      return { title: `${who} sent you ${count > 1 ? `${count} messages` : "a message"}`, body: "Open WebNewsX to read it", url, tag };
     }
     case "group_added":
       return {
@@ -295,7 +295,7 @@ function meetMessage(row: QueuedRow, who: string, tag: string): PushMessage | nu
   const when = row.meet_starts_at ? meetWhen(row.meet_starts_at) : null;
   const title = row.meet_title;
   const amount = inr(row.amount);
-  const where = row.meet_platform === "google_meet" ? "On Google Meet" : "On WebNEWS Live";
+  const where = row.meet_platform === "google_meet" ? "On Google Meet" : "On WebNewsX Live";
   switch (row.type) {
     case "press_meet_invited":
       return { title: `${who} has invited you to cover their press meet`, body: joined(title, when, amount && `Your fee ${amount}`), url, tag };
@@ -320,9 +320,9 @@ function meetMessage(row: QueuedRow, who: string, tag: string): PushMessage | nu
     case "press_meet_cancelled":
       return { title: `${who} has cancelled the press meet`, body: joined(title, when), url, tag };
     case "press_meet_submitted":
-      return { title: `${who} has submitted their coverage of your press meet for verification`, body: joined(title, "Read it and verify it — it goes live on WebNEWS once you do."), url, tag };
+      return { title: `${who} has submitted their coverage of your press meet for verification`, body: joined(title, "Read it and verify it — it goes live on WebNewsX once you do."), url, tag };
     case "press_meet_approved":
-      return { title: `${who} has verified your story — it's live on WebNEWS`, body: joined(title, amount && `Your fee of ${amount} will be released to you shortly.`), url, tag };
+      return { title: `${who} has verified your story — it's live on WebNewsX`, body: joined(title, amount && `Your fee of ${amount} will be released to you shortly.`), url, tag };
     case "press_meet_changes":
       return { title: `${who} has requested changes to your press meet coverage`, body: joined(quoted(row.note), "Update your story and send it again."), url, tag };
     case "press_meet_paid":

@@ -28,7 +28,7 @@ import { DEMO_PUBLISHERS } from "./seed-data.js";
 import { DEMO_TRAINEE } from "./seed-roles-data.js";
 
 const PIB = "https://pib.gov.in";
-const HEADERS = { "User-Agent": "Mozilla/5.0 (WebNEWS local dev seed)" };
+const HEADERS = { "User-Agent": "Mozilla/5.0 (WebNewsX local dev seed)" };
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 /**
  * Releases are numbered in order (regional-language ones trail a little): the walk starts a bit past the newest number

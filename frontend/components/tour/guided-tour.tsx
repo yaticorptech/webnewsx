@@ -96,7 +96,7 @@ type GuideCopy = { title: string; description: string; cta: string; items: { ico
 /** The welcome of each guide. */
 const GUIDE_COPY: Record<GuideId, GuideCopy> = {
   basics: {
-    title: "Welcome to WebNEWS",
+    title: "Welcome to WebNewsX",
     description: "A two-minute tour of the basics. A finger shows you where to tap, you try each one yourself, and it moves on once you have.",
     cta: "Start tour",
     items: [
@@ -107,7 +107,7 @@ const GUIDE_COPY: Record<GuideId, GuideCopy> = {
     ],
   },
   engage: {
-    title: "Make WebNEWS yours",
+    title: "Make WebNewsX yours",
     description: "One minute, hands on: like and save stories, follow a reporter, open the comments, your notifications and your profile.",
     cta: "Show me",
     items: [

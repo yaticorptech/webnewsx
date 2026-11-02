@@ -12,7 +12,7 @@ const TITLE_SIZES = [
 ] as const;
 
 /**
- * Red fade (owner 2026-10-07, for tall 9:16 photos): the whole poster is the photo, fading into WebNEWS red at the
+ * Red fade (owner 2026-10-07, for tall 9:16 photos): the whole poster is the photo, fading into WebNewsX red at the
  * bottom (not black), with a big white headline and the author line on the red.
  */
 export function RedFadePoster({ story, priority, titleId }: PosterDesignProps) {

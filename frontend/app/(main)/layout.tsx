@@ -8,6 +8,7 @@ import { PressPassWelcome } from "@/components/layout/press-pass-welcome";
 import { FirstStepsPopup } from "@/components/layout/first-steps-popup";
 import { BackToTop } from "@/components/layout/back-to-top";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { AppUpdate } from "@/components/layout/app-update";
 import { GetAppBanner } from "@/components/layout/get-app-banner";
 import { HomeOnly } from "@/components/layout/home-only";
 import { RightRail } from "@/components/layout/right-rail";
@@ -72,8 +73,10 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
       <FirstStepsPopup />
       {/* Visitors past their free stories: the Instagram-style sign-up wall (owner 2026-10-08). */}
       <ReadWallHost />
-      {/* Phone browsers: "Get the WebNEWS app" (owner 2026-10-16) — never in the app, gone for good once downloaded. */}
+      {/* Phone browsers: "Get the WebNewsX app" (owner 2026-10-16) — never in the app, gone for good once downloaded. */}
       <GetAppBanner />
+      {/* In the Android app: "Update available" when a newer build is out (owner 2026-11-02). */}
+      <AppUpdate />
       {/* First opening of the site or the app: "Start tour / Skip", then a hands-on walk through every feature (owner 2026-10-22). */}
       <GuidedTour />
     </>

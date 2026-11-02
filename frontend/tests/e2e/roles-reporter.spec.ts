@@ -206,7 +206,7 @@ test("Reader → Press Pass (3 steps) → Trainee → “Submit for review” �
   await expect(page.getByRole("heading", { level: 2, name: "The Reporter Pledge" })).toBeVisible();
   await page.getByLabel("Sign with your display name").fill(user.name);
   await expect(page.getByText("Matches")).toBeVisible();
-  await page.getByText("I take the WebNEWS Reporter Pledge").click();
+  await page.getByText("I take the WebNewsX Reporter Pledge").click();
   await page.getByRole("button", { name: "Issue my Press Pass" }).click();
 
   // Issued instantly as a Trainee.

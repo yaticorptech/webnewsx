@@ -60,14 +60,14 @@ public class MediaNotificationPlugin extends Plugin {
     @PluginMethod
     public void show(PluginCall call) {
         String title = call.getString("title", "");
-        String artist = call.getString("artist", "WebNEWS");
+        String artist = call.getString("artist", "WebNewsX");
         boolean playing = Boolean.TRUE.equals(call.getBoolean("playing", true));
         long positionMs = Math.round(call.getDouble("position", 0.0) * 1000);
         long durationMs = Math.round(call.getDouble("duration", 0.0) * 1000);
         Context context = getContext();
 
         if (session == null) {
-            session = new MediaSession(context, "WebNEWS Listen");
+            session = new MediaSession(context, "WebNewsX Listen");
             session.setCallback(new MediaSession.Callback() {
                 @Override
                 public void onPlay() {

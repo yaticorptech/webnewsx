@@ -9,7 +9,7 @@ import { isNativeApp, nativeTextToSpeech, type TextToSpeechPlugin } from "./nati
  * and the feed's News radio (components/feed/news-radio.tsx). Text goes in short chunks: Chrome drops an utterance
  * after ~15 s, and pause/resume are unreliable on Android, so a pause cancels and a resume restarts the chunk.
  * One speaker at a time: starting one silences (and notifies) the one before.
- * Inside the WebNEWS Android app (owner 2026-09-30) the WebView has no Web Speech API: the app's text-to-speech plugin
+ * Inside the WebNewsX Android app (owner 2026-09-30) the WebView has no Web Speech API: the app's text-to-speech plugin
  * (lib/native-app.ts) reads instead, chunk by chunk, with the languages the phone has voices for.
  */
 
@@ -139,14 +139,14 @@ const noopSubscribe = () => () => {};
 /** The app but without a voice: a build from before its text-to-speech (2026-09-30) — Listen / radio ask to update. */
 const appNeedsUpdate = () => !hasWebSpeech() && isNativeApp() && !nativeTextToSpeech();
 
-/** True in an old WebNEWS app that can't read aloud (client only; false on the server and on the website). */
+/** True in an old WebNewsX app that can't read aloud (client only; false on the server and on the website). */
 export function useSpeechNeedsAppUpdate(): boolean {
   return useSyncExternalStore(noopSubscribe, appNeedsUpdate, () => false);
 }
 
 /** Tells the reader why nothing plays in an old app. */
 export function showAppUpdateForSpeech(): void {
-  toast("Update the WebNEWS app to listen", {
+  toast("Update the WebNewsX app to listen", {
     id: "speech-update",
     description: "This version of the app can't read stories aloud. Install the latest version, then open the story again.",
   });

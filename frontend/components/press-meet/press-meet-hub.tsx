@@ -46,7 +46,7 @@ export function PressMeetHub({ username, reporter }: { username: string; reporte
             Your press meets
           </h1>
           <p className="mt-2 max-w-md text-[0.9375rem] leading-relaxed text-muted">
-            Book a time on the calendar, invite Verified reporters and hold it live — on camera in WebNEWS Live or on Google
+            Book a time on the calendar, invite Verified reporters and hold it live — on camera in WebNewsX Live or on Google
             Meet.
           </p>
           <div className="mt-6 flex w-full max-w-sm gap-2 sm:w-auto sm:max-w-none">

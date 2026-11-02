@@ -241,7 +241,7 @@ function publicImageUrl(key: string): string | null {
 
 function captionFor(story: { title: string | null; excerpt: string | null; slug: string | null; shortCode: string | null }): string {
   const link = story.shortCode ? `${env.FRONTEND_URL}/s/${story.shortCode}` : `${env.FRONTEND_URL}/a/${story.slug ?? ""}`;
-  return [story.title ?? "", story.excerpt ?? "", `Read the full story on WebNEWS: ${link}`].filter(Boolean).join("\n\n");
+  return [story.title ?? "", story.excerpt ?? "", `Read the full story on WebNewsX: ${link}`].filter(Boolean).join("\n\n");
 }
 
 async function sendOne(postId: string): Promise<void> {
@@ -268,7 +268,7 @@ async function sendOne(postId: string): Promise<void> {
   if (story.status !== "published" || story.hiddenAt) return void (await fail("The story isn't public any more", false));
   const imageUrl = post.imageKey ? publicImageUrl(post.imageKey) : null;
   if (!imageUrl) {
-    return void (await fail("Auto-posting starts once WebNEWS is online at its https address (Meta can't fetch images from this computer)", false));
+    return void (await fail("Auto-posting starts once WebNewsX is online at its https address (Meta can't fetch images from this computer)", false));
   }
   try {
     const token = decryptToken(connection.tokenEnc);

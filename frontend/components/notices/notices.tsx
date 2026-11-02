@@ -42,12 +42,12 @@ const COPY = {
     icon: ShieldAlert,
     title: "Warning from the Editor Desk",
     body: (title: string) => `Readers reported your story “${title}” and the Editor Desk reviewed it.`,
-    footnote: "Please follow the WebNEWS rules — repeated warnings can lead to your account being suspended.",
+    footnote: "Please follow the WebNewsX rules — repeated warnings can lead to your account being suspended.",
   },
   story_hidden: {
     icon: EyeOff,
     title: "Your story was hidden",
-    body: (title: string) => `The Editor Desk hid “${title}”. It no longer appears on WebNEWS.`,
+    body: (title: string) => `The Editor Desk hid “${title}”. It no longer appears on WebNewsX.`,
     footnote: null,
   },
 } as const;

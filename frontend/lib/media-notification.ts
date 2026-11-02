@@ -32,7 +32,7 @@ export type MediaNotification = {
   close: () => void;
 };
 
-const ARTIST = "WebNEWS · Listen";
+const ARTIST = "WebNewsX · Listen";
 const NONE: MediaNotification = { update: () => {}, close: () => {} };
 
 let current: MediaNotification | null = null;

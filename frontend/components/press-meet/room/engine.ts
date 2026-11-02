@@ -11,7 +11,7 @@ export type RemotePeer = {
 export type LocalMedia = {
   /** Mic (null when the person has no mic or refused it — they can still listen). */
   audio: MediaStreamTrack | null;
-  /** Outgoing video: the organizer's composited camera (with the WebNEWS mark) or a reporter's own camera; null = none yet. */
+  /** Outgoing video: the organizer's composited camera (with the WebNewsX mark) or a reporter's own camera; null = none yet. */
   video: MediaStreamTrack | null;
 };
 

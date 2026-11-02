@@ -65,7 +65,7 @@ export function PressPassCard({ data, animateIn = true, hints = false, className
   const languages = languageLabels(data.languages);
   const play = animateIn && !reduce;
   const name = data.holder.name || "Your name";
-  const label = `WebNEWS Global Press Pass${preview ? " preview" : ""} — ${data.holder.name}, ${data.level === "verified" ? "Verified" : "Trainee"} reporter`;
+  const label = `WebNewsX Global Press Pass${preview ? " preview" : ""} — ${data.holder.name}, ${data.level === "verified" ? "Verified" : "Trainee"} reporter`;
   const portrait = (
     <>
       <span aria-hidden className="font-wider font-black uppercase text-brand" style={{ fontSize: fs(96, 1.5) }}>

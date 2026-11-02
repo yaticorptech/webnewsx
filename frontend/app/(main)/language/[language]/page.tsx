@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const label = languagesLabel(languages);
   const path = `/language/${languages.join(",")}`;
   const title = `${label} news`;
-  const description = `The latest stories in ${label} — live on WebNEWS.`;
+  const description = `The latest stories in ${label} — live on WebNewsX.`;
   return { title, description, alternates: { canonical: path }, openGraph: { title, description, url: path } };
 }
 

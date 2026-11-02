@@ -71,7 +71,7 @@ type StoriesViewProps = {
   initialPins: AdminStoryRow[] | null;
 };
 
-/** Every story on WebNEWS: search + filters, moderation (hide / unpublish / delete) and Editor's Picks. */
+/** Every story on WebNewsX: search + filters, moderation (hide / unpublish / delete) and Editor's Picks. */
 export function StoriesView({ initialFilters, initial, initialPins }: StoriesViewProps) {
   const [filters, setFilters] = useUrlFilters<StoryFilters>(initialFilters, { status: "all" });
   const [initialKey] = useState(() => filtersKey(initialFilters));
@@ -129,7 +129,7 @@ export function StoriesView({ initialFilters, initial, initialPins }: StoriesVie
     <div className="animate-fade-up flex flex-col gap-8">
       <SectionHeader
         title="Stories"
-        description="Every story on WebNEWS. Hide or unpublish what breaks the rules, delete what must go, and choose up to three Editor's Picks."
+        description="Every story on WebNewsX. Hide or unpublish what breaks the rules, delete what must go, and choose up to three Editor's Picks."
       />
 
       <EditorsPicks initial={initialPins} onUnpin={(story) => actions.unpin.mutate({ story })} />

@@ -4,7 +4,7 @@ import { canPublish, requireOnboardedViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Press meet",
-  description: "Schedule press meets, invite verified reporters and follow the coverage on WebNEWS.",
+  description: "Schedule press meets, invite verified reporters and follow the coverage on WebNewsX.",
   robots: { index: false },
 };
 

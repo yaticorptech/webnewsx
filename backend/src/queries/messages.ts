@@ -546,7 +546,7 @@ function toSummary(row: SummaryRow, viewerId: string): ConversationSummary {
   const preview = row.preview ?? [];
   const peer = row.kind === "direct" ? (preview[0] ?? null) : null;
   let title: string;
-  if (row.kind === "direct") title = peer?.name || (peer ? `@${peer.username}` : "WebNEWS user");
+  if (row.kind === "direct") title = peer?.name || (peer ? `@${peer.username}` : "WebNewsX user");
   else if (row.name) title = row.name;
   else {
     const names = preview.map((p) => firstName(p.name || p.username));

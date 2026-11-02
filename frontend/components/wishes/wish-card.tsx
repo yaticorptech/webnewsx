@@ -505,9 +505,6 @@ export function WishCard({
         </Link>
         <span className="text-xs text-muted">· {data.kind === "birthday" ? "Birthday wish" : "Invitation"}</span>
         <div className="ml-auto flex items-center gap-1">
-          <Link href="/wishes/new" className="rounded-full px-3 py-1.5 text-xs font-bold text-brand hover:bg-tint">
-            Post yours
-          </Link>
           {canDelete && onDelete && (
             <button
               type="button"

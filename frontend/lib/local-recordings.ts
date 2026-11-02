@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PRESS_MEET } from "./shared/contracts";
 
 /*
- * Press meet recordings live on the reporter's own device only (owner 2026-10-02: no copy on the WebNEWS server, so
+ * Press meet recordings live on the reporter's own device only (owner 2026-10-02: no copy on the WebNewsX server, so
  * it uses no server storage). Each piece MediaRecorder hands over every few seconds goes into this site's private
  * IndexedDB — in the app that's the app's own private storage; in a browser, that browser — so a closed tab or a crash
  * keeps what was recorded. The reporter can download and share it (owner 2026-10-05); uninstalling the app or clearing

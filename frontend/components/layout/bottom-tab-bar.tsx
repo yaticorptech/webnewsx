@@ -1,9 +1,10 @@
 "use client";
 
-import { House, LayoutDashboard, LogIn, Search, SquarePlay, SquarePlus } from "lucide-react";
+import { House, LayoutDashboard, LogIn, LogOut, Search, Settings, SquarePlay, SquarePlus } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { isFeedPath } from "@/components/feed/feed-views";
 import { useFeedLayout } from "@/components/providers/feed-layout-provider";
 import { useViewer } from "@/components/providers/viewer-provider";
@@ -14,6 +15,7 @@ import type { FeedLayout } from "@/lib/feed-layout";
 import { cn } from "@/lib/utils";
 import { useAdminVisit } from "./admin-visit";
 import { showPendingPage } from "./pending-page";
+import { useLogOut } from "./user-menu";
 import { publishActionFor } from "./publish-action";
 
 /**
@@ -94,7 +96,7 @@ export function BottomTabBar() {
             <LayoutDashboard aria-hidden />
           </TabLink>
         ) : username ? (
-          <TabLink href={`/${username}`} label="Profile" tour="tab-profile" active={profileActive}>
+          <ProfileTab username={username} active={profileActive}>
             <Avatar
               src={viewer?.image}
               name={viewer?.name ?? username}
@@ -102,7 +104,7 @@ export function BottomTabBar() {
               decorative
               className={profileActive ? "ring-2 ring-ink ring-offset-1 ring-offset-surface" : "ring-1 ring-border"}
             />
-          </TabLink>
+          </ProfileTab>
         ) : (
           <TabLink href="/login" label="Log in" tour="tab-login" active={pathname === "/login"}>
             <LogIn aria-hidden />
@@ -149,6 +151,127 @@ function TabLink({
         <span aria-hidden className={cn("size-1.25 rounded-full", active ? "bg-brand" : "bg-transparent")} />
         <span className="sr-only">{label}</span>
       </Link>
+    </li>
+  );
+}
+
+const LONG_PRESS_MS = 450;
+
+/**
+ * The profile tab (owner 2026-11-02): a tap opens your profile; a long press opens a small menu above it with Settings
+ * and Log out (a short buzz where the phone supports it). The phone's own long-press menu for the link is suppressed.
+ */
+function ProfileTab({ username, active, children }: { username: string; active: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressed = useRef(false);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const logOut = useLogOut();
+
+  const cancel = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  useEffect(() => cancel, []);
+
+  // Close on a tap anywhere else or Escape; focus the first item for keyboards.
+  useEffect(() => {
+    if (!open) return;
+    menuRef.current?.querySelector<HTMLElement>("a,button")?.focus({ preventScroll: true });
+    const onDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", onDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <li className="relative flex">
+      <Link
+        href={`/${username}`}
+        aria-current={active ? "page" : undefined}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        data-tour="tab-profile"
+        onPointerDown={(event) => {
+          pressed.current = false;
+          start.current = { x: event.clientX, y: event.clientY };
+          cancel();
+          timer.current = setTimeout(() => {
+            pressed.current = true;
+            navigator.vibrate?.(12);
+            setOpen(true);
+          }, LONG_PRESS_MS);
+        }}
+        onPointerMove={(event) => {
+          // A finger that drags (a swipe) isn't a long press.
+          if (start.current && Math.hypot(event.clientX - start.current.x, event.clientY - start.current.y) > 10) cancel();
+        }}
+        onPointerUp={cancel}
+        onPointerCancel={cancel}
+        onPointerLeave={cancel}
+        onContextMenu={(event) => event.preventDefault()}
+        onClick={(event) => {
+          // The long press already opened the menu: don't also open the profile.
+          if (pressed.current || open) {
+            event.preventDefault();
+            pressed.current = false;
+          }
+        }}
+        className={cn(
+          "relative flex h-12 w-14 select-none flex-col items-center justify-center gap-1 rounded-2xl -outline-offset-2 transition-colors [-webkit-touch-callout:none] [&_svg]:size-6",
+          active ? "text-ink" : "text-ink-2 hover:text-ink",
+        )}
+      >
+        {children}
+        <span aria-hidden className={cn("size-1.25 rounded-full", active ? "bg-brand" : "bg-transparent")} />
+        <span className="sr-only">Profile (press and hold for Settings and Log out)</span>
+      </Link>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            ref={menuRef}
+            role="menu"
+            aria-label="Account"
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97, transition: { duration: 0.12 } }}
+            transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+            style={{ transformOrigin: "bottom right" }}
+            className="absolute bottom-[calc(100%+0.625rem)] right-0 w-52 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 shadow-[0_12px_40px_-12px_rgb(0_0_0/0.35)]"
+          >
+            <Link
+              href="/settings"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-[0.9375rem] font-semibold text-ink outline-none transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 [&_svg]:size-5 [&_svg]:text-ink-2"
+            >
+              <Settings aria-hidden />
+              Settings
+            </Link>
+            <div aria-hidden className="mx-2 my-1 h-px bg-border" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                void logOut();
+              }}
+              className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-[0.9375rem] font-semibold text-brand outline-none transition-colors hover:bg-tint focus-visible:bg-tint [&_svg]:size-5"
+            >
+              <LogOut aria-hidden />
+              Log out
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </li>
   );
 }

@@ -5,7 +5,7 @@ import { SITE_AD_POSITIONS, SITE_AD_ROTATE_MS, type SiteAdPosition, type SiteAds
 
 /**
  * What the "Advertise here" card needs from the site (SiteChrome): where it books (mail to the site; null in the
- * setup preview: not a link) and the site's logo / name, shown in place of WebNEWS's (owner 2026-10-31).
+ * setup preview: not a link) and the site's logo / name, shown in place of WebNewsX's (owner 2026-10-31).
  */
 export type AdBookingInfo = { href: string | null; logoUrl: string | null; name: string; lang: SiteLanguage };
 const AdBookingContext = createContext<AdBookingInfo>({ href: null, logoUrl: null, name: "", lang: "en" });
@@ -90,7 +90,7 @@ function LogoBanners({ side, ads, className }: { side: "left" | "right"; ads: Si
 }
 
 /**
- * webnews.in's "Advertise here" card (owner 2026-10-31: with the site's own logo in place of WebNEWS's): soft pink
+ * webnews.in's "Advertise here" card (owner 2026-10-31: with the site's own logo in place of WebNewsX's): soft pink
  * card, red bar with a shine, "Advertise Here", "Book this spot in seconds" and the red "Click to Book" button.
  */
 function AdvertiseCard() {

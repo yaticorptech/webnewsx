@@ -5,7 +5,6 @@ import { RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMetered } from "@/components/auth/read-meter";
 import { LockedPhoneCard, splitForVisitor, useMarkLocked } from "@/components/auth/read-wall";
-import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { useInfiniteSentinel } from "@/components/profile/use-infinite-sentinel";
 import { usePhoneLayout } from "@/components/providers/phone-layout-provider";
 import { useRealtimeEvent, useRealtimeReconnect } from "@/components/providers/realtime-provider";
@@ -279,7 +278,7 @@ export function NewsFeed({ view, initialPage, suggestions = [] }: NewsFeedProps)
 
       {!hasNextPage && blurred.length === 0 && (
         <div className="panel-tint mt-10 flex flex-col items-center gap-3 px-6 pb-6 pt-8 text-center">
-          <SpeedBarsSvg className="w-9 text-brand" />
+          <img src="/brand/x.svg" alt="" aria-hidden width={40} height={40} className="size-10" />
           <p className="kicker text-ink">You&apos;re all caught up</p>
           <p className="max-w-xs text-sm text-muted">New stories appear at the top the moment they&apos;re published.</p>
           <Button variant="ghost" size="sm" onClick={() => scrollToTop("smooth")} className="mt-1 text-brand">

@@ -50,7 +50,7 @@ export function googleReturnError(code: string | null | undefined): string | nul
   if (!code) return null;
   if (code === "ADMIN_PASSWORD_ONLY") return "This account logs in with its email and password only. Type them below.";
   if (code === "ACCOUNT_SUSPENDED") {
-    return "This account has been suspended by the WebNEWS Editor Desk. Contact the WebNEWS team if you think this is a mistake.";
+    return "This account has been suspended by the WebNewsX Editor Desk. Contact the WebNewsX team if you think this is a mistake.";
   }
   return "Google sign-in didn't work. Please try again, or log in with your email and password.";
 }

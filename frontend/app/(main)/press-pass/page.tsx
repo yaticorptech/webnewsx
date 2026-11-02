@@ -5,7 +5,7 @@ import { requireOnboardedViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Press Pass",
-  description: "Apply for your WebNEWS Press Pass and start publishing as a reporter.",
+  description: "Apply for your WebNewsX Press Pass and start publishing as a reporter.",
   robots: { index: false, follow: false },
 };
 

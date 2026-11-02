@@ -19,7 +19,7 @@ export function PressPassLink({ pass, viewer }: { pass: PressPassSummary | null;
       <div className="flex items-center justify-between gap-3 border-b border-tint-border bg-tint px-5 py-2.5">
         <span className="kicker flex items-center gap-2 text-brand">
           <SpeedBarsSvg className="h-2.5 w-auto text-brand" />
-          WebNEWS Press Pass
+          WebNewsX Press Pass
         </span>
         {pass && (
           <span className="kicker text-muted">{pass.status === "active" ? "Active" : "Revoked"}</span>

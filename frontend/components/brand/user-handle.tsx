@@ -11,7 +11,7 @@ export type UserHandleProps = {
 };
 
 /**
- * A WebNEWS handle: "@username" (owner 2026-09-25: back to the classic "@", replacing the brand-bars mark used since
+ * A WebNewsX handle: "@username" (owner 2026-09-25: back to the classic "@", replacing the brand-bars mark used since
  * 2026-09-24). One text run, so it reads (and is announced) as "@username" — never "@ username".
  */
 export function UserHandle({ username, wrap = false, truncate = false, className }: UserHandleProps) {

@@ -40,8 +40,8 @@ import { shownCount } from "../lib/demo-engagement.js";
 
 /*
  * Publisher websites (owner 2026-10-29): a verified domain's news site in the webnews.in layout. The owner sets it up
- * on WebNEWS (/site-setup); visitors read it on the domain; its admin manages it at `<domain>/admin` with a separate
- * email + password. Stories open on WebNEWS (`/pub/<domain>/article/<slug>`) so their views count there.
+ * on WebNewsX (/site-setup); visitors read it on the domain; its admin manages it at `<domain>/admin` with a separate
+ * email + password. Stories open on WebNewsX (`/pub/<domain>/article/<slug>`) so their views count there.
  */
 
 const scrypt = promisify(scryptCallback) as (password: string, salt: Buffer, keylen: number) => Promise<Buffer>;
@@ -236,7 +236,7 @@ export async function siteArticle(domain: string, slug: string): Promise<SiteArt
   return { site: toPublicSite(site), article: detail, more, breaking, ads, categories };
 }
 
-/* ─────────────── The owner's setup (WebNEWS, /site-setup) ─────────────── */
+/* ─────────────── The owner's setup (WebNewsX, /site-setup) ─────────────── */
 
 async function verifiedDomain(personId: string): Promise<string | null> {
   const [row] = await db
@@ -352,7 +352,7 @@ export async function saveMySite(person: Person, input: SetupData): Promise<void
     }
   } catch (error) {
     if (isUniqueViolation(error, "publisher_site_domain_unique")) {
-      throw new ApiError(409, "domain_taken", `${domain} already has a site on WebNEWS`);
+      throw new ApiError(409, "domain_taken", `${domain} already has a site on WebNewsX`);
     }
     throw error;
   }
@@ -397,7 +397,7 @@ export async function connectMySite(personId: string): Promise<void> {
   const site = await ownSite(personId);
   if (!site) throw new ApiError(409, "site_not_set_up", "Save your site first");
   if (!env.vercelEnabled) {
-    throw new ApiError(503, "domain_connect_unavailable", "Connecting domains isn't switched on yet. Ask WebNEWS to add your domain.");
+    throw new ApiError(503, "domain_connect_unavailable", "Connecting domains isn't switched on yet. Ask WebNewsX to add your domain.");
   }
   await connectSite(site);
 }

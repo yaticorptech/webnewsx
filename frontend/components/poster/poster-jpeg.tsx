@@ -39,7 +39,7 @@ function waitForImages(root: HTMLElement): Promise<void> {
 }
 
 /**
- * A story's poster, exactly as the feed shows it plus the small WebNEWS mark in its top left corner, as a JPEG
+ * A story's poster, exactly as the feed shows it plus the small WebNewsX mark in its top left corner, as a JPEG
  * (owner 2026-10-05: shares send the poster, not the bare photo; auto-posts use it too). Drawn off screen at 360 px
  * wide × `scale` (3 → 1080 × 1920). A video story shows its poster frame.
  */

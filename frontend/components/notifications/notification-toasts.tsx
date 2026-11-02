@@ -70,14 +70,14 @@ function copyOf(item: AppNotification, username: string): { title: string; descr
     case "press_meet_reminder":
       return {
         title: meet?.soon ? "Your press meet starts in 15 minutes" : "Press meet today",
-        description: meet?.soon ? undefined : `At ${meet ? meetTime(meet.startsAt) : ""} IST${meet?.platform === "google_meet" ? " on Google Meet" : " on WebNEWS Live"}.`,
+        description: meet?.soon ? undefined : `At ${meet ? meetTime(meet.startsAt) : ""} IST${meet?.platform === "google_meet" ? " on Google Meet" : " on WebNewsX Live"}.`,
         href: meetHref,
         cta: "Open",
       };
     case "press_meet_live":
       return {
         title: "The press meet has started",
-        description: `${who} is live now${meet?.platform === "google_meet" ? " on Google Meet" : " on WebNEWS Live"}.`,
+        description: `${who} is live now${meet?.platform === "google_meet" ? " on Google Meet" : " on WebNewsX Live"}.`,
         href: meet ? (meet.platform === "webnews" ? `/press-meet/${meet.id}/live` : meetHref) : null,
         cta: "Join now",
       };

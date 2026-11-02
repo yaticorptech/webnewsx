@@ -1,8 +1,7 @@
 "use client";
 
-import { BarChart3, FolderInput, PenLine, Sparkles, Trash2 } from "lucide-react";
+import { BarChart3, Ellipsis, EllipsisVertical, FolderInput, PenLine, Sparkles, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { DeleteStoryDialog } from "@/components/article/delete-story-button";
 import { SpotlightSheet, type SpotlightStory } from "@/components/newsroom/spotlight-sheet";
 import { useViewer } from "@/components/providers/viewer-provider";
@@ -26,7 +25,7 @@ export type StoryMenuProps = {
   align?: "start" | "end";
   /** Items above the author's / desk's own (Home's YouTube-style cards: Save · Share · Report). */
   leadItems?: DropdownItem[];
-  /** Was the vertical ⋮ trigger; every menu shows the WebNEWS three bars now (owner 2026-10-05). Ignored. */
+  /** ⋮ instead of ⋯ (the reels side rail). */
   vertical?: boolean;
   /** No Delete item (the story page, which has its own Delete button). */
   noDelete?: boolean;
@@ -51,6 +50,7 @@ export function StoryMenu({
   leadItems = [],
   noDelete = false,
   trigger,
+  vertical = false,
   triggerClassName,
   className,
 }: StoryMenuProps) {
@@ -132,8 +132,8 @@ export function StoryMenu({
           md ? "size-10 [&_svg]:size-5" : size === "xs" ? "size-7 [&_svg]:size-4" : "size-9 [&_svg]:size-4.5",
           triggerClassName,
         )}
-        // The WebNEWS three bars instead of ⋮ / ⋯ (owner 2026-10-05), a little smaller to sit like the other icons.
-        trigger={trigger ?? <SpeedBarsSvg className="scale-[0.8]" />}
+        // Plain three dots (owner 2026-11-02, instead of the old three bars): ⋮ in the reels rail, ⋯ everywhere else.
+        trigger={trigger ?? (vertical ? <EllipsisVertical aria-hidden /> : <Ellipsis aria-hidden />)}
         menuClassName={cn(
           size === "xs" ? "min-w-48" : "min-w-60",
           up && "bottom-full top-auto mb-2 mt-0",

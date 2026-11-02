@@ -49,10 +49,10 @@ import { RoomRecorder, recordingSupported } from "./recorder";
 import { RoomChat, useRoomChat } from "./room-chat";
 
 /*
- * /press-meet/[id]/live (owner 2026-10-01) — the WebNEWS Live room, full screen and dark like a broadcast gallery.
- * The organizer is on camera (with the WebNEWS mark burnt into the picture) and mic; reporters agree that the session is
+ * /press-meet/[id]/live (owner 2026-10-01) — the WebNewsX Live room, full screen and dark like a broadcast gallery.
+ * The organizer is on camera (with the WebNewsX mark burnt into the picture) and mic; reporters agree that the session is
  * recorded before they join (their recording starts as they join), ask to speak and talk once the organizer accepts
- * (owner 2026-10-05), and their recording is replayed only inside WebNEWS. Works on phones (portrait stage, people strip,
+ * (owner 2026-10-05), and their recording is replayed only inside WebNewsX. Works on phones (portrait stage, people strip,
  * big touch controls) and in the Android app.
  */
 
@@ -79,7 +79,7 @@ function mediaProblem(error: unknown): string {
     return "Your browser allows the microphone and camera only on a secure (https) page. Open this page over https.";
   }
   const name = error instanceof DOMException ? error.name : "";
-  if (name === "NotAllowedError" || name === "SecurityError") return "Access was blocked. Allow the camera and microphone for WebNEWS in your browser or phone settings, then try again.";
+  if (name === "NotAllowedError" || name === "SecurityError") return "Access was blocked. Allow the camera and microphone for WebNewsX in your browser or phone settings, then try again.";
   if (name === "NotFoundError" || name === "OverconstrainedError") return "No camera or microphone was found on this device.";
   if (name === "NotReadableError") return "Your camera or microphone is being used by another app. Close it and try again.";
   return "Couldn't start your camera or microphone.";
@@ -127,7 +127,7 @@ export function PressMeetRoom({ meetId }: { meetId: string }) {
     if (meet?.platform === "google_meet") router.replace(`/press-meet/${meet.id}`);
   }, [meet, router]);
 
-  // Reporters: no screenshots / screen recording in the app while in the room (recordings stay inside WebNEWS).
+  // Reporters: no screenshots / screen recording in the app while in the room (recordings stay inside WebNewsX).
   const reporter = meet?.role === "reporter";
   useEffect(() => {
     if (!reporter) return;
@@ -243,7 +243,7 @@ function RoomHeader({ meet, right }: { meet: PressMeetDetail; right?: ReactNode 
       </div>
       {right}
       {/* Always the dark-background wordmark here (white "Web"). */}
-      <Logo height={13} alt="WebNEWS" className="hidden opacity-90 sm:inline-flex [&>img:first-child]:hidden [&>img:last-child]:block" />
+      <Logo height={13} alt="WebNewsX" className="hidden opacity-90 sm:inline-flex [&>img:first-child]:hidden [&>img:last-child]:block" />
     </header>
   );
 }
@@ -431,7 +431,7 @@ function Lobby({ meet, onJoin }: { meet: PressMeetDetail; onJoin: (media: Media,
         <div className="flex w-full max-w-3xl flex-col items-center gap-6 lg:flex-row lg:items-center lg:gap-10">
           <div className="w-full lg:flex-1">
             <div className="relative mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-2xl bg-black ring-1 ring-white/10">
-              {/* A reporter sees their own camera mirrored (the organizer's picture carries the WebNEWS mark). */}
+              {/* A reporter sees their own camera mirrored (the organizer's picture carries the WebNewsX mark). */}
               <video
                 ref={previewRef}
                 muted
@@ -452,11 +452,11 @@ function Lobby({ meet, onJoin }: { meet: PressMeetDetail; onJoin: (media: Media,
             </div>
           </div>
           <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center lg:items-start lg:text-left">
-            <p className="kicker text-brand">WebNEWS Live</p>
+            <p className="kicker text-brand">WebNewsX Live</p>
             <h1 className="font-wide text-2xl font-black tracking-tight">{organizer ? "Ready to go live?" : "Ready to join?"}</h1>
             <p className="text-sm leading-relaxed text-white/60">
               {organizer
-                ? "Reporters see your camera with the WebNEWS mark and hear your mic; you see theirs. You can mute reporters and see raised hands. The press meet is recorded on this device from the moment you go live."
+                ? "Reporters see your camera with the WebNewsX mark and hear your mic; you see theirs. You can mute reporters and see raised hands. The press meet is recorded on this device from the moment you go live."
                 : "Your camera stays on for the whole press meet — everyone in the room sees you. Your microphone stays off: tap Ask to speak, and it turns on once the organizer accepts."}
             </p>
             {!organizer && (
@@ -604,7 +604,7 @@ function InRoom({
   useEffect(() => {
     const peerId = newPeerId();
     peerIdRef.current = peerId;
-    // The organizer sends the composited picture (with the WebNEWS mark), a reporter their own camera.
+    // The organizer sends the composited picture (with the WebNewsX mark), a reporter their own camera.
     const localVideo = media.compositor?.track ?? media.camera?.getVideoTracks()[0] ?? null;
     const engine: RoomEngine = new RoomEngine(meet.id, peerId, meet.role, iceServers, { audio: localAudio, video: localVideo }, () =>
       setPeers([...engine.peers.values()]),
@@ -1297,7 +1297,7 @@ function TileGrid({ count, children }: { count: number; children: ReactNode }) {
 
 /**
  * One person's tile: their video while their camera's on (the organizer's picture always — it shows their photo card
- * with the WebNEWS mark when their camera's off), else their photo; name, muted mic, raised hand, REC, and a red ring
+ * with the WebNewsX mark when their camera's off), else their photo; name, muted mic, raised hand, REC, and a red ring
  * while they speak. Muted: the sound plays from the room's own players.
  */
 function VideoTile({

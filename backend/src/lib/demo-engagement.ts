@@ -10,7 +10,7 @@ import { env } from "../env.js";
  * only while demo mode is on.
  *
  * The public site can never turn it on — decided here on the server, not in the browser: demo mode is refused when the
- * site's address is a public WebNEWS domain, and in production unless the deployment explicitly sets
+ * site's address is a public WebNewsX domain, and in production unless the deployment explicitly sets
  * ALLOW_DEMO_ENGAGEMENT=1 (a staging deployment). The Editor Desk switch can't override either.
  *
  * Exception (owner 2026-11-02, before launch with no real readers yet): ALLOW_DEMO_ENGAGEMENT=public allows it on the

@@ -20,7 +20,7 @@ import type { RouteDeps } from "./deps.js";
  *
  *  1. POST /api/phone-auth/check  { phoneNumber } → "password" (verified, has a password: ask for it) or "verify".
  *  2. POST /api/phone-auth/start  { phoneNumber } → a check id and a wa.me link: WhatsApp opens a chat with our
- *     business number, "Verify my WebNEWS number: WN-XXXXXX" typed in. They press Send.
+ *     business number, "Verify my WebNewsX number: WN-XXXXXX" typed in. They press Send.
  *  3. Meta calls POST /api/whatsapp/webhook with the message and the number it came from. Same number as typed → the
  *     check is "verified" and we answer in the chat ("✅ Number verified"); another number → we say so there.
  *  4. GET /api/phone-auth/status/:id — the page asks every couple of seconds until it's verified.
@@ -81,7 +81,7 @@ export function phoneAuthRoutes({ limiter }: RouteDeps) {
       console.log(`[whatsapp] not configured — ${phoneNumber} (${code}) counts as verified in ${DEV_CONFIRM_MS / 1000} s`);
       setTimeout(() => void setStatus(id, value, "verified").catch(() => {}), DEV_CONFIRM_MS);
     }
-    return c.json({ id, code, link: whatsAppChatLink(`Verify my WebNEWS number: ${code}`) });
+    return c.json({ id, code, link: whatsAppChatLink(`Verify my WebNewsX number: ${code}`) });
   });
 
   app.get("/status/:id", rateLimit(limiter, "phone-status", STATUS_RULE, "ip"), async (c) => {
@@ -164,7 +164,7 @@ export function whatsAppWebhookRoutes() {
         .where(and(eq(verification.identifier, `${CHECK_PREFIX}${code}`), gt(verification.expiresAt, new Date())))
         .limit(1);
       if (!row) {
-        await sendWhatsAppText(from, "This code has expired. Go back to WebNEWS and tap \"Verify on WhatsApp\" again.");
+        await sendWhatsAppText(from, "This code has expired. Go back to WebNewsX and tap \"Verify on WhatsApp\" again.");
         continue;
       }
       const value = JSON.parse(row.value) as CheckValue;
@@ -174,7 +174,7 @@ export function whatsAppWebhookRoutes() {
         continue;
       }
       await setStatus(row.id, value, "verified");
-      await sendWhatsAppText(from, "✅ Your number is verified. Go back to WebNEWS to set your password.");
+      await sendWhatsAppText(from, "✅ Your number is verified. Go back to WebNewsX to set your password.");
     }
     return c.text("ok");
   });

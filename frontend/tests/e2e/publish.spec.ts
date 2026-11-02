@@ -221,14 +221,14 @@ test("unsaved work survives a reload and in-app navigation asks first", async ({
   await expect(page.getByText("Restored your unsaved changes")).toBeVisible();
 
   // Clicking an in-app link holds the navigation behind a confirmation.
-  await page.getByRole("link", { name: "WebNEWS home" }).filter({ visible: true }).click();
+  await page.getByRole("link", { name: "WebNewsX home" }).filter({ visible: true }).click();
   const leave = page.getByRole("dialog", { name: "Leave this story?" });
   await expect(leave).toBeVisible();
   await leave.getByRole("button", { name: "Keep writing" }).click();
   await expect(leave).toBeHidden();
   expect(new URL(page.url()).pathname).toBe("/publish");
 
-  await page.getByRole("link", { name: "WebNEWS home" }).filter({ visible: true }).click();
+  await page.getByRole("link", { name: "WebNewsX home" }).filter({ visible: true }).click();
   await page.getByRole("dialog", { name: "Leave this story?" }).getByRole("button", { name: "Leave anyway" }).click();
   await page.waitForURL((url) => url.pathname === "/");
 });

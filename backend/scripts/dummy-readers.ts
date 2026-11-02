@@ -190,7 +190,7 @@ for (const p of PEOPLE) {
     const base = p.handle.replace(/\d+$/, "");
     for (const candidate of [base, `${base}.news`, `${base}.reads`, `${base}.in`]) {
       const ob = await c.req("/api/onboarding", {
-        json: { username: candidate, name: p.name, bio: "WebNEWS reader (test account).", image: avatar.url, languages: ["en"], acceptTerms: true },
+        json: { username: candidate, name: p.name, bio: "WebNewsX reader (test account).", image: avatar.url, languages: ["en"], acceptTerms: true },
       });
       if (ob.status === 200) {
         username = candidate;

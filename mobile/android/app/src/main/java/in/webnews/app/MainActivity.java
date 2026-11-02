@@ -1,9 +1,10 @@
 package in.webnews.app;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
-import android.graphics.drawable.Animatable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.webkit.CookieManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebView;
@@ -32,7 +34,7 @@ import com.getcapacitor.BridgeWebViewClient;
  * Capacitor's own handling is off (capacitor.config.ts → SystemBars.insetsHandling "disable").
  */
 public class MainActivity extends BridgeActivity {
-    /** The loading screen (owner 2026-10-05): the WebNEWS three bars filling, until the first page is on screen. */
+    /** The loading screen (owner 2026-10-05): the WebNewsX three bars filling, until the first page is on screen. */
     private View bootOverlay;
     /** Never longer than this, whatever happens. */
     private static final long BOOT_OVERLAY_MAX_MS = 20_000;
@@ -41,7 +43,7 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         // After super.onCreate: Capacitor switches from the launch theme to AppTheme.NoActionBar there. Touching the
         // window (EdgeToEdge reads the decor view) before that builds it with the launch theme — and its action bar:
-        // a 56dp "WebNEWS" title bar, with the splash squashed into its background, above the site.
+        // a 56dp "WebNewsX" title bar, with the splash squashed into its background, above the site.
         // App-only plugins register before super.onCreate (Capacitor reads them there).
         registerPlugin(ScreenGuardPlugin.class);
         registerPlugin(PushSupportPlugin.class);
@@ -97,20 +99,36 @@ public class MainActivity extends BridgeActivity {
         });
     }
 
-    /** A white screen with the WebNEWS three bars filling in turn (res/drawable/boot_bars_animated.xml), over the app. */
+    /**
+     * A white screen with the WebNewsX "X" (res/drawable-nodpi/boot_x.png, owner 2026-11-02) gently pulsing, over the
+     * app until the site is on screen.
+     */
     private void showBootOverlay() {
         ViewGroup content = findViewById(android.R.id.content);
         if (content == null) return;
         FrameLayout overlay = new FrameLayout(this);
         overlay.setBackgroundColor(Color.WHITE);
         overlay.setClickable(true);
-        ImageView bars = new ImageView(this);
-        Drawable drawable = getDrawable(R.drawable.boot_bars_animated);
-        bars.setImageDrawable(drawable);
+        ImageView mark = new ImageView(this);
+        mark.setImageResource(R.drawable.boot_x);
+        mark.setScaleType(ImageView.ScaleType.FIT_CENTER);
         float density = getResources().getDisplayMetrics().density;
-        overlay.addView(bars, new FrameLayout.LayoutParams(Math.round(72 * density), Math.round(62 * density), Gravity.CENTER));
+        int size = Math.round(112 * density);
+        overlay.addView(mark, new FrameLayout.LayoutParams(size, size, Gravity.CENTER));
         content.addView(overlay, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        if (drawable instanceof Animatable) ((Animatable) drawable).start();
+        // Soft "breathing": 92% → 100% and back, until the overlay fades out.
+        ObjectAnimator pulse = ObjectAnimator.ofPropertyValuesHolder(
+            mark,
+            PropertyValuesHolder.ofFloat(View.SCALE_X, 0.92f, 1f),
+            PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.92f, 1f),
+            PropertyValuesHolder.ofFloat(View.ALPHA, 0.75f, 1f)
+        );
+        pulse.setDuration(700);
+        pulse.setRepeatMode(ValueAnimator.REVERSE);
+        pulse.setRepeatCount(ValueAnimator.INFINITE);
+        pulse.setInterpolator(new AccelerateDecelerateInterpolator());
+        pulse.start();
+        overlay.setTag(pulse);
         bootOverlay = overlay;
         new Handler(Looper.getMainLooper()).postDelayed(this::hideBootOverlay, BOOT_OVERLAY_MAX_MS);
     }
@@ -121,6 +139,7 @@ public class MainActivity extends BridgeActivity {
             View overlay = bootOverlay;
             if (overlay == null) return;
             bootOverlay = null;
+            if (overlay.getTag() instanceof ValueAnimator) ((ValueAnimator) overlay.getTag()).cancel();
             overlay.animate().alpha(0f).setDuration(200).withEndAction(() -> {
                 if (overlay.getParent() instanceof ViewGroup) {
                     ((ViewGroup) overlay.getParent()).removeView(overlay);

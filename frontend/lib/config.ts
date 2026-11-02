@@ -10,7 +10,7 @@ export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:30
 export const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "1";
 
 /**
- * The backend's Google OAuth *web* client ID (public). The WebNEWS app's native account picker asks Google for an ID
+ * The backend's Google OAuth *web* client ID (public). The WebNewsX app's native account picker asks Google for an ID
  * token addressed to it, which the backend then verifies (lib/native-app.ts). Empty = no Google sign-in in the app.
  */
 export const googleWebClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
@@ -18,7 +18,7 @@ export const googleWebClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 /** SSE endpoint. Same-origin through the rewrite unless a direct URL is configured. */
 export const streamUrl = process.env.NEXT_PUBLIC_STREAM_URL || "/api/stream";
 
-export const SITE_NAME = "WebNEWS";
+export const SITE_NAME = "WebNewsX";
 export const TAGLINE = "Pulse of People";
 export const SITE_DESCRIPTION =
   "A live, endlessly scrolling feed of news stories published by the public. Read what's breaking, follow publishers, and get your Press Pass to report.";

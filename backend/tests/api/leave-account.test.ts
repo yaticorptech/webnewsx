@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { closeDatabase } from "../../src/db/client.js";
 import { cleanupFixtures, freshApp, logIn, onboardedUser } from "../helpers.js";
 
-/* Leaving WebNEWS (owner 2026-10-23): deactivate hides you until you log in again; delete removes the account. */
+/* Leaving WebNewsX (owner 2026-10-23): deactivate hides you until you log in again; delete removes the account. */
 const app = freshApp();
 
 afterAll(async () => {

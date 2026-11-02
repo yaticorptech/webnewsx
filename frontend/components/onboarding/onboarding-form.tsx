@@ -222,7 +222,7 @@ export function OnboardingForm({ viewer, next }: { viewer: ViewerUser; next: str
         });
         return;
       }
-      toast.success(`Welcome to WebNEWS, ${user.name}`, {
+      toast.success(`Welcome to WebNewsX, ${user.name}`, {
         id: "onboarding-welcome",
         // Readers never get a publish control (SPEC §3.11); their next step is the Press Pass.
         description: user.publisher
@@ -254,7 +254,7 @@ export function OnboardingForm({ viewer, next }: { viewer: ViewerUser; next: str
         <header>
           <p className="kicker flex items-center gap-2 text-brand">
             <SpeedLines />
-            Welcome to WebNEWS
+            Welcome to WebNewsX
           </p>
           <h1 className="mt-3 font-wide text-[2rem] leading-[1.02] font-black tracking-tight text-ink sm:text-[2.625rem]">
             Set up your byline

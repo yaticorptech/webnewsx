@@ -13,7 +13,7 @@ test("shell renders with live data and no console errors", async ({ page, create
   const errors = trackConsoleErrors(page);
 
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "WebNEWS home" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "WebNewsX home" })).toBeVisible();
   const ticker = page.getByRole("region", { name: "Live headlines" });
   await expect(ticker.getByRole("link", { name: new RegExp(story.title) })).toBeAttached();
   // Masthead category nav (Home · Following · sections · Karnataka ▾ · Astrology · More ▾); Home is "/".

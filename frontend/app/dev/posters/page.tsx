@@ -78,7 +78,7 @@ export default async function PostersPage() {
 
       <main id="main" className="mx-auto max-w-300 px-4 pb-24 sm:px-6">
         <header className="py-12 sm:py-16">
-          <p className="kicker text-brand-strong">WebNEWS · Reel posters</p>
+          <p className="kicker text-brand-strong">WebNewsX · Reel posters</p>
           <h1 className="mt-3 flex items-center gap-3 font-wide text-3xl font-extrabold tracking-[-0.015em] sm:text-4xl">
             <SpeedLines className="text-[0.9em]" />
             Poster templates

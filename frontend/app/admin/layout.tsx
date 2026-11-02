@@ -5,7 +5,7 @@ import { loadOverview } from "@/components/admin/server-loaders";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
-  title: { default: "Editor Desk", template: "%s · Editor Desk · WebNEWS" },
+  title: { default: "Editor Desk", template: "%s · Editor Desk · WebNewsX" },
   robots: { index: false, follow: false },
 };
 

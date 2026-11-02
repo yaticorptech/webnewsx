@@ -56,7 +56,7 @@ export function BrandLockup({ size = "md", align = "center", priority, fit = fal
     >
       <img
         src="/brand/logo-light.png"
-        alt="WebNEWS"
+        alt="WebNewsX"
         width={Math.round(height * LOGO_ASPECT)}
         height={height}
         decoding="async"

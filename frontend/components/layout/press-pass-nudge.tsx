@@ -49,7 +49,7 @@ export function PressPassNudge() {
       if (Date.now() < next || document.hidden || document.querySelector("[role=dialog]") || isTourActive()) return;
       toast("Want to publish a story?", {
         id: "press-pass-nudge",
-        description: "Create your Press Pass and file news on WebNEWS.",
+        description: "Create your Press Pass and file news on WebNewsX.",
         action: { label: "Click here", href: "/press-pass" },
         duration: 10_000,
       });

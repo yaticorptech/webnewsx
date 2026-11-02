@@ -21,7 +21,7 @@ export type GoogleButtonProps = {
 const noopSubscribe = () => () => {};
 
 /**
- * Whether to offer "Continue with Google": the backend has it. In the WebNEWS app only with its native account picker
+ * Whether to offer "Continue with Google": the backend has it. In the WebNewsX app only with its native account picker
  * (owner 2026-09-29) — Google refuses its web sign-in page inside app web views ("disallowed_useragent"), so an older
  * app build offers email + password only.
  */
@@ -46,7 +46,7 @@ export function GoogleMark({ className }: { className?: string }) {
 /**
  * "Continue with Google". Renders nothing unless NEXT_PUBLIC_GOOGLE_ENABLED=1. On click it
  * navigates to Google's consent screen (redirect URI = FRONTEND_URL/api/auth/callback/google);
- * in the WebNEWS app it opens the phone's Google account picker instead (signInWithGoogleInApp).
+ * in the WebNewsX app it opens the phone's Google account picker instead (signInWithGoogleInApp).
  */
 export function GoogleButton({ callbackURL = "/", newUserCallbackURL = "/onboarding", label = "Continue with Google", className }: GoogleButtonProps) {
   const [pending, setPending] = useState(false);

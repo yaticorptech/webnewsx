@@ -188,7 +188,7 @@ export function meRoutes({ limiter }: RouteDeps) {
 
   // PATCH /api/me — edit profile (onboarded users).
   /*
-   * Leaving WebNEWS (owner 2026-10-23), from Edit profile — always your own account (a group is deleted from Groups).
+   * Leaving WebNewsX (owner 2026-10-23), from Edit profile — always your own account (a group is deleted from Groups).
    * Type your @username to confirm. Deactivate hides you until you log in again; Delete removes everything for good.
    */
   const leaving = async (c: Parameters<typeof mustViewer>[0]) => {

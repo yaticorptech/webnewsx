@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye } from "lucide-react";
+import { Eye, MessageCircleHeart, Trash2 } from "lucide-react";
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
@@ -9,7 +9,7 @@ import { showPendingPage } from "@/components/layout/pending-page";
 import { Avatar } from "@/components/ui/avatar";
 import { TimeAgo } from "@/components/ui/time-ago";
 import { formatNumber } from "@/lib/format";
-import { type ArticleCard, type Wish } from "@/lib/shared/contracts";
+import { WISH_QUICK_COMMENTS, type ArticleCard, type Wish } from "@/lib/shared/contracts";
 import { openStoryHref, storyHref, storyLinkProps } from "@/lib/story-link";
 import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,8 @@ import { DOUBLE_TAP_MS, HeartPop } from "./story-cover";
 import { ReporterMark, SpotlightedTag } from "./story-badges";
 import { useLike } from "./use-like";
 import { useViewTracking } from "./view-tracker";
-import { FeedWish, type FeedEntry } from "@/components/wishes/feed-wishes";
+import { useRemoveWish, useSendWish, type FeedEntry } from "@/components/wishes/feed-wishes";
+import { WishArt } from "@/components/wishes/wish-card";
 
 /*
  * Home and every feed on tablets and computers (owner 2026-10-16): news cards in a grid, newspaper style — the article
@@ -134,7 +135,7 @@ export function FrontPage({
                 )}
               >
                 {isWish(article) ? (
-                  <FeedWish wish={article} compact />
+                  <GridWishCard wish={article} />
                 ) : lockedIds.has(article.id) ? (
                   <LockedGridCard article={article} />
                 ) : (
@@ -242,6 +243,78 @@ function GridCard({ article, priority }: { article: ArticleCard; priority: boole
         <div className="ml-auto shrink-0">
           <ActionRow article={article} compact />
         </div>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * A birthday wish / invitation in the grid (owner 2026-11-02: "same like article post"): the card's design in the
+ * photo's 16:9 place (on a soft blur of itself), a headline and the message as the blurb, then who posted it + Follow
+ * and a one-tap wish with the count where a story has like · comment · share.
+ */
+function GridWishCard({ wish }: { wish: Wish }) {
+  const titleId = useId();
+  const { sending, send } = useSendWish(wish);
+  const remove = useRemoveWish(wish);
+  const birthday = wish.kind === "birthday";
+  const quick = WISH_QUICK_COMMENTS[wish.kind][0]!;
+  const headline = birthday ? `Happy birthday, ${wish.title}` : wish.title;
+  return (
+    <article aria-labelledby={titleId} className="flex h-full flex-col gap-3">
+      <div className="relative aspect-video w-full overflow-hidden bg-surface-2">
+        {wish.photoUrl && (
+          <img src={wish.photoUrl} alt="" aria-hidden className="absolute inset-0 size-full scale-110 object-cover opacity-60 blur-xl" />
+        )}
+        <div className="absolute inset-0 flex items-center justify-center py-2">
+          <WishArt data={wish} className="h-full w-auto rounded-lg shadow-[0_8px_24px_-10px_rgb(0_0_0/0.45)]" />
+        </div>
+        <span className="pointer-events-none absolute bottom-2 right-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
+          {birthday ? "🎂 Birthday" : "✉️ Invitation"}
+          <span aria-hidden className="text-white/60">·</span>
+          <TimeAgo date={wish.createdAt} className="shrink-0" />
+        </span>
+      </div>
+      <div className="mt-2 flex items-start gap-2">
+        <h3 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-[1.125rem] font-semibold leading-[1.45] text-ink">
+          {headline}
+        </h3>
+        {wish.canDelete && (
+          <button
+            type="button"
+            onClick={() => void remove()}
+            aria-label="Remove from the feed"
+            className="-mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted hover:bg-tint hover:text-brand"
+          >
+            <Trash2 aria-hidden className="size-4" />
+          </button>
+        )}
+      </div>
+      {wish.message && <p className="line-clamp-3 text-[0.9375rem] leading-[1.7] text-muted">{wish.message}</p>}
+      <div className="mt-auto flex min-w-0 items-center gap-2 pt-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <Link
+            href={`/${wish.author.username}`}
+            className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] font-semibold text-ink-2 hover:text-ink"
+          >
+            <Avatar src={wish.author.image} name={wish.author.name} size={26} decorative className="shrink-0 ring-1 ring-border" />
+            <span className="truncate">{wish.author.name}</span>
+          </Link>
+          {!wish.canDelete && (
+            <FollowPill username={wish.author.username} initialFollowing={false} className="h-6 shrink-0 gap-1 px-2.5 text-[0.6875rem] [&_svg]:size-3" />
+          )}
+        </div>
+        <button
+          type="button"
+          disabled={sending !== null}
+          onClick={() => void send(quick)}
+          title={quick}
+          className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-ink-2 transition-colors hover:bg-tint hover:text-brand disabled:opacity-60"
+        >
+          <MessageCircleHeart aria-hidden className="size-4.5" />
+          <span>{sending ? "Sending…" : birthday ? "Wish" : "Reply"}</span>
+          {wish.commentCount > 0 && <span className="tabular-nums text-muted">{formatNumber(wish.commentCount)}</span>}
+        </button>
       </div>
     </article>
   );

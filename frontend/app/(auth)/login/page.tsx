@@ -8,7 +8,7 @@ import { redirectIfLoggedIn } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Log in",
-  description: "Log in to WebNEWS to publish stories, follow publishers and like what matters.",
+  description: "Log in to WebNewsX to publish stories, follow publishers and like what matters.",
   robots: { index: false },
 };
 
@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: PageSe
   return (
     <AuthShell
       panel={{
-        kicker: "Live on WebNEWS",
+        kicker: "Live on WebNewsX",
         title: (
           <>
             The wire

@@ -1,5 +1,5 @@
 /**
- * WebNEWS shared contract — SOURCE OF TRUTH.
+ * WebNewsX shared contract — SOURCE OF TRUTH.
  *
  * Copied verbatim into backend/src/shared/contracts.ts and frontend/lib/shared/contracts.ts
  * by `node scripts/sync-shared.mjs` so each app deploys on its own. Edit ONLY this file,
@@ -274,7 +274,7 @@ export type ViewerUser = {
   unreadMessages?: number;
   /** "group" = a group account (owner 2026-10-23); always sent by the API. */
   accountType?: AccountType;
-  /** Stories live on WebNEWS (owner 2026-10-23: "post your first article" popup until the first one). */
+  /** Stories live on WebNewsX (owner 2026-10-23: "post your first article" popup until the first one). */
   publishedStories?: number;
   /**
    * Posting as a group account: then this whole object is the GROUP, and `actingAs` says who is really signed in and
@@ -420,7 +420,7 @@ export function categoryPath(category: Category, district?: string | null): stri
 /* ─────────────────────────── Poster templates (owner 2026-09-26) ─────────────────────────── */
 
 /**
- * How a story looks in the reel: a 9:16 poster = WebNEWS logo + the story's image + its title (+ a small author line).
+ * How a story looks in the reel: a 9:16 poster = WebNewsX logo + the story's image + its title (+ a small author line).
  * The reporter picks one when publishing; stories without one use DEFAULT_POSTER_TEMPLATE. Designs live in
  * frontend/components/poster/ (the owner will refine them).
  */
@@ -966,7 +966,7 @@ export type TrendingHeadline = Omit<Headline, "author"> & {
   likeCount: number;
   shareCount: number;
   score: number;
-  /** The newest story on WebNEWS (owner 2026-10-14): always #1 in Trending, with a red border. Always sent by the API. */
+  /** The newest story on WebNewsX (owner 2026-10-14): always #1 in Trending, with a red border. Always sent by the API. */
   newest?: boolean;
 };
 
@@ -986,7 +986,7 @@ export type ApiErrorBody = { error: { code: string; message: string; fields?: Re
 export type FeedTab = "foryou" | "latest" | "following";
 export const FEED_TAB_VALUES = ["foryou", "latest", "following"] as const satisfies readonly FeedTab[];
 
-/** `dm` = sent to people / chats inside WebNEWS (recorded by `POST /api/messages/send`, not by the share endpoint). */
+/** `dm` = sent to people / chats inside WebNewsX (recorded by `POST /api/messages/send`, not by the share endpoint). */
 export type ShareChannel = "native" | "copy" | "whatsapp" | "x" | "facebook" | "instagram" | "linkedin" | "telegram" | "email" | "dm";
 
 /* ─────────────────────────── Realtime (SSE) ─────────────────────────── */
@@ -1451,7 +1451,7 @@ export function regionName(code: string | null | undefined): string | null {
   return INDIAN_REGIONS.find((r) => r.code === code)?.name ?? (code === "IN" ? "India" : null);
 }
 
-/** The WebNEWS Reporter Pledge (step 3 of the Press Pass application). */
+/** The WebNewsX Reporter Pledge (step 3 of the Press Pass application). */
 export const PRESS_PLEDGE: readonly string[] = [
   "I will verify what I report before I publish it.",
   "I will credit my sources and never pass off someone else's work as mine.",
@@ -1463,7 +1463,7 @@ export const PRESS_PLEDGE: readonly string[] = [
 /**
  * The government ID a reporter gives with their personal details (owner 2026-10-07: kept for legal matters, private to
  * them and the Editor Desk). Aadhaar (owner 2026-10-08) is one optional choice, and only its last 4 digits are ever
- * saved — masked as "XXXXXXXX1234" in the browser, so the full number never reaches WebNEWS (a private platform may not
+ * saved — masked as "XXXXXXXX1234" in the browser, so the full number never reaches WebNewsX (a private platform may not
  * keep Aadhaar numbers) — with the reporter's consent ticked in the form.
  */
 export const PRESS_ID_TYPE_VALUES = ["pan", "voter_id", "driving_licence", "passport", "aadhaar"] as const;
@@ -1950,6 +1950,12 @@ export type NewsroomSpotlight = {
   /** Spotlight is on sale (owner 2026-11-02: Editor Desk switch); false = "Coming soon", requests refused. */
   open: boolean;
 };
+/**
+ * `GET /api/app/android` (owner 2026-11-02): the newest Android build. The app compares its own build number: newer →
+ * "Update available" (no "Later" when its build is below `minBuild`). `latestBuild` null = no popup.
+ */
+export type AppVersionInfo = { latestBuild: number | null; latestVersion: string | null; minBuild: number | null; notes: string | null };
+
 /** `GET / PUT /api/admin/spotlight/status` — the Editor Desk's on/off switch for Spotlight. */
 export type SpotlightSales = { open: boolean };
 export const spotlightStatusSchema = z.object({ open: z.boolean() });
@@ -2466,7 +2472,7 @@ export type ConversationSummary = {
   image: string | null;
   /** Direct chats: the other person. */
   peer: ChatPerson | null;
-  /** Direct chats: when the other person last had WebNEWS open (online = within PRESENCE_ONLINE_MS); else null. */
+  /** Direct chats: when the other person last had WebNewsX open (online = within PRESENCE_ONLINE_MS); else null. */
   peerActiveAt: string | null;
   /** A few other members (stacked avatars for groups). */
   preview: ChatPerson[];
@@ -2493,7 +2499,7 @@ export type ConversationDetail = ConversationSummary & {
 };
 
 /**
- * Online in Messages (owner 2026-10-01): someone whose WebNEWS was open within this long. The server refreshes the
+ * Online in Messages (owner 2026-10-01): someone whose WebNewsX was open within this long. The server refreshes the
  * time every ~45 s while their live connection is open (backend lib/presence.ts), so this rides out one missed beat.
  */
 export const PRESENCE_ONLINE_MS = 2 * 60_000;
@@ -2527,7 +2533,7 @@ export type AccountSettings = {
   membershipPrice: number | null;
   /** Whether they may start a membership, and how far along each rule they are (owner 2026-10-16). Reporters only. */
   membershipEligibility: MembershipEligibility | null;
-  /** Settings → Notifications (owner 2026-10-02): push to this account's phones (the WebNEWS app). */
+  /** Settings → Notifications (owner 2026-10-02): push to this account's phones (the WebNewsX app). */
   pushNotifications: boolean;
 };
 
@@ -2553,7 +2559,7 @@ export type AiDescribeResult = { html: string };
  * "Like YouTube" channel membership: a reporter sets a monthly price, readers pay once (Razorpay) for
  * MEMBERSHIP_DAYS of that reporter's members-only stories, and renew by paying again (it adds to the days left).
  * No auto-debit: a reminder goes out before and when it ends (owner 2026-10-16).
- * WebNEWS keeps MEMBERSHIP_FEE_PERCENT of the price (taken from the reporter's share, never added on top).
+ * WebNewsX keeps MEMBERSHIP_FEE_PERCENT of the price (taken from the reporter's share, never added on top).
  */
 export const MEMBERSHIP_FEE_PERCENT = 8;
 export const MEMBERSHIP_DAYS = 30;
@@ -2584,7 +2590,7 @@ export const MEMBERSHIP_RULE_METRICS = {
   stories: { label: "Published stories in total", unit: "stories", hasValue: true },
   views: { label: "Total views on their stories", unit: "views", hasValue: true },
   likes: { label: "Total likes on their stories", unit: "likes", hasValue: true },
-  account_age_days: { label: "Days since joining WebNEWS", unit: "days", hasValue: true },
+  account_age_days: { label: "Days since joining WebNewsX", unit: "days", hasValue: true },
   no_warnings_days: { label: "No Editor Desk warning in the last … days", unit: "days", hasValue: true },
 } as const;
 export type MembershipRuleMetric = keyof typeof MEMBERSHIP_RULE_METRICS;
@@ -2633,7 +2639,7 @@ export function membershipRuleTitle(rule: Pick<MembershipRule, "metric" | "value
     case "likes":
       return `Get ${n} likes on your stories`;
     case "account_age_days":
-      return `Be on WebNEWS for ${n} days`;
+      return `Be on WebNewsX for ${n} days`;
     case "no_warnings_days":
       return `No Editor Desk warning in the last ${n} days`;
   }
@@ -2730,7 +2736,7 @@ export type MembershipEarnings = {
   feePaise: number;
   netPaise: number;
   paidOutPaise: number;
-  /** net − paid out: what WebNEWS still owes the reporter. */
+  /** net − paid out: what WebNewsX still owes the reporter. */
   balancePaise: number;
   /** The reporter's share per month, oldest first (last 6 months, IST). */
   monthly: { month: string; netPaise: number; payments: number }[];
@@ -2757,7 +2763,7 @@ export type AdminMembershipReporterRow = {
 export type AdminMemberships = {
   totals: {
     grossPaise: number;
-    /** WebNEWS's platform fee. */
+    /** WebNewsX's platform fee. */
     feePaise: number;
     netPaise: number;
     paidOutPaise: number;
@@ -2877,7 +2883,7 @@ const chatImage = z
   .string()
   .trim()
   .max(LIMITS.linkMax)
-  .refine((value) => value.startsWith("/media/") || /^https?:\/\//.test(value), "Pick a photo uploaded to WebNEWS")
+  .refine((value) => value.startsWith("/media/") || /^https?:\/\//.test(value), "Pick a photo uploaded to WebNewsX")
   .nullable()
   .optional();
 
@@ -3032,11 +3038,11 @@ export type UpdateSocialInput = z.input<typeof updateSocialSchema>;
  * Virtual press meets. Any member books one from their profile: a date + time on the calendar (an organizer's own press
  * meets can't overlap; others' don't block a time — owner 2026-10-02; 9 AM–9 PM IST, 30 / 60 / 90 minutes), then Verified reporters (each shows the price
  * they set in Settings), then the details. Reporters get the invitation in the bell and in their profile's "Press meet"
- * tab, accept or decline, are reminded on the day, and join the room the organizer starts — the built-in WebNEWS room
- * (organizer on camera + mic, reporters mic only; reporters can record it, replayed only inside WebNEWS) or a Google
+ * tab, accept or decline, are reminded on the day, and join the room the organizer starts — the built-in WebNewsX room
+ * (organizer on camera + mic, reporters mic only; reporters can record it, replayed only inside WebNewsX) or a Google
  * Meet link. Afterwards each reporter writes their story from the press meet page and sends it to the organizer; it
  * stays unpublished until the organizer verifies it — which publishes it, locked from then on (owner 2026-10-07) — or
- * asks for changes. The organizer then releases the reporter's fee (paid outside WebNEWS for now, recorded here), and
+ * asks for changes. The organizer then releases the reporter's fee (paid outside WebNewsX for now, recorded here), and
  * the reporter confirms they received it.
  */
 export const PRESS_MEET = {
@@ -3078,7 +3084,7 @@ export type PressMeetDuration = (typeof PRESS_MEET_DURATIONS)[number];
 
 export const PRESS_MEET_PLATFORM_VALUES = ["webnews", "google_meet"] as const;
 export type PressMeetPlatform = (typeof PRESS_MEET_PLATFORM_VALUES)[number];
-export const PRESS_MEET_PLATFORM_LABELS: Record<PressMeetPlatform, string> = { webnews: "WebNEWS Live", google_meet: "Google Meet" };
+export const PRESS_MEET_PLATFORM_LABELS: Record<PressMeetPlatform, string> = { webnews: "WebNewsX Live", google_meet: "Google Meet" };
 
 /**
  * Who can join (owner 2026-10-07): `invited` — the reporters the organizer chose; `public` — any reporter, first come
@@ -3623,7 +3629,7 @@ export type PersonBehaviour = {
 export const followNotifySchema = z.object({ notify: z.boolean() });
 export type FollowNotify = { following: boolean; notify: boolean };
 
-/** `GET /api/admin/live` — who's on WebNEWS right now (owner 2026-10-16): anyone active in the last LIVE_WINDOW_MINUTES. */
+/** `GET /api/admin/live` — who's on WebNewsX right now (owner 2026-10-16): anyone active in the last LIVE_WINDOW_MINUTES. */
 export const LIVE_WINDOW_MINUTES = 5;
 export type LiveVisitors = {
   total: number;
@@ -3768,7 +3774,7 @@ export const groupMemberRoleSchema = z.object({ role: z.enum(["editor", "writer"
 
 export const groupDecisionSchema = z.object({ note: z.string().trim().max(500).optional() });
 
-/* ─────────────────────────── Leaving WebNEWS (owner 2026-10-23) ─────────────────────────── */
+/* ─────────────────────────── Leaving WebNewsX (owner 2026-10-23) ─────────────────────────── */
 
 /**
  * Deactivate = the account is hidden (profile, stories, comments — like a suspension) until its owner logs in again,
@@ -3783,8 +3789,8 @@ export const leaveAccountSchema = z.object({ confirm: z.string().trim().min(1).m
 /*
  * A Press Pass holder with a verified domain runs a news site on it in the webnews.in layout: their logo, title and
  * tagline, only their stories (or their group's), the webnews.in ad positions managed from `<domain>/admin` with a
- * separate email + password. A story opens on WebNEWS itself (`/pub/<domain>/article/<slug>`) in the same layout, so
- * its views count on WebNEWS.
+ * separate email + password. A story opens on WebNewsX itself (`/pub/<domain>/article/<slug>`) in the same layout, so
+ * its views count on WebNewsX.
  */
 
 export const SITE_LIMITS = {
@@ -3820,7 +3826,7 @@ export const SITE_AD_ROTATE_MS = 5000;
 /** Where a site's domain stands on Vercel: not added yet / DNS not pointed yet / live. */
 export type SiteConnection = "not_connected" | "pending_dns" | "live";
 
-/** The records the publisher adds so the domain reaches WebNEWS (A for a root domain, CNAME for a subdomain). */
+/** The records the publisher adds so the domain reaches WebNewsX (A for a root domain, CNAME for a subdomain). */
 export type SiteDnsRecord = { type: "A" | "CNAME" | "TXT"; host: string; value: string };
 
 /** One ad as the site's admin manages it. */
@@ -3850,7 +3856,7 @@ export type PublicSite = {
   contactEmail: string | null;
   contactPhone: string | null;
   address: string | null;
-  /** Where its stories open: `<WebNEWS>/pub/<domain>/article/<slug>`. */
+  /** Where its stories open: `<WebNewsX>/pub/<domain>/article/<slug>`. */
   articleBase: string;
   /** The owner's default interface language (the visitor's toggle overrides it). */
   language: SiteLanguage;

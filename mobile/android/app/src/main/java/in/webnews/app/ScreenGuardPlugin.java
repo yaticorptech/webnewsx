@@ -7,7 +7,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
- * Press meets (owner 2026-10-01): recordings replay only inside WebNEWS, so while the site asks for it (the room and
+ * Press meets (owner 2026-10-01): recordings replay only inside WebNewsX, so while the site asks for it (the room and
  * the recording player) the app's window is FLAG_SECURE — no screenshots, no screen recording, blank in the recents
  * list. The site calls Capacitor.Plugins.ScreenGuard.enable() / disable() (frontend lib/native-app.ts).
  */

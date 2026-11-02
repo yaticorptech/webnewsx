@@ -12,7 +12,7 @@ export function OnboardingHeader() {
     <header className="relative border-b border-border bg-surface">
       <span aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-brand" />
       <div className="mx-auto flex h-16 max-w-275 items-center gap-3 px-4 sm:px-6 md:h-18">
-        <Link href="/" aria-label="WebNEWS home" className="rounded-md outline-offset-4">
+        <Link href="/" aria-label="WebNewsX home" className="rounded-md outline-offset-4">
           <BrandLockup size="xs" align="start" priority />
         </Link>
         <div className="ml-auto flex items-center gap-3 sm:gap-4">

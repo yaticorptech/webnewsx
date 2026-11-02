@@ -92,7 +92,7 @@ export async function getRoom(meetId: string, viewer: Viewer): Promise<PressMeet
   return { meet, iceServers: iceServers(), peers: await listPeers(db, meet.id) };
 }
 
-/** Enters the room (a live WebNEWS Live press meet). Returns the room with everyone already in it. */
+/** Enters the room (a live WebNewsX Live press meet). Returns the room with everyone already in it. */
 export async function joinRoom(
   meetId: string,
   viewer: Viewer,

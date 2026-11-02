@@ -4,7 +4,7 @@ import { canPublish } from "../lib/roles.js";
 import type { AppEnv, Viewer } from "../types.js";
 
 export const pressPassRequired = () =>
-  new ApiError(403, "press_pass_required", "Get your Press Pass to publish stories on WebNEWS");
+  new ApiError(403, "press_pass_required", "Get your Press Pass to publish stories on WebNewsX");
 
 /** Rejects signed-out requests with 401. */
 export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {

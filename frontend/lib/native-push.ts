@@ -5,7 +5,7 @@ import { api } from "./api";
 import { nativePush, type PushPermission, type PushNotificationsPlugin } from "./native-app";
 
 /*
- * Phone push notifications in the WebNEWS app (owner 2026-10-02): everything the bell shows — new followers, stories,
+ * Phone push notifications in the WebNewsX app (owner 2026-10-02): everything the bell shows — new followers, stories,
  * likes, comments, messages, press meets (sent by the backend, queries/push.ts). When the app opens it asks for the phone's
  * notification permission (the system popup), gets this phone's token and registers it for whoever is logged in;
  * tapping a notification opens its page. Settings → Notifications turns them off for the account. No-op on the
@@ -63,7 +63,7 @@ async function start(): Promise<void> {
   if (!push) return;
   const { plugin } = push;
   await plugin
-    .createChannel({ id: CHANNEL_ID, name: "WebNEWS", description: "Followers, stories, likes, comments, messages and press meets", importance: 4, visibility: 1 })
+    .createChannel({ id: CHANNEL_ID, name: "WebNewsX", description: "Followers, stories, likes, comments, messages and press meets", importance: 4, visibility: 1 })
     .catch(() => {});
   await plugin.addListener("registration", ({ value }) => {
     token = value;

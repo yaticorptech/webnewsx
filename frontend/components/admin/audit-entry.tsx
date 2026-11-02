@@ -250,7 +250,7 @@ export function AuditLine({ entry, compact = false, onTarget }: { entry: AuditEn
       <span className="font-bold text-ink">{entry.actor.name}</span>
     )
   ) : automatic ? (
-    <span className="font-bold text-ink">WebNEWS</span>
+    <span className="font-bold text-ink">WebNewsX</span>
   ) : (
     // The acting admin's account no longer exists (e.g. removed test accounts).
     <span className="font-bold text-muted">A deleted account</span>

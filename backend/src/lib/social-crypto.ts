@@ -73,7 +73,7 @@ export function readOAuthState(state: string | undefined, provider: SocialProvid
 
 /**
  * A one-time pass (5 minutes) for the phone app: Meta doesn't allow its login inside apps' web views, so the app opens
- * Connect in the phone's browser — which isn't logged in to WebNEWS — with this pass naming the reporter.
+ * Connect in the phone's browser — which isn't logged in to WebNewsX — with this pass naming the reporter.
  */
 export function makeConnectTicket(userId: string, provider: SocialProvider): string {
   return seal(["t", userId, provider, Date.now() + TICKET_TTL_MS]);

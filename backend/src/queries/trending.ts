@@ -25,7 +25,7 @@ type TrendingRow = {
 };
 
 /**
- * Owner 2026-10-14: #1 is always the newest story on WebNEWS (marked `newest`, red border); the rest are ranked by
+ * Owner 2026-10-14: #1 is always the newest story on WebNewsX (marked `newest`, red border); the rest are ranked by
  * readers (views) in the last 24h, then likes, then their total views and likes.
  *
  * "Trending now" (SPEC §3.4b): engagement that happened in the last 24h — views + 4·likes + 6·shares

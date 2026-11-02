@@ -19,7 +19,7 @@ export const ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED";
 
 export function suspendedMessage(reason: string | null): string {
   const why = reason ? ` Reason: ${reason}` : "";
-  return `This account has been suspended by the WebNEWS Editor Desk.${why} Contact the WebNEWS team if you think this is a mistake.`;
+  return `This account has been suspended by the WebNewsX Editor Desk.${why} Contact the WebNewsX team if you think this is a mistake.`;
 }
 
 /**
@@ -102,7 +102,7 @@ const NEW_PASSWORD_FIELDS: Record<string, string> = { "/sign-up/email": "passwor
 /** Owner 2026-10-22: readers sign up and log in with their WhatsApp number or a social account; email + password is the Editor Desk's. */
 const EMAIL_SIGN_UP_DISABLED = "EMAIL_SIGN_UP_DISABLED";
 const EMAIL_SIGN_IN_DISABLED = "EMAIL_SIGN_IN_DISABLED";
-const EMAIL_ONLY_FOR_DESK_MESSAGE = "WebNEWS signs you in with your WhatsApp number or a social account. Email and password are for the Editor Desk.";
+const EMAIL_ONLY_FOR_DESK_MESSAGE = "WebNewsX signs you in with your WhatsApp number or a social account. Email and password are for the Editor Desk.";
 
 const beforeAuthRequest = createAuthMiddleware(async (ctx) => {
   // Email sign-up is for Editor Desk addresses only (the test suite's fixtures still use it).
@@ -133,7 +133,7 @@ const beforeAuthRequest = createAuthMiddleware(async (ctx) => {
     .where(sql`lower(${userTable.email}) = ${email}`)
     .limit(1);
   if (!record) {
-    throw APIError.from("UNAUTHORIZED", { code: "ACCOUNT_NOT_FOUND", message: "There's no WebNEWS account with this email." });
+    throw APIError.from("UNAUTHORIZED", { code: "ACCOUNT_NOT_FOUND", message: "There's no WebNewsX account with this email." });
   }
   if (!(await hasPasswordLogin(db, record.id))) {
     throw APIError.from("UNAUTHORIZED", {
@@ -166,7 +166,7 @@ export const CLIENT_IP_HEADER = "x-webnews-client-ip";
  * Google sign-ups get `name` + `image` from their Google profile and still have to onboard.
  */
 export const auth = betterAuth({
-  appName: "WebNEWS",
+  appName: "WebNewsX",
   baseURL: env.FRONTEND_URL,
   basePath: "/api/auth",
   secret: env.BETTER_AUTH_SECRET,

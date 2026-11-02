@@ -39,7 +39,7 @@ export function buildStoryPrompt({ topic, points, language }: { topic: string; p
   const subLists = CATEGORY_VALUES.map((c) =>
     c === "karnataka" ? `   - Karnataka: the district — one of ${KARNATAKA_DISTRICTS.join(", ")}` : `   - ${CATEGORY_LABELS[c]}: ${SUBCATEGORIES[c].join(", ")}`,
   ).join("\n");
-  return `You are an experienced news reporter and editor writing for WebNEWS, an Indian news platform.
+  return `You are an experienced news reporter and editor writing for WebNewsX, an Indian news platform.
 
 Write a news story in ${lang} from the title and facts below.
 Use ONLY these facts. Do not invent names, numbers, quotes, dates or places. If a detail is not given, leave it out.
@@ -109,7 +109,7 @@ export function fitBlurb(text: string): string {
 /**
  * Reads the AI's answer to buildStoryPrompt (owner 2026-10-16: paste the whole answer, the page fills itself): finds each
  * labelled part — "1. CATEGORY", "**HEADLINE:**", "Headline -" … — and matches category, sub category / district and
- * language to WebNEWS's own lists. Tolerant of markdown, numbering and answers on the label's line.
+ * language to WebNewsX's own lists. Tolerant of markdown, numbering and answers on the label's line.
  */
 export function parseStoryAnswer(answer: string): FilledStory {
   const parts: Partial<Record<Label, string>> = {};

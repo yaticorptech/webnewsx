@@ -32,7 +32,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- WebNEWS links (profile QR codes, shared stories) open in the app when it's installed; otherwise the
+            <!-- WebNewsX links (profile QR codes, shared stories) open in the app when it's installed; otherwise the
                  phone's browser opens them as usual. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />

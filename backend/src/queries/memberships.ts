@@ -29,7 +29,7 @@ import { findProfileUser } from "./users.js";
 
 /*
  * Premium membership (owner 2026-10-14, "like YouTube"): readers pay a reporter's monthly price through Razorpay and
- * read that reporter's members-only stories for MEMBERSHIP_DAYS; paying again adds the days on. WebNEWS keeps
+ * read that reporter's members-only stories for MEMBERSHIP_DAYS; paying again adds the days on. WebNewsX keeps
  * MEMBERSHIP_FEE_PERCENT of the price. Without Razorpay keys, development uses the `test` provider (no money moves);
  * production refuses until the keys are set.
  */

@@ -36,7 +36,7 @@ export function PressPass({ username, name, bio, image, className }: PressPassPr
           <SpeedLines className="text-[0.8rem]" />
           Press pass
         </span>
-        <Logo height={13} alt="WebNEWS" className="relative" />
+        <Logo height={13} alt="WebNewsX" className="relative" />
       </div>
 
       <div className="relative px-5 pb-5 pt-6">

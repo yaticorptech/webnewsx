@@ -46,7 +46,7 @@ export function BestTimes({ data, dimmed }: { data: NewsroomBestTimes; dimmed?: 
           <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink-2">
             {data.basis === "you"
               ? `Based on ${plural(data.sample)} with your stories. Publish shortly before your readers peak.`
-              : "Based on readers across WebNEWS until your own stories have 30 or more engagements — then it's all about your audience."}
+              : "Based on readers across WebNewsX until your own stories have 30 or more engagements — then it's all about your audience."}
           </p>
         </div>
 

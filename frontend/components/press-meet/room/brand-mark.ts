@@ -1,6 +1,6 @@
 /*
- * The WebNEWS mark drawn onto video (owner 2026-10-01): top right of the organizer's camera, and of reporters'
- * recordings — the red bars icon and the wordmark (white "Web", red "NEWS") on a dark see-through pill.
+ * The WebNewsX mark drawn onto video (owner 2026-10-01): top right of the organizer's camera, and of reporters'
+ * recordings — the X icon (owner 2026-11-02, /brand/icon.svg is now the X) and the wordmark on a dark see-through pill.
  */
 
 const ICON_SRC = "/brand/icon.svg";

@@ -270,7 +270,7 @@ export function pressMeetRoutes({ limiter }: RouteDeps) {
 
   // Recordings stay on the reporter's own device (owner 2026-10-02: no copy on the server, frontend
   // lib/local-recordings.ts) — new recordings and their pieces are refused here, so nothing can be stored.
-  const deviceOnly = () => new ApiError(410, "recordings_on_device", "Recordings are saved on your device now, not on WebNEWS.");
+  const deviceOnly = () => new ApiError(410, "recordings_on_device", "Recordings are saved on your device now, not on WebNewsX.");
   app.post("/:id/recordings", () => {
     throw deviceOnly();
   });
@@ -304,7 +304,7 @@ export function pressMeetRoutes({ limiter }: RouteDeps) {
     return c.json({ ok: true });
   });
 
-  // GET /api/press-meets/:id/recordings/:rid/video — the MP4 for WebNEWS's own player (inline, ranges, never cached).
+  // GET /api/press-meets/:id/recordings/:rid/video — the MP4 for WebNewsX's own player (inline, ranges, never cached).
   app.get("/:id/recordings/:rid/video", async (c) => {
     const path = await readableRecording(assertMeetId(c.req.param("id")), c.req.param("rid"), mustViewer(c));
     let size: number;

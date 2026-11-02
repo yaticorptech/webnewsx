@@ -437,7 +437,7 @@ export const api = {
   /** PUT /api/me/push-notifications — Settings → Notifications: pushes to this account's phones on / off. */
   setPushNotifications: (enabled: boolean) =>
     request<{ pushNotifications: boolean }>("/api/me/push-notifications", { method: "PUT", body: { enabled } }),
-  /** The WebNEWS app's push token for this phone (lib/native-push.ts): register after login, remove on logout. */
+  /** The WebNewsX app's push token for this phone (lib/native-push.ts): register after login, remove on logout. */
   pushDevices: {
     register: (token: string, platform: "android" | "ios") =>
       request<void>("/api/me/push-devices", { method: "POST", body: { token, platform } }),
@@ -909,7 +909,7 @@ export const api = {
     membershipRules: (signal?: AbortSignal) => request<AdminMembershipRules>("/api/admin/membership-rules", { signal }),
     setMembershipRules: (rules: MembershipRule[]) =>
       request<AdminMembershipRules>("/api/admin/membership-rules", { method: "PUT", body: { rules } }),
-    /** GET /api/admin/live — who's on WebNEWS right now (owner 2026-10-16). */
+    /** GET /api/admin/live — who's on WebNewsX right now (owner 2026-10-16). */
     live: (signal?: AbortSignal) => request<LiveVisitors>("/api/admin/live", { signal }),
     /** GET /api/admin/behaviour?days= — Desk → Behaviour (owner 2026-10-16). */
     behaviour: (days: number, signal?: AbortSignal) => request<BehaviourOverview>(`/api/admin/behaviour${query({ days })}`, { signal }),

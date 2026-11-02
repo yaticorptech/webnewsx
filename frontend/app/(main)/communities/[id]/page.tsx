@@ -4,7 +4,7 @@ import { CommunityPage } from "@/components/communities/community-page";
 
 export const metadata: Metadata = {
   title: "Community",
-  description: "A WebNEWS community: its chat, members and shared stories.",
+  description: "A WebNewsX community: its chat, members and shared stories.",
   robots: { index: false, follow: true },
 };
 

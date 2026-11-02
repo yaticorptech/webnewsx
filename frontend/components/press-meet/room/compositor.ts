@@ -4,7 +4,7 @@ import { startTicker } from "./ticker";
 const FPS = 24;
 
 /**
- * The organizer's outgoing picture (owner 2026-10-01): their camera with the WebNEWS mark at the top right, drawn on a
+ * The organizer's outgoing picture (owner 2026-10-01): their camera with the WebNewsX mark at the top right, drawn on a
  * canvas whose stream is what reporters receive — so the mark is part of the video itself (and of every recording).
  * Camera off shows their photo card instead; switching cameras swaps the source without renegotiating. The canvas
  * follows the camera's orientation (portrait on a phone held upright).

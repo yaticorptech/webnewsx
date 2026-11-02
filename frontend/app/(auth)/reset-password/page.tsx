@@ -5,7 +5,7 @@ import { ExpiredLink, ResetPasswordForm } from "@/components/auth/reset-password
 
 export const metadata: Metadata = {
   title: "Choose a new password",
-  description: "Set a new password for your WebNEWS account.",
+  description: "Set a new password for your WebNewsX account.",
   robots: { index: false },
 };
 

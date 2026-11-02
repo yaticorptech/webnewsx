@@ -345,7 +345,7 @@ export async function getPersonBehaviour(username: string): Promise<PersonBehavi
 
 /* ─────────────── Live now ─────────────── */
 
-/** Who's on WebNEWS right now: anyone with activity (a page opened, a tap) in the last LIVE_WINDOW_MINUTES. */
+/** Who's on WebNewsX right now: anyone with activity (a page opened, a tap) in the last LIVE_WINDOW_MINUTES. */
 export async function getLiveVisitors(): Promise<LiveVisitors> {
   const since = sql`now() - make_interval(mins => ${LIVE_WINDOW_MINUTES})`;
   const [totals] = [

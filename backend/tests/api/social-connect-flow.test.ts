@@ -28,7 +28,7 @@ describe.skipIf(!env.facebookEnabled || !env.instagramEnabled)("Connect on the w
       expect(reporter.cookie).toMatch(/wn_social=/);
       const callback = `/api/social/${provider}/callback?state=${encodeURIComponent(state)}&code=abc`;
 
-      // Another browser — same WebNEWS login, but not the one that started it (no nonce): refused before Meta is asked.
+      // Another browser — same WebNewsX login, but not the one that started it (no nonce): refused before Meta is asked.
       const session = reporter.cookie
         .split(/;\s*/)
         .filter((pair) => !pair.startsWith("wn_social="))

@@ -35,7 +35,7 @@ export function BrandSection() {
           <TaglineText className="text-[0.625rem]" />
         </Demo>
         <Demo label="App icon" className="flex h-32 items-center justify-center gap-4">
-          <img src="/brand/icon.svg" alt="WebNEWS icon" width={56} height={56} />
+          <img src="/brand/icon.svg" alt="WebNewsX icon" width={56} height={56} />
           <img src="/icons/maskable-512.png" alt="Maskable icon" width={56} height={56} className="rounded-xl" />
         </Demo>
         <Demo label="Pulse dot · heartbeat" className="flex h-32 items-center justify-center gap-5">

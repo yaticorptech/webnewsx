@@ -18,7 +18,7 @@ export type SocialLinksProps = {
 };
 
 /**
- * WebNEWS on social media (SPEC §3.10): outlined rounded-square buttons with a crimson
+ * WebNewsX on social media (SPEC §3.10): outlined rounded-square buttons with a crimson
  * hover/focus state, opening in a new tab. Data comes from COMPANY.social.
  */
 export function SocialLinks({ size = "md", className }: SocialLinksProps) {

@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Check, Info, TriangleAlert, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /* ─────────────────────────── Store ─────────────────────────── */
@@ -129,43 +129,27 @@ export function Toaster() {
 }
 
 /**
- * The card's colours by variant (owner 2026-10-12, from their reference): one look for every toast — a pale tinted
- * card with a border, a filled warning triangle, dark title, grey description and a solid pill button on the right.
- * Lime for everything except errors and warnings (e.g. logout), which are red.
+ * The card's look (owner 2026-11-02: "latest trending UI"; replaces the lime / red tinted pills): one calm white card
+ * with a soft shadow; each kind has its own icon in a tinted circle and a thin progress line along the bottom showing
+ * when it closes (paused while hovered).
  */
-type Tone = { card: string; icon: string; text: string; sub: string; action: string; close: string };
-const LIME: Tone = {
-  card: "border-[#8cc63f] bg-[#eefbcb] shadow-[0_10px_30px_-12px_rgb(60_90_20/0.35)]",
-  icon: "text-[#8cc63f]",
-  text: "text-[#2f362c]",
-  sub: "text-[#5d6659]",
-  action: "bg-[#8cc63f] text-white hover:bg-[#7bb32f]",
-  close: "text-[#2f362c] hover:bg-black/5",
+type Tone = { badge: string; bar: string; icon: ReactNode };
+const TONES: Record<ToastVariant, Tone> = {
+  success: { badge: "bg-success-soft text-success-strong", bar: "bg-success", icon: <Check strokeWidth={3} /> },
+  default: { badge: "bg-surface-2 text-ink-2", bar: "bg-ink-2/40", icon: <Info strokeWidth={2.4} /> },
+  live: {
+    badge: "bg-tint text-brand",
+    bar: "bg-brand",
+    icon: (
+      <span className="relative flex size-2.5">
+        <span className="absolute inset-0 animate-ping rounded-full bg-brand/60" />
+        <span className="relative size-2.5 rounded-full bg-brand" />
+      </span>
+    ),
+  },
+  warning: { badge: "bg-tint text-brand", bar: "bg-brand", icon: <Info strokeWidth={2.4} /> },
+  error: { badge: "bg-brand text-white", bar: "bg-brand", icon: <TriangleAlert strokeWidth={2.4} /> },
 };
-const RED: Tone = {
-  card: "border-[#e5534b] bg-[#fde8e6] shadow-[0_10px_30px_-12px_rgb(120_30_20/0.35)]",
-  icon: "text-[#e5534b]",
-  text: "text-[#3a2a29]",
-  sub: "text-[#6b5856]",
-  action: "bg-[#e5534b] text-white hover:bg-[#d2423a]",
-  close: "text-[#3a2a29] hover:bg-black/5",
-};
-const TONES: Record<ToastVariant, Tone> = { success: LIME, default: LIME, live: LIME, error: RED, warning: RED };
-
-function ToastIcon({ variant }: { variant: ToastVariant }) {
-  return (
-    <span aria-hidden className={cn("flex shrink-0 [&_svg]:size-6", TONES[variant].icon)}>
-      {/* Filled rounded triangle with a white "!". */}
-      <svg viewBox="0 0 24 24">
-        <path
-          fill="currentColor"
-          d="M10.27 3.5a2 2 0 0 1 3.46 0l8.2 14.2A2 2 0 0 1 20.2 20.7H3.8a2 2 0 0 1-1.73-3L10.27 3.5Z"
-        />
-        <path stroke="white" strokeWidth={2.4} strokeLinecap="round" d="M12 9v4.5M12 17.2v.05" />
-      </svg>
-    </span>
-  );
-}
 
 function ToastCard({ toast: item }: { toast: ToastRecord }) {
   const router = useRouter();
@@ -185,65 +169,64 @@ function ToastCard({ toast: item }: { toast: ToastRecord }) {
 
   const isError = item.variant === "error";
   const tone = TONES[item.variant];
-  // A message with a description AND a button (owner 2026-10-15: the text was squeezed into a thin column beside the
-  // button): the button goes under the text, everything top-aligned, ✕ in the corner.
-  const stacked = Boolean(item.description && item.action);
-  const actionButton = item.action && (
-    <button
-      type="button"
-      className={cn("inline-flex h-9 shrink-0 items-center rounded-full px-4 text-[0.875rem] font-bold transition-colors", tone.action)}
-      onClick={() => {
-        const href = item.action?.href;
-        item.action?.onClick?.();
-        if (href) router.push(href);
-        dismiss(item.id);
-      }}
-    >
-      {item.action.label}
-    </button>
-  );
 
   return (
     <motion.div
       layout
       role={isError ? "alert" : "status"}
       aria-live={isError ? "assertive" : "polite"}
-      initial={{ opacity: 0, y: 16, scale: 0.96 }}
+      initial={{ opacity: 0, y: 14, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 40, transition: { duration: 0.18 } }}
+      exit={{ opacity: 0, x: 32, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 420, damping: 34 }}
       onPointerEnter={() => setPaused(true)}
       onPointerLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      // Compact (owner 2026-10-08: not full width on phones): as wide as its text, at most 22rem.
       className={cn(
-        "pointer-events-auto relative flex max-w-[min(24rem,calc(100vw-1.5rem))] gap-3 overflow-hidden rounded-[1.75rem] border-2 py-3 pl-4 pr-2",
-        stacked ? "w-[min(24rem,calc(100vw-1.5rem))] items-start py-4" : "w-fit items-center",
-        tone.card,
+        // Compact (owner 2026-10-08 / 2026-11-02: not full width on phones): as wide as its text, at most 23rem.
+        "pointer-events-auto relative flex w-fit max-w-[min(23rem,calc(100vw-2.5rem))] items-start gap-3 overflow-hidden rounded-2xl",
+        "border border-border bg-surface/95 py-3.5 pl-3.5 pr-2 backdrop-blur-md",
+        "shadow-[0_1px_2px_rgb(16_18_24/0.06),0_18px_44px_-14px_rgb(16_18_24/0.28)]",
       )}
     >
-      <span className={cn("flex", stacked && "pt-0.5")}>
-        <ToastIcon variant={item.variant} />
+      <span aria-hidden className={cn("mt-px flex size-9 shrink-0 items-center justify-center rounded-full [&_svg]:size-4.5", tone.badge)}>
+        {tone.icon}
       </span>
-      <div className="min-w-0 flex-1">
-        <p className={cn("text-[0.9375rem] font-bold leading-snug", tone.text)}>{item.title}</p>
-        {item.description && <p className={cn("mt-1 text-[0.8125rem] leading-snug", tone.sub)}>{item.description}</p>}
-        {stacked && <div className="mt-3">{actionButton}</div>}
+      <div className="min-w-0 flex-1 py-0.5">
+        <p className="text-[0.9375rem] font-bold leading-snug text-ink">{item.title}</p>
+        {item.description && <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted">{item.description}</p>}
+        {item.action && (
+          <button
+            type="button"
+            className="mt-2 inline-flex h-8 items-center rounded-full bg-ink px-3.5 text-[0.8125rem] font-bold text-white transition-colors hover:bg-ink-2"
+            onClick={() => {
+              const href = item.action?.href;
+              item.action?.onClick?.();
+              if (href) router.push(href);
+              dismiss(item.id);
+            }}
+          >
+            {item.action.label}
+          </button>
+        )}
       </div>
-      {!stacked && actionButton}
       <button
         type="button"
         aria-label="Dismiss notification"
         onClick={() => dismiss(item.id)}
-        className={cn(
-          "inline-flex size-8 shrink-0 items-center justify-center rounded-full opacity-80 transition-colors hover:opacity-100",
-          stacked && "-mt-1",
-          tone.close,
-        )}
+        className="-mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
       >
-        <X aria-hidden className="size-4.5" strokeWidth={2.25} />
+        <X aria-hidden className="size-4" strokeWidth={2.25} />
       </button>
+      {/* Time left before it closes: a thin line that empties (stops while hovered). */}
+      {item.duration > 0 && (
+        <span
+          aria-hidden
+          className={cn("absolute bottom-0 left-0 h-0.75 w-full origin-left animate-toast-time", tone.bar)}
+          style={{ animationDuration: `${item.duration}ms`, animationPlayState: paused ? "paused" : "running" }}
+        />
+      )}
     </motion.div>
   );
 }

@@ -151,7 +151,7 @@ export function PeopleView({ initialFilters, initial }: { initialFilters: People
     <div className="animate-fade-up flex flex-col gap-8">
       <SectionHeader
         title="Readers"
-        description="Readers on WebNEWS (reporters are under Reporters). Change roles, and suspend accounts that break the rules — suspended people are signed out and can't sign in."
+        description="Readers on WebNewsX (reporters are under Reporters). Change roles, and suspend accounts that break the rules — suspended people are signed out and can't sign in."
       />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
 <Segmented

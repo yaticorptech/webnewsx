@@ -4,12 +4,11 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { hasShareToApp, isNativeApp, nativeSharePlugin, shareFileUri, shareToApp } from "@/lib/native-app";
-import { SPEED_BARS, SPEED_VIEWBOX } from "@/components/brand/speed-lines";
 import { cn } from "@/lib/utils";
 
 /*
  * Profile QR (owner 2026-10-14): sharing a profile shows its QR code next to the person in the Dispatch sheet, and
- * sharing OUTSIDE WebNEWS sends a QR card image (QR + name + handle + link) instead of a bare link. Inside WebNEWS
+ * sharing OUTSIDE WebNewsX sends a QR card image (QR + name + handle + link) instead of a bare link. Inside WebNewsX
  * (chats) the profile is still sent as before.
  */
 
@@ -48,7 +47,7 @@ export function useProfileQr(username: string): string | null {
 }
 
 /**
- * The profile QR with WebNEWS's three bars in a white square at its centre (owner 2026-10-15). Drawn at error
+ * The profile QR with WebNewsX's three bars in a white square at its centre (owner 2026-10-15). Drawn at error
  * correction "H" (30% may be covered), so the logo never stops it scanning.
  */
 export function ProfileQr({ username, size = 56, className }: { username: string; size?: number; className?: string }) {
@@ -62,17 +61,13 @@ export function ProfileQr({ username, size = 56, className }: { username: string
       {src ? (
         <>
           <img src={src} alt={`QR code for @${username}'s profile`} width={size - pad * 2} height={size - pad * 2} className="size-full" />
-          {/* The WebNEWS app logo (owner 2026-10-15): white bars on a red rounded square, a white gap around it. */}
+          {/* The app logo (owner 2026-11-02: the WebNewsX "X" on a white rounded square, like the app icon). */}
           <span
             aria-hidden
-            className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[24%] bg-brand ring-white"
+            className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[24%] bg-white ring-1 ring-border"
             style={{ width: size * 0.22, height: size * 0.22, boxShadow: `0 0 0 ${Math.max(2, size * 0.02)}px #fff` }}
           >
-            <svg viewBox={SPEED_VIEWBOX} className="w-[64%]">
-              {SPEED_BARS.map((points) => (
-                <polygon key={points} points={points} fill="#ffffff" />
-              ))}
-            </svg>
+            <img src={X_SRC} alt="" className="w-[78%]" />
           </span>
         </>
       ) : (
@@ -82,8 +77,8 @@ export function ProfileQr({ username, size = 56, className }: { username: string
   );
 }
 
-/** The WebNEWS app logo (white bars on a red rounded square, a white gap around it) at the centre of a canvas QR. */
-function drawQrLogo(ctx: CanvasRenderingContext2D, x: number, y: number, box: number) {
+/** The app logo (the WebNewsX "X" on a white rounded square, a thin grey edge) at the centre of a canvas QR. */
+function drawQrLogo(ctx: CanvasRenderingContext2D, x: number, y: number, box: number, mark: HTMLImageElement | null) {
   const tile = box * 0.22;
   const gap = box * 0.02;
   const tx = x + (box - tile) / 2;
@@ -92,22 +87,14 @@ function drawQrLogo(ctx: CanvasRenderingContext2D, x: number, y: number, box: nu
   ctx.beginPath();
   ctx.roundRect(tx - gap, ty - gap, tile + gap * 2, tile + gap * 2, (tile + gap * 2) * 0.24);
   ctx.fill();
-  ctx.fillStyle = BRAND;
+  ctx.strokeStyle = "#e3e5ea";
+  ctx.lineWidth = Math.max(1, box * 0.004);
   ctx.beginPath();
   ctx.roundRect(tx, ty, tile, tile, tile * 0.24);
-  ctx.fill();
-  // The bars' box is x 8–60, y 9–54 (SPEED_VIEWBOX): 64% of the tile wide, centred.
-  const w = tile * 0.64;
-  const scale = w / 52;
-  const ox = tx + (tile - w) / 2 - 8 * scale;
-  const oy = ty + (tile - 45 * scale) / 2 - 9 * scale;
-  ctx.fillStyle = "#ffffff";
-  for (const points of SPEED_BARS) {
-    const pts = points.split(" ").map((pair) => pair.split(",").map(Number) as [number, number]);
-    ctx.beginPath();
-    pts.forEach(([px, py], index) => (index === 0 ? ctx.moveTo(ox + px * scale, oy + py * scale) : ctx.lineTo(ox + px * scale, oy + py * scale)));
-    ctx.closePath();
-    ctx.fill();
+  ctx.stroke();
+  if (mark) {
+    const w = tile * 0.78;
+    ctx.drawImage(mark, tx + (tile - w) / 2, ty + (tile - w) / 2, w, w);
   }
 }
 
@@ -124,21 +111,34 @@ function loadImage(src: string | null | undefined): Promise<HTMLImageElement | n
   });
 }
 
-/** The three bars as a canvas path at (x, y), `w` wide. */
-function barsPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number) {
-  const scale = w / 52;
-  for (const points of SPEED_BARS) {
-    const pts = points.split(" ").map((pair) => pair.split(",").map(Number) as [number, number]);
-    ctx.beginPath();
-    pts.forEach(([px, py], index) => {
-      const cx = x + (px - 8) * scale;
-      const cy = y + (py - 9) * scale;
-      if (index === 0) ctx.moveTo(cx, cy);
-      else ctx.lineTo(cx, cy);
-    });
-    ctx.closePath();
-    ctx.fill();
-  }
+/** The WebNewsX "X" as a filled shape in the current fill colour at (x, y), `w` square (its two outlines from x.svg). */
+function barsPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, shape: XShape | null) {
+  if (!shape) return;
+  const scale = w / shape.size;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.translate(-shape.x, -shape.y);
+  for (const path of shape.paths) ctx.fill(path, "evenodd");
+  ctx.restore();
+}
+
+const X_SRC = "/brand/x.svg";
+type XShape = { x: number; y: number; size: number; paths: Path2D[] };
+
+/** The X's outlines and square box, read once from /brand/x.svg (null if it can't be loaded). */
+let xShape: Promise<XShape | null> | null = null;
+function loadXShape(): Promise<XShape | null> {
+  xShape ??= fetch(X_SRC)
+    .then((res) => res.text())
+    .then((svg) => {
+      const box = svg.match(/viewBox="([^"]+)"/)?.[1]?.split(/\s+/).map(Number);
+      const paths = [...svg.matchAll(/ d="([^"]+)"/g)].map((m) => new Path2D(m[1]));
+      if (!box || box.length < 4 || paths.length === 0) return null;
+      return { x: box[0]!, y: box[1]!, size: box[2]!, paths };
+    })
+    .catch(() => null);
+  return xShape;
 }
 
 function fitText(ctx: CanvasRenderingContext2D, text: string, max: number): string {
@@ -149,7 +149,7 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, max: number): stri
 }
 
 /**
- * The 1080×1350 share card (owner 2026-10-15: "more attractive and professional, with the logo"): the WebNEWS logo and
+ * The 1080×1350 share card (owner 2026-10-15: "more attractive and professional, with the logo"): the WebNewsX logo and
  * tagline on a soft brand fade, the person's photo in a red ring, name and @handle, the QR in a white panel with red
  * scanner corners (the black bars at its centre), and a dark footer with "Scan to open the profile" and the link.
  */
@@ -162,6 +162,7 @@ async function qrCard(name: string, username: string, image?: string | null): Pr
   canvas.height = H;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unavailable");
+  const [shape, mark] = await Promise.all([loadXShape(), loadImage(X_SRC)]);
   const font = getComputedStyle(document.body).fontFamily || "system-ui, sans-serif";
   const [logo, photo] = await Promise.all([loadImage("/brand/logo-light.png"), loadImage(image)]);
 
@@ -175,7 +176,7 @@ async function qrCard(name: string, username: string, image?: string | null): Pr
   ctx.fillRect(0, 0, W, 520);
   ctx.globalAlpha = 0.06;
   ctx.fillStyle = BRAND;
-  barsPath(ctx, W - 330, -30, 420);
+  barsPath(ctx, W - 330, -30, 420, shape);
   ctx.globalAlpha = 1;
   ctx.fillStyle = BRAND;
   ctx.fillRect(0, 0, W, 12);
@@ -190,7 +191,7 @@ async function qrCard(name: string, username: string, image?: string | null): Pr
   } else {
     ctx.fillStyle = INK;
     ctx.font = `900 64px ${font}`;
-    ctx.fillText("WebNEWS", W / 2, 92);
+    ctx.fillText("WebNewsX", W / 2, 92);
     ctx.font = `800 20px ${font}`;
     ctx.fillStyle = "#3a3f4b";
     ctx.fillText("P U L S E   O F   P E O P L E", W / 2, 148);
@@ -275,20 +276,20 @@ async function qrCard(name: string, username: string, image?: string | null): Pr
   const qx = (W - qrSize) / 2;
   const qy = py + (panel - qrSize) / 2;
   ctx.drawImage(qr, qx, qy, qrSize, qrSize);
-  drawQrLogo(ctx, qx, qy, qrSize);
+  drawQrLogo(ctx, qx, qy, qrSize, mark);
 
-  // Footer: dark band, red bars, the call to action and the link.
+  // Footer: dark band, the red X, the call to action and the link.
   const fy = 1170;
   ctx.fillStyle = INK;
   ctx.fillRect(0, fy, W, H - fy);
   ctx.fillStyle = BRAND;
   ctx.fillRect(0, fy, W, 6);
   ctx.fillStyle = BRAND;
-  barsPath(ctx, 84, fy + 54, 78);
+  barsPath(ctx, 84, fy + 50, 80, shape);
   ctx.textAlign = "left";
   ctx.fillStyle = "#ffffff";
   ctx.font = `800 40px ${font}`;
-  ctx.fillText("Scan to open the profile on WebNEWS", 196, fy + 70);
+  ctx.fillText("Scan to open the profile on WebNewsX", 196, fy + 70);
   ctx.fillStyle = "#a7acb8";
   ctx.font = `500 28px ${font}`;
   ctx.fillText(fitText(ctx, url.replace(/^https?:\/\//, ""), W - 260), 196, fy + 122);
@@ -310,12 +311,12 @@ function download(blob: Blob, name: string) {
 }
 
 /**
- * Outside WebNEWS: share the QR card image (with the link as text) — the app's share sheet, a phone browser's, or
+ * Outside WebNewsX: share the QR card image (with the link as text) — the app's share sheet, a phone browser's, or
  * (computers) download the image and copy the link.
  */
 export async function shareProfileQr(name: string, username: string, image?: string | null): Promise<void> {
   const url = profileUrl(username);
-  const title = `${name} (@${username}) on WebNEWS`;
+  const title = `${name} (@${username}) on WebNewsX`;
   const text = `${title}\n${url}`;
   try {
     const blob = await qrCard(name, username, image);
@@ -377,7 +378,7 @@ export async function downloadProfileQr(name: string, username: string, image?: 
   }
 }
 
-/** The apps under "Outside WebNEWS" (owner 2026-10-14): the profile goes there as its QR card. */
+/** The apps under "Outside WebNewsX" (owner 2026-10-14): the profile goes there as its QR card. */
 export type QrApp = "whatsapp" | "instagram" | "facebook";
 
 const APP_PACKAGES: Record<QrApp, readonly string[]> = {
@@ -390,14 +391,14 @@ const APP_NAMES: Record<QrApp, string> = { whatsapp: "WhatsApp", instagram: "Ins
 /**
  * Share the QR card to one app (owner 2026-10-14: straight to that app's chat / new message, where the user picks who
  * gets it — never a download):
- * - the WebNEWS app: opens WhatsApp / Instagram / Facebook itself with the QR card attached;
+ * - the WebNewsX app: opens WhatsApp / Instagram / Facebook itself with the QR card attached;
  * - a phone browser: the share sheet with the QR card (pick the app there; a browser can't attach a picture to one app);
  * - a computer: the QR card goes on the clipboard and the app's chat opens (WhatsApp with the link written in) — paste
  *   the QR there with Ctrl/⌘ + V.
  */
 export async function shareProfileQrTo(app: QrApp, name: string, username: string, image?: string | null): Promise<void> {
   const url = profileUrl(username);
-  const text = `${name} (@${username}) on WebNEWS\n${url}`;
+  const text = `${name} (@${username}) on WebNewsX\n${url}`;
   const chat =
     app === "whatsapp"
       ? `https://wa.me/?text=${encodeURIComponent(text)}`

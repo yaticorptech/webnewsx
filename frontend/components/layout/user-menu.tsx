@@ -58,9 +58,7 @@ export function UserMenu({
   unreadNotices = 0,
   className,
 }: UserMenuProps) {
-  const router = useRouter();
   const pathname = usePathname();
-  const queryClient = useQueryClient();
   const viewer = useViewer();
   const { switchTo } = useSwitchAccount();
   const canGetApp = useCanGetApp();
@@ -69,19 +67,7 @@ export function UserMenu({
     pathname.startsWith("/settings") ||
     pathname === "/press-pass";
 
-  const logOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast.error("Couldn't log out", {
-        description: error.message || "Please try again.",
-      });
-      return;
-    }
-    queryClient.clear();
-    router.push("/");
-    router.refresh();
-    toast.warning("You're logged out", { description: "See you on the wire." });
-  };
+  const logOut = useLogOut();
 
   return (
     <div
@@ -183,6 +169,25 @@ function withoutLeadingSeparator(items: DropdownItem[]): DropdownItem[] {
   return items.slice(start);
 }
 
+/** Signs out, clears cached data and goes home (account menu; profile tab long-press, bottom-tab-bar.tsx). */
+export function useLogOut(): () => Promise<void> {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  return async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Couldn't log out", {
+        description: error.message || "Please try again.",
+      });
+      return;
+    }
+    queryClient.clear();
+    router.push("/");
+    router.refresh();
+    toast.warning("You're logged out", { description: "See you on the wire." });
+  };
+}
+
 function switchItems(
   viewer: ViewerUser | null,
   switchTo: (group: { id: string; name: string } | null) => void,
@@ -274,7 +279,7 @@ function menuItems({
   items.push(
     { type: "separator" },
     { label: "Settings", href: "/settings", icon: <Settings aria-hidden /> },
-    { label: "About WebNEWS", href: "/about", icon: <Info aria-hidden /> },
+    { label: "About WebNewsX", href: "/about", icon: <Info aria-hidden /> },
     { type: "separator" },
     {
       label: "Log out",

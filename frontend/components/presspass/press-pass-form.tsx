@@ -52,7 +52,7 @@ export type PressPassFormProps = {
 
 const STEP_COPY = [
   { title: "Your details", lede: "Who you are, how the Editor Desk can verify you, where you file from and a note about your reporting." },
-  { title: "The Reporter Pledge", lede: "Five promises every WebNEWS reporter makes. Sign it to get your pass." },
+  { title: "The Reporter Pledge", lede: "Five promises every WebNewsX reporter makes. Sign it to get your pass." },
 ] as const;
 
 /** The first screen's three parts, each under its own heading. */

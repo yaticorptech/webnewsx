@@ -1,6 +1,6 @@
 /**
  * Generative demo artwork for the seed: abstract 16:9 editorial covers and round-friendly avatars in
- * the WebNEWS palette (red / black / graphite). No text, deterministic per seed number.
+ * the WebNewsX palette (red / black / graphite). No text, deterministic per seed number.
  */
 import sharp from "sharp";
 

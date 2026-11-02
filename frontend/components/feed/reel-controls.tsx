@@ -2,10 +2,9 @@
 
 import { askUnfollow } from "@/components/follow/unfollow-confirm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Check, Flag, Pause, Play, Plus } from "lucide-react";
+import { Bookmark, Check, EllipsisVertical, Flag, Pause, Play, Plus } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import Link from "next/link";
-import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { handleText } from "@/components/brand/user-handle";
 import { useAuthPrompt } from "@/components/layout/auth-prompt";
@@ -53,7 +52,7 @@ const RAIL_COUNTED = cn(
   "h-auto min-h-10 w-10 flex-col justify-center gap-0.5 rounded-2xl px-0 py-0.5 text-[0.6875rem] font-bold leading-none after:-inset-0.5",
   "sm:min-h-12 sm:w-13 sm:gap-1 sm:py-1 sm:text-[0.8125rem] sm:after:inset-0",
   "[&_svg]:size-5.5 [&>span:first-child]:size-5.5 sm:[&_svg]:size-7.5 sm:[&>span:first-child]:size-7.5",
-  // The WebNEWS app (owner 2026-10-16: "a little bigger in the app"): 26px icons in 46px buttons.
+  // The WebNewsX app (owner 2026-10-16: "a little bigger in the app"): 26px icons in 46px buttons.
   "max-sm:in-data-[app=android]:min-h-11.5 max-sm:in-data-[app=android]:w-11.5 max-sm:in-data-[app=android]:text-xs max-sm:in-data-[app=android]:[&_svg]:size-6.5 max-sm:in-data-[app=android]:[&>span:first-child]:size-6.5",
   RAIL_TONE,
 );
@@ -111,7 +110,7 @@ export type ReelRailProps = {
 
 /**
  * A reel's actions (owner 2026-09-26, Instagram style): a thin column of small icons on the right, top to bottom
- * like, comment (→ the comments sheet), share, save (owner 2026-10-05: out of the menu) and the menu (the WebNEWS
+ * like, comment (→ the comments sheet), share, save (owner 2026-10-05: out of the menu) and the menu (the WebNewsX
  * three bars) — News radio, Report (owner 2026-10-05: in here, never on your own story) and the feed's Auto-scroll
  * switch (only in a feed that auto-scrolls), then the author's / desk's own items. Phones: over the
  * poster's right edge, transparent (white icons with a dark shadow, legible on any photo); ≥640px: just outside the
@@ -240,7 +239,7 @@ export function ReelRail({ article, stats, like, save, isOwn, preview = false }:
         )}
         {preview ? (
           <span aria-hidden className={cn("inline-flex items-center justify-center", icon)}>
-            <SpeedBarsSvg className="scale-[0.8]" />
+            <EllipsisVertical aria-hidden />
           </span>
         ) : (
           <StoryMenu article={article} vertical leadItems={menuItems} className={RAIL_MENU} />

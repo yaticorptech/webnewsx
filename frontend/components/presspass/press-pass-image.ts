@@ -260,11 +260,11 @@ export async function renderPressPassPng(data: PressPassCardData): Promise<Blob>
 export async function downloadPressPass(data: PressPassCardData): Promise<void> {
   const blob = await renderPressPassPng(data);
   // The phone app's web view ignores download links (owner 2026-10-31): save it straight to the phone
-  // (Documents/WebNEWS); only if that fails, the share sheet (Save to Photos / Files from there).
+  // (Documents/WebNewsX); only if that fails, the share sheet (Save to Photos / Files from there).
   const fileName = `webnews-press-pass-${data.passNumber.toLowerCase()}.png`;
   if (isNativeApp()) {
     if (await saveFileToDevice(blob, fileName)) {
-      toast.success("Press Pass saved", { id: "press-pass-download", description: "In your phone's Documents › WebNEWS folder." });
+      toast.success("Press Pass saved", { id: "press-pass-download", description: "In your phone's Documents › WebNewsX folder." });
       return;
     }
     const plugin = nativeSharePlugin();
@@ -296,13 +296,13 @@ export async function sharePressPass(data: PressPassCardData): Promise<void> {
   const blob = await renderPressPassPng(data);
   const fileName = `webnews-press-pass-${data.passNumber.toLowerCase()}.png`;
   const link = passVerifyUrl(data.passNumber);
-  const text = `${data.holder.name} — WebNEWS Press Pass ${data.passNumber}\n${link}`;
+  const text = `${data.holder.name} — WebNewsX Press Pass ${data.passNumber}\n${link}`;
   const cancelled = (error: unknown) => /cancel|abort/i.test(error instanceof Error ? `${error.name} ${error.message}` : String(error));
   const plugin = nativeSharePlugin();
   if (isNativeApp() && plugin) {
     const uri = await shareFileUri(blob, fileName);
     try {
-      await plugin.share(uri ? { title: "WebNEWS Press Pass", text, files: [uri], dialogTitle: "Share Press Pass" } : { title: "WebNEWS Press Pass", text, url: link, dialogTitle: "Share Press Pass" });
+      await plugin.share(uri ? { title: "WebNewsX Press Pass", text, files: [uri], dialogTitle: "Share Press Pass" } : { title: "WebNewsX Press Pass", text, url: link, dialogTitle: "Share Press Pass" });
     } catch (error) {
       if (!cancelled(error)) throw error;
     }
@@ -311,8 +311,8 @@ export async function sharePressPass(data: PressPassCardData): Promise<void> {
   const file = new File([blob], fileName, { type: "image/png" });
   if (typeof navigator.share === "function") {
     try {
-      if (navigator.canShare?.({ files: [file] })) await navigator.share({ title: "WebNEWS Press Pass", text, files: [file] });
-      else await navigator.share({ title: "WebNEWS Press Pass", text, url: link });
+      if (navigator.canShare?.({ files: [file] })) await navigator.share({ title: "WebNewsX Press Pass", text, files: [file] });
+      else await navigator.share({ title: "WebNewsX Press Pass", text, url: link });
       return;
     } catch (error) {
       if (cancelled(error)) return;

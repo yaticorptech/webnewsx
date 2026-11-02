@@ -5,7 +5,7 @@ import { redirectIfLoggedIn } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Forgot password",
-  description: "Get a link to choose a new WebNEWS password.",
+  description: "Get a link to choose a new WebNewsX password.",
   robots: { index: false },
 };
 
@@ -30,7 +30,7 @@ export default async function ForgotPasswordPage() {
       <AuthHeading
         kicker="Forgot password"
         title="Reset your password"
-        lede="Enter the email you use for WebNEWS and we'll send you a link to choose a new password."
+        lede="Enter the email you use for WebNewsX and we'll send you a link to choose a new password."
       />
       <div className="mt-8">
         <ForgotPasswordForm />

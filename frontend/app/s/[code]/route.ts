@@ -35,7 +35,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
   } catch (error) {
     if (error instanceof ServerApiError && error.status === 404) return redirectTo("/", 302);
     console.warn(`[short-link] /s/${code} failed: ${error instanceof ServerApiError ? `${error.status} ${error.code}` : String(error)}`);
-    return new Response("WebNEWS is briefly unavailable. Please try this link again in a moment.", {
+    return new Response("WebNewsX is briefly unavailable. Please try this link again in a moment.", {
       status: 503,
       headers: { "Cache-Control": NO_STORE, "Content-Type": "text/plain; charset=utf-8", "Retry-After": "10" },
     });

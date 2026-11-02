@@ -40,12 +40,12 @@ export function passwordResetMail({ to, name, url, minutes }: { to: string; name
   const text = [
     greeting,
     "",
-    "Someone asked to reset the password of your WebNEWS account. Open this link to choose a new one:",
+    "Someone asked to reset the password of your WebNewsX account. Open this link to choose a new one:",
     url,
     "",
     `The link works once and expires in ${minutes} minutes. If you didn't ask for this, ignore this email: your password stays the same.`,
     "",
-    "— WebNEWS",
+    "— WebNewsX",
   ].join("\n");
   const safeUrl = escapeHtml(url);
   const html = `<!doctype html>
@@ -54,14 +54,14 @@ export function passwordResetMail({ to, name, url, minutes }: { to: string; name
     <tr><td style="padding:28px 28px 8px;font-size:22px;font-weight:900;letter-spacing:-0.5px">Web<span style="color:#d22e2a">NEWS</span></td></tr>
     <tr><td style="padding:8px 28px 0;font-size:15px;line-height:1.6">
       <p style="margin:0 0 12px">${escapeHtml(greeting)}</p>
-      <p style="margin:0 0 20px">Someone asked to reset the password of your WebNEWS account. Choose a new one here:</p>
+      <p style="margin:0 0 20px">Someone asked to reset the password of your WebNewsX account. Choose a new one here:</p>
       <p style="margin:0 0 20px"><a href="${safeUrl}" style="display:inline-block;background:#d22e2a;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px">Reset password</a></p>
       <p style="margin:0 0 20px;font-size:13px;color:#5b5f6b">Or paste this link into your browser:<br><a href="${safeUrl}" style="color:#d22e2a;word-break:break-all">${safeUrl}</a></p>
       <p style="margin:0 0 28px;font-size:13px;color:#5b5f6b">The link works once and expires in ${minutes} minutes. If you didn't ask for this, ignore this email: your password stays the same.</p>
     </td></tr>
   </table>
 </body></html>`;
-  return { to, subject: "Reset your WebNEWS password", text, html };
+  return { to, subject: "Reset your WebNewsX password", text, html };
 }
 
 /**
@@ -86,7 +86,7 @@ export function pressMeetMail({
   url: string;
 }): Mail {
   const greeting = name.trim() ? `Hi ${name.trim()},` : "Hi,";
-  const text = [greeting, "", heading, "", ...lines, "", `${cta}: ${url}`, "", "— WebNEWS Press Meet"].join("\n");
+  const text = [greeting, "", heading, "", ...lines, "", `${cta}: ${url}`, "", "— WebNewsX Press Meet"].join("\n");
   const safeUrl = escapeHtml(url);
   const paragraphs = lines.map((line) => `<p style="margin:0 0 12px">${escapeHtml(line)}</p>`).join("");
   const html = `<!doctype html>

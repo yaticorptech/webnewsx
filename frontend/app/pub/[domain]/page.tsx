@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /**
  * A publisher's website (owner 2026-10-29): served on their verified domain (proxy.ts rewrites `<domain>/` here) in the
- * webnews.in layout, with only their stories; each opens on WebNEWS so its views count there.
+ * webnews.in layout, with only their stories; each opens on WebNewsX so its views count there.
  */
 export default async function PublisherHome({ params }: Props) {
   const home = await getSiteHome(decodeURIComponent((await params).domain));

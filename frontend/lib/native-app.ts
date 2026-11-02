@@ -1,5 +1,5 @@
 /*
- * The WebNEWS Android / iOS app (mobile/, Capacitor) is a native shell that loads this website and injects
+ * The WebNewsX Android / iOS app (mobile/, Capacitor) is a native shell that loads this website and injects
  * `window.Capacitor` with the native plugins installed there. On the plain website everything here is a no-op.
  */
 
@@ -89,8 +89,10 @@ type ShareTargetPlugin = { share(options: { package: string; text?: string; file
  * remote page), `addListener` hands back the listener itself rather than a promise of it: wrap it in Promise.resolve.
  */
 type AppPlugin = {
+  /** The installed app's version: `build` = Android versionCode (as text), `version` = versionName. */
+  getInfo?(): Promise<{ build: string; version: string }>;
   addListener(event: "backButton", fn: (data: { canGoBack: boolean }) => void): Promise<PluginListener> | PluginListener;
-  /** A WebNEWS link opened the app (a scanned profile QR, a shared story): its full URL. */
+  /** A WebNewsX link opened the app (a scanned profile QR, a shared story): its full URL. */
   addListener(event: "appUrlOpen", fn: (data: { url: string }) => void): Promise<PluginListener> | PluginListener;
   exitApp(): Promise<void>;
   minimizeApp?(): Promise<void>;
@@ -148,7 +150,16 @@ export function nativeAppPlugin(): AppPlugin | null {
   return cap?.Plugins?.App && (cap.isPluginAvailable?.("App") ?? true) ? cap.Plugins.App : null;
 }
 
-/** Running inside the WebNEWS app (client only; always false during server rendering). */
+/** The installed Android app's build number (versionCode) and version name, or null (website, iOS, or not readable). */
+export async function nativeAndroidVersion(): Promise<{ build: number; version: string | null } | null> {
+  const cap = capacitor();
+  if (!cap || cap.getPlatform?.() !== "android") return null;
+  const info = await nativeAppPlugin()?.getInfo?.().catch(() => null);
+  const build = Number(info?.build);
+  return Number.isInteger(build) && build > 0 ? { build, version: info?.version || null } : null;
+}
+
+/** Running inside the WebNewsX app (client only; always false during server rendering). */
 export function isNativeApp(): boolean {
   return capacitor() !== null;
 }
@@ -239,7 +250,7 @@ export async function shareFileUriFromParts(parts: Blob[], name: string): Promis
 }
 
 /**
- * Saves a file straight onto the phone (owner 2026-10-31: "download, not only share"): Documents/WebNEWS/<name> through
+ * Saves a file straight onto the phone (owner 2026-10-31: "download, not only share"): Documents/WebNewsX/<name> through
  * the Filesystem plugin. Returns false where that isn't possible (website, older builds, storage refused).
  */
 export async function saveFileToDevice(blob: Blob, name: string): Promise<boolean> {
@@ -247,7 +258,7 @@ export async function saveFileToDevice(blob: Blob, name: string): Promise<boolea
   const fs = cap?.Plugins?.Filesystem;
   if (!cap || !fs || !(cap.isPluginAvailable?.("Filesystem") ?? false)) return false;
   try {
-    await fs.writeFile({ path: `WebNEWS/${name}`, data: await base64(blob), directory: "DOCUMENTS", recursive: true });
+    await fs.writeFile({ path: `WebNewsX/${name}`, data: await base64(blob), directory: "DOCUMENTS", recursive: true });
     return true;
   } catch {
     return false;
@@ -298,7 +309,7 @@ export async function nativeGoogleIdToken(webClientId: string): Promise<string |
 }
 
 /**
- * In the app: no screenshots or screen recording while `on` (press meet recordings replay only inside WebNEWS, owner
+ * In the app: no screenshots or screen recording while `on` (press meet recordings replay only inside WebNewsX, owner
  * 2026-10-01). Websites can't block the computer's own screen recorder, so this is a no-op there.
  */
 export function setScreenGuard(on: boolean): void {

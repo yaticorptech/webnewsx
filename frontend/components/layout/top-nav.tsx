@@ -52,7 +52,7 @@ export function Masthead({ viewer, adminVisit = false }: MastheadProps) {
               tried centred on the screen, then put back here ("where it was before"). */}
           <Link
             href="/"
-            aria-label="WebNEWS home"
+            aria-label="WebNewsX home"
             // A little in from the corner (owner 2026-10-08: "not too much corner").
             // ≥1024px at least as wide as the side menu (so the page lines up under it) — never narrower than the lockup:
             // on pages with the slim 5rem menu (the composer, a story) a fixed width squeezed the wordmark to a sliver.

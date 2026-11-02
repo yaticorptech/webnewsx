@@ -48,7 +48,7 @@ export function AdminShell({ viewer, overview, children }: AdminShellProps) {
   return (
     <div className="flex min-h-dvh bg-[#f7f7f8]">
       {/*
-        ≥1024px (owner 2026-10-16, a newsroom CMS look): the red WebNEWS header, then the sections in groups that open
+        ≥1024px (owner 2026-10-16, a newsroom CMS look): the red WebNewsX header, then the sections in groups that open
         and close. ☰ in the top bar folds it to icons (remembered on this device; names show on hover).
       */}
       <aside
@@ -289,7 +289,7 @@ function TopLogOut() {
 const LIVE_TIME = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit" });
 
 /**
- * "● 12 live" (owner 2026-10-16: show the live visits): people on WebNEWS in the last few minutes, refreshed every 20 s.
+ * "● 12 live" (owner 2026-10-16: show the live visits): people on WebNewsX in the last few minutes, refreshed every 20 s.
  * Tap for the split (signed in / visitors, app / web), the pages they're on and who's signed in.
  */
 function LiveNow() {
@@ -330,7 +330,7 @@ function LiveNow() {
       </button>
       {open && data && (
         <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border bg-surface p-4 shadow-xl">
-          <p className="text-sm font-semibold text-ink">On WebNEWS now</p>
+          <p className="text-sm font-semibold text-ink">On WebNewsX now</p>
           <p className="text-xs text-muted">Active in the last {LIVE_WINDOW_MINUTES} minutes · updates live</p>
           <dl className="mt-3 grid grid-cols-4 gap-2 text-center">
             {[

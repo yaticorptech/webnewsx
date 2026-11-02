@@ -166,7 +166,7 @@ export function PressMeetInvitationsTab() {
                 icon={<CalendarPlus aria-hidden />}
                 kicker="Press meet"
                 title="You haven't scheduled one"
-                description="Book a time, invite Verified reporters and hold it live on WebNEWS or Google Meet."
+                description="Book a time, invite Verified reporters and hold it live on WebNewsX or Google Meet."
               />
             )
           }

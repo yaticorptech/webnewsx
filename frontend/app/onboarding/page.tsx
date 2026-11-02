@@ -9,7 +9,7 @@ import { requireViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Set up your profile",
-  description: "Choose your username, name and photo to start using WebNEWS.",
+  description: "Choose your username, name and photo to start using WebNewsX.",
   robots: { index: false },
 };
 

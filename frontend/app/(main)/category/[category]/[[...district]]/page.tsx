@@ -28,15 +28,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!view) return { title: "Section not found", robots: { index: false } };
   const title = categoryLabel(view.category, view.district);
   const description = view.district
-    ? `The latest stories from ${view.district}, Karnataka — live on WebNEWS.`
-    : `The latest ${CATEGORY_LABELS[view.category]} stories — live on WebNEWS.`;
+    ? `The latest stories from ${view.district}, Karnataka — live on WebNewsX.`
+    : `The latest ${CATEGORY_LABELS[view.category]} stories — live on WebNewsX.`;
   const url = categoryPath(view.category, view.district);
   return {
     title,
     description,
-    keywords: [title, `${title} news`, view.district ? "Karnataka news" : "India news", "WebNEWS"],
+    keywords: [title, `${title} news`, view.district ? "Karnataka news" : "India news", "WebNewsX"],
     alternates: { canonical: url },
-    openGraph: { images: ["/opengraph-image"], type: "website", siteName: "WebNEWS", locale: "en_IN", title, description, url },
+    openGraph: { images: ["/opengraph-image"], type: "website", siteName: "WebNewsX", locale: "en_IN", title, description, url },
   };
 }
 

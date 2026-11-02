@@ -207,7 +207,7 @@ export async function applyForPressPass(holder: HolderFields & { role: string },
   const existing = await findPressPass(holder.id);
   if (existing && !existing.revokedAt) throw new ApiError(409, "already_reporter", "You already have a Press Pass");
   if (existing?.revokedAt) {
-    throw new ApiError(403, "press_pass_revoked", "Your Press Pass was revoked by the Editor Desk. Contact the WebNEWS team to have it reinstated.");
+    throw new ApiError(403, "press_pass_revoked", "Your Press Pass was revoked by the Editor Desk. Contact the WebNewsX team to have it reinstated.");
   }
 
   const now = new Date();

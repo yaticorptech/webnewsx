@@ -80,10 +80,10 @@ const fontVariables = [archivo, sourceSerif, notoSansKannada, notoSerifKannada].
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const viewer = await getViewer();
-  // The Android app (mobile/, user agent "… WebNEWSApp") already keeps the page below the status bar itself, so
+  // The Android app (mobile/, user agent "… WebNewsXApp") already keeps the page below the status bar itself, so
   // the page must not pad for it again (globals.css, `data-app`) — its WebView still reports a camera cutout.
   const userAgent = (await headers()).get("user-agent") ?? "";
-  const androidApp = userAgent.includes("WebNEWSApp") && userAgent.includes("Android");
+  const androidApp = userAgent.includes("WebNewsXApp") && userAgent.includes("Android");
   // A phone ("Mobi": Android phones and the app's WebView; iPhone): phone layouts render from the first paint
   // (usePhoneLayout). Tablets don't match.
   const phone = /Mobi|iPhone|iPod/i.test(userAgent);

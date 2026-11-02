@@ -12,7 +12,6 @@ import {
   type MouseEvent,
 } from "react";
 import { useMeterReel } from "@/components/auth/read-meter";
-import { SpeedBarsSvg } from "@/components/brand/speed-lines";
 import {
   StoryPoster,
   toPosterStory,
@@ -60,7 +59,7 @@ const PREVIEW_FRAME = { "--reel-poster-w": "100cqw" } as CSSProperties;
 /**
  * One story per screen (owner 2026-09-26, "like Instagram reels"): exactly `--reel-h` tall (the space under the sticky
  * masthead; above the tab bar on phones — globals.css "Reel feed"), holding the story's POSTER (its template:
- * WebNEWS logo, photo — a video story's clip, playing muted while on screen —, headline and a small author line), the
+ * WebNewsX logo, photo — a video story's clip, playing muted while on screen —, headline and a small author line), the
  * largest 9:16 box that fits, centred, rounded from 640px. Over the poster: the auto-scroll progress bar along its top,
  * the live "Just in" pill (top-left), the transparency labels and a video's sound switch (top-right); beside it, the action rail
  * (reel-controls.tsx: author + Follow, like, comment, share, save, report, auto-scroll, ⋯).
@@ -361,7 +360,8 @@ export function ReelSkeleton({
       <div className="reel-frame relative flex h-(--reel-h) items-center justify-center">
         <div className="reel-poster relative">
           <div className="skeleton relative aspect-9/16 w-full rounded-2xl sm:rounded-3xl">
-            <SpeedBarsSvg className="absolute left-1/2 top-1/2 w-16 -translate-x-1/2 -translate-y-1/2 text-ink opacity-[0.06]" />
+            {/* The WebNewsX "X" as a faint mark while the reel loads (owner 2026-11-02: no more bars). */}
+            <img src="/brand/x.svg" alt="" aria-hidden width={64} height={64} className="absolute left-1/2 top-1/2 w-16 -translate-x-1/2 -translate-y-1/2 opacity-[0.12] grayscale" />
           </div>
           <div
             aria-hidden

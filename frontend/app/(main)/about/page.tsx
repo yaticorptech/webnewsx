@@ -178,7 +178,7 @@ function aboutCta(action: PublishAction): { href: string; label: string } {
     case "onboard":
       return { href: action.href, label: "Finish your profile" };
     case "login":
-      return { href: "/signup", label: "Join WebNEWS" };
+      return { href: "/signup", label: "Join WebNewsX" };
   }
 }
 

@@ -4,10 +4,8 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } f
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-/** The owner's icon bars (64×64 icon.svg), used as the Verified Reporter mark. */
-const BARS = ["20,9 60,9 48,20 8,20", "20,26 60,26 48,37 8,37", "20,43 60,43 48,54 8,54"] as const;
-/** Top edge y of each bar — the reveal masks are drawn per bar. */
-const BAR_TOP = [9, 26, 43] as const;
+/** The WebNewsX logo's own "X" (owner 2026-11-02, replacing the three bars): the same file as the app icon. */
+const X_SRC = "/brand/x.svg";
 /** The check mark (100×100 badge coordinates). */
 const CHECK = "M29 52 L44 66 L72 36";
 
@@ -33,8 +31,8 @@ export type VerifiedBadgeProps = {
 };
 
 /**
- * Verified Reporter badge (owner design 2026-09-24, revised 2026-09-26): the WebNEWS icon's three slanted bars
- * start grey and each fills with the logo red from right to left along the tilt (top → bottom, staggered); then a
+ * Verified Reporter badge (owner design 2026-09-24, revised 2026-09-26; the X since 2026-11-02): the WebNewsX "X"
+ * starts grey, its black stroke then its red stroke fill in from the right; then a
  * blue check mark draws itself over them, a blue ring draws itself around the badge, the blue floods out to fill
  * that circle (the check turns white) and the badge pops with a soft blue glow. Final look: solid blue disc + white check; the glow breathes while it holds.
  * The sequence loops: it holds the finished badge for `loopEvery` ms, then plays again — only while the badge is
@@ -145,34 +143,21 @@ export function VerifiedBadge({
         }}
       >
         <defs>
-          {BAR_TOP.map((top, i) => (
-            <mask key={top} id={`${uid}-m${i}`} maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140">
-              {/* Slanted reveal sheet (in bar coordinates): its left edge follows the bars' tilt; it slides in from the right. */}
-              <polygon
-                className={`vb-sheet vb-sheet-${i}`}
-                points={`12,${top} 100,${top} 100,${top + 11} 0,${top + 11}`}
-                fill="#fff"
-              />
-            </mask>
-          ))}
+          <mask id={`${uid}-m0`} maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140">
+            {/* A slanted reveal sheet over the whole X; it slides in from the right. */}
+            <polygon className="vb-sheet vb-sheet-0 vb-sheet-x" points="22,0 140,0 140,100 0,100" fill="#fff" />
+          </mask>
           <filter id={`${uid}-glow`} x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#1d9bf0" floodOpacity="0.55" />
           </filter>
         </defs>
-        <g transform="translate(22.8 24.8) scale(0.8)">
-          {BARS.map((points) => (
-            <polygon key={points} points={points} className="vb-bar-grey" />
-          ))}
-          {BARS.map((points, i) => (
-            <g key={points} mask={`url(#${uid}-m${i})`}>
-              <polygon points={points} className="vb-bar-red" />
-            </g>
-          ))}
-        </g>
+        {/* The logo's X: grey first, then its own red and black fill in from the right. */}
+        <image href={X_SRC} x="12" y="12" width="76" height="76" className="vb-x-grey" />
+        <image href={X_SRC} x="12" y="12" width="76" height="76" mask={`url(#${uid}-m0)`} />
         {/* The circle draws itself, then the blue disc floods out to fill it (final: blue disc + white check + glow). */}
         <circle cx="50" cy="50" r="46" pathLength={100} className="vb-ring" />
         <circle cx="50" cy="50" r="49" className="vb-disc" filter={`url(#${uid}-glow)`} />
-        {/* The check: a white halo keeps it readable over the red bars until the disc covers them. */}
+        {/* The check: a white halo keeps it readable over the X until the disc covers them. */}
         <path d={CHECK} pathLength={100} className="vb-check-halo" />
         <path d={CHECK} pathLength={100} className="vb-check" />
       </svg>

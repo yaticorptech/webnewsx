@@ -33,7 +33,7 @@ export function PressPassWelcome() {
   useEffect(() => {
     if (!signedIn || !takeWelcomeBack()) return;
     const first = viewer?.name?.split(" ")[0] || viewer?.username;
-    toast.success(first ? `Welcome back, ${first}` : "Welcome back", { id: "welcome-back", description: "You're logged in to WebNEWS." });
+    toast.success(first ? `Welcome back, ${first}` : "Welcome back", { id: "welcome-back", description: "You're logged in to WebNewsX." });
   }, [signedIn, viewer?.name, viewer?.username]);
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export function PressPassWelcome() {
       open={open && reader}
       onOpenChange={setOpen}
       title="Want to publish your first article?"
-      description="Get your Press Pass and start filing news on WebNEWS. It takes a minute."
+      description="Get your Press Pass and start filing news on WebNewsX. It takes a minute."
       size="sm"
       variant="dialog"
       footer={
@@ -88,7 +88,7 @@ export function PressPassWelcome() {
           <PenLine aria-hidden className="size-5.5" />
         </span>
         <p className="text-sm leading-relaxed text-ink-2">
-          Report what&apos;s happening around you — your stories reach readers across WebNEWS the moment they&apos;re live.
+          Report what&apos;s happening around you — your stories reach readers across WebNewsX the moment they&apos;re live.
         </p>
       </div>
     </Modal>

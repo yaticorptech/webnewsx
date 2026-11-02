@@ -60,8 +60,8 @@ const schema = z.object({
   RESEND_API_KEY: optionalString,
   /** Where Contact us messages are emailed (they're always kept in the database too). */
   CONTACT_INBOX: z.preprocess(blankToUndefined, z.string().trim().email().default("contact@webnews.in")),
-  /** Sender, e.g. `WebNEWS <no-reply@webnews.in>` (the domain must be verified in Resend). */
-  MAIL_FROM: z.preprocess(blankToUndefined, z.string().trim().default("WebNEWS <onboarding@resend.dev>")),
+  /** Sender, e.g. `WebNewsX <no-reply@webnews.in>` (the domain must be verified in Resend). */
+  MAIL_FROM: z.preprocess(blankToUndefined, z.string().trim().default("WebNewsX <onboarding@resend.dev>")),
   R2_ACCOUNT_ID: optionalString,
   R2_ACCESS_KEY_ID: optionalString,
   R2_SECRET_ACCESS_KEY: optionalString,
@@ -107,6 +107,14 @@ const schema = z.object({
    */
   IMPORT_TOKEN: optionalString,
   IMPORT_AUTHOR_USERNAME: z.preprocess(blankToUndefined, z.string().default("webnews.in")),
+  /**
+   * Android app updates (owner 2026-11-02): the newest APK's build number (versionCode) and name, what's new, and the
+   * oldest build still allowed (older ones must update — no "Later"). Unset build = no update popup.
+   */
+  ANDROID_APP_BUILD: z.preprocess(blankToUndefined, z.coerce.number().int().min(1).optional()),
+  ANDROID_APP_VERSION: optionalString,
+  ANDROID_APP_NOTES: optionalString,
+  ANDROID_APP_MIN_BUILD: z.preprocess(blankToUndefined, z.coerce.number().int().min(1).optional()),
   /** GIFs in comments (owner 2026-10-31): a GIPHY API key (developers.giphy.com → Create an API key). */
   GIPHY_API_KEY: optionalString,
   INSTAGRAM_APP_ID: optionalString,

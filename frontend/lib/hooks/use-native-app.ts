@@ -5,7 +5,7 @@ import { isNativeApp } from "@/lib/native-app";
 
 const noopSubscribe = () => () => {};
 
-/** True inside the WebNEWS app once hydrated (false while server rendering, so the markup matches on both). */
+/** True inside the WebNewsX app once hydrated (false while server rendering, so the markup matches on both). */
 export function useNativeApp(): boolean {
   return useSyncExternalStore(noopSubscribe, isNativeApp, () => false);
 }

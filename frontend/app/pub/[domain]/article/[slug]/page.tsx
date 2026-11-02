@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * A publisher's story, on WebNEWS (owner 2026-10-29: "redirect to our main website but layout same as webnews.in, to
+ * A publisher's story, on WebNewsX (owner 2026-10-29: "redirect to our main website but layout same as webnews.in, to
  * get views in main website"): their header, ads and footer around it; premium stories open in full.
  */
 export default async function PublisherArticle({ params }: Props) {

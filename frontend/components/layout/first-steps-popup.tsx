@@ -90,8 +90,8 @@ export function FirstStepsPopup() {
       title={firstStory ? "Post your first article" : "Get your Press Pass"}
       description={
         firstStory
-          ? "Your Press Pass is ready — file your first story and it reaches readers across WebNEWS."
-          : "Want to publish too? Your Press Pass takes a minute, and then you can file news on WebNEWS."
+          ? "Your Press Pass is ready — file your first story and it reaches readers across WebNewsX."
+          : "Want to publish too? Your Press Pass takes a minute, and then you can file news on WebNewsX."
       }
       size="sm"
       variant="dialog"

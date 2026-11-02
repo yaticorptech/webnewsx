@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { SpeedLinesLoader } from "@/components/ui/speed-lines-loader";
 import { isNativeApp } from "@/lib/native-app";
 import { cn } from "@/lib/utils";
 
@@ -34,11 +33,11 @@ function inScrolledBox(target: EventTarget | null): boolean {
   return false;
 }
 
-/** The spinner stays at least this long, so a quick refresh doesn't blink. */
-const MIN_SPIN_MS = 450;
+/** The X stays at least this long (owner 2026-11-02: one full breath), so a quick refresh doesn't blink. */
+const MIN_SPIN_MS = 1400;
 
 /**
- * Swipe down at the top of any page to refresh it — in the WebNEWS app (owner 2026-09-29) and, since the reels take
+ * Swipe down at the top of any page to refresh it — in the WebNewsX app (owner 2026-09-29) and, since the reels take
  * over the browser's own touch handling, in phone browsers too (owner 2026-10-05: it didn't work on the website), in
  * place of the browser's. On computers (owner 2026-10-05) the same pull with the trackpad or mouse wheel: scrolling up
  * at the very top (not a scroll still gliding into the top). Not while a dialog is open, inside a scrolled box, or on
@@ -245,7 +244,9 @@ export function PullToRefresh() {
       // The page behind is blurred while it refreshes (owner 2026-10-14).
       <div role="status" className="fixed inset-0 z-60 flex items-center justify-center bg-surface/30 backdrop-blur-sm">
         <span className="flex size-14 animate-fade-up items-center justify-center rounded-full border border-border bg-surface shadow-pop">
-          <SpeedLinesLoader size="sm" label="Refreshing" />
+          {/* The WebNewsX "X" breathing, like the app's loading screen (owner 2026-11-02). */}
+          <img src="/brand/x.svg" alt="" width={30} height={30} className="size-7.5 animate-x-breathe" />
+          <span className="sr-only">Refreshing</span>
         </span>
       </div>
     );
@@ -266,6 +267,7 @@ export function PullToRefresh() {
         opacity: travel > 0 ? Math.min(1, travel / (THRESHOLD * 0.6)) : 0,
       }}
     >
+      {/* Pulling: the refresh arrow turns with the pull (owner 2026-11-02: the X only while refreshing). */}
       <RefreshCw
         aria-hidden
         className={cn("size-5 transition-colors", armed ? "text-brand" : "text-muted")}

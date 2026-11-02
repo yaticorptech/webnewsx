@@ -298,7 +298,7 @@ export function adminRoutes() {
     return c.json(await setMembershipRules(mustViewer(c).id, rules));
   });
 
-  // GET /api/admin/live — who's on WebNEWS right now (owner 2026-10-16).
+  // GET /api/admin/live — who's on WebNewsX right now (owner 2026-10-16).
   app.get("/live", async (c) => c.json(await getLiveVisitors()));
 
   // GET /api/admin/behaviour/people/:username — one person's behaviour and timeline.

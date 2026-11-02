@@ -376,7 +376,7 @@ export async function saveArticle(
       status: "sent",
       article: { ...toDraftDetail(outcome.row), status: "draft", slug: null },
       pressMeetId: outcome.meetId,
-      message: `It goes live on WebNEWS once ${outcome.organizerName} verifies it.`,
+      message: `It goes live on WebNewsX once ${outcome.organizerName} verifies it.`,
     };
   }
   if (outcome.kind === "in_review") {

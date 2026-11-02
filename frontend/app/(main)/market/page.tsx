@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: "Market",
   description: "Live Nifty 50, Sensex, Bank Nifty, gold and silver rates, crude oil, the rupee and Bitcoin.",
   alternates: { canonical: "/market" },
-  keywords: ["Nifty 50", "Sensex", "Bank Nifty", "gold rate today", "silver rate", "USD to INR", "Bitcoin price INR", "stock market live", "WebNEWS"],
-  openGraph: { images: ["/opengraph-image"], type: "website", siteName: "WebNEWS", locale: "en_IN", url: "/market", title: "Market — live Nifty, Sensex, gold and the rupee", description: "Live Nifty 50, Sensex, Bank Nifty, gold and silver rates, crude oil, the rupee and Bitcoin." },
+  keywords: ["Nifty 50", "Sensex", "Bank Nifty", "gold rate today", "silver rate", "USD to INR", "Bitcoin price INR", "stock market live", "WebNewsX"],
+  openGraph: { images: ["/opengraph-image"], type: "website", siteName: "WebNewsX", locale: "en_IN", url: "/market", title: "Market — live Nifty, Sensex, gold and the rupee", description: "Live Nifty 50, Sensex, Bank Nifty, gold and silver rates, crude oil, the rupee and Bitcoin." },
 };
 
 /**

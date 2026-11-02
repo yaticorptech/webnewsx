@@ -121,7 +121,7 @@ test("sign up → onboarding wizard → home with avatar → log out → log in"
 
   // Home with the new avatar in the nav + welcome toast.
   await page.waitForURL((url) => url.pathname === "/");
-  await expect(page.getByText(new RegExp(`Welcome to WebNEWS, ${name}`))).toBeVisible();
+  await expect(page.getByText(new RegExp(`Welcome to WebNewsX, ${name}`))).toBeVisible();
   const avatarLink = navProfileLink(page, suggestion);
   await expect(avatarLink).toBeVisible();
   await expect(avatarLink).toHaveAttribute("href", `/${suggestion}`);

@@ -5,7 +5,7 @@ import { requireOnboardedViewer } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Messages",
-  description: "Your private messages and community chats on WebNEWS.",
+  description: "Your private messages and community chats on WebNewsX.",
   robots: { index: false, follow: false },
 };
 

@@ -82,7 +82,7 @@ async function coverImage(article: ShareSource): Promise<Blob | null> {
 /** Posters drawn for sharing, by story + design (the last few; a share right after opening the sheet reuses its). */
 const posterJobs = new Map<string, Promise<Blob | null>>();
 
-/** The story's poster in its template, with the small WebNEWS mark on top, as a JPEG (owner 2026-10-05). */
+/** The story's poster in its template, with the small WebNewsX mark on top, as a JPEG (owner 2026-10-05). */
 function posterFor(article: ShareSource): Promise<Blob | null> {
   const poster = posterOf(article);
   if (!poster) return Promise.resolve(null);
@@ -229,7 +229,7 @@ export function useStoryShare(article: ShareSource) {
     const withImage = { title: article.title, text: `${article.title}\n\n${url}` };
     const fileName = `webnews-${(article.slug ?? article.id).slice(0, 60)}.jpg`;
     try {
-      // The WebNEWS app: its native share sheet (the Android WebView has no Web Share API).
+      // The WebNewsX app: its native share sheet (the Android WebView has no Web Share API).
       if (plugin) {
         const image = await shareImage(article, 10_000);
         const uri = image ? await shareFileUri(image, fileName).catch(() => null) : null;
@@ -274,7 +274,7 @@ export function useStoryShare(article: ShareSource) {
       return;
     }
     const packages = APP_PACKAGES[channel];
-    // The WebNEWS app (owner 2026-10-02): straight into WhatsApp / Telegram / … with the poster attached (owner
+    // The WebNewsX app (owner 2026-10-02): straight into WhatsApp / Telegram / … with the poster attached (owner
     // 2026-10-05; the cover before) and "headline + link" as its caption — a web link can't carry a picture. Not
     // installed: the web link as before.
     if (packages && hasShareToApp()) {
@@ -289,7 +289,7 @@ export function useStoryShare(article: ShareSource) {
   };
 
   // The apps' own badges (share-glyphs.tsx), the size of the sheet's tiles.
-  const badge = 24;
+  const badge = 32;
   const later = (run: () => void) => () => {
     setSheetOpen(false);
     run();
@@ -300,7 +300,7 @@ export function useStoryShare(article: ShareSource) {
       onOpenChange={setSheetOpen}
       item={sendItem(article)}
       external={
-        <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 no-scrollbar">
+        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar">
           <ExternalShareButton label="Copy link" icon={<CopyLinkIcon size={badge} />} onClick={() => void copyLink()} />
           {native && <ExternalShareButton label="Share via…" icon={<ShareViaIcon size={badge} />} onClick={later(() => void shareNative())} />}
           <ExternalShareButton label="WhatsApp" icon={<WhatsAppIcon size={badge} />} onClick={later(() => openIntent("whatsapp"))} />
@@ -327,7 +327,7 @@ export function useStoryShare(article: ShareSource) {
 
 /**
  * Share control. Signed in (owner 2026-09-30, like Instagram): the "Send to" sheet — send the story to people and chats
- * in WebNEWS, with Copy link, the native sheet and the other apps underneath. Signed out: touch devices with the Web
+ * in WebNewsX, with Copy link, the native sheet and the other apps underneath. Signed out: touch devices with the Web
  * Share API get the native sheet straight away; everywhere else a menu offers Copy link, WhatsApp, X, Facebook,
  * LinkedIn, Telegram and Email (plus the native sheet when available). Every channel sends `shareUrl` (the short link; a hidden story's full URL).
  * Every completed share is recorded (`api.share`) and the count updates optimistically, then from the server.

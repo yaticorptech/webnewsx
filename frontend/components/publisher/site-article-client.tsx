@@ -5,7 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { SiteLanguage } from "@/lib/shared/contracts";
 import { countViewNow, recordArticleRead } from "@/components/feed/view-tracker";
 
-/** The story is open on WebNEWS (owner 2026-10-29: that's why publisher stories open here): count the view and the read. */
+/** The story is open on WebNewsX (owner 2026-10-29: that's why publisher stories open here): count the view and the read. */
 export function SiteArticleViews({ id }: { id: string }) {
   useEffect(() => {
     void countViewNow(id);

@@ -18,7 +18,7 @@ const SUGGESTED_PUBLISHERS = 12;
 /** Home's own canonical and preview (owner 2026-10-22, SEO before hosting); the share image is app/opengraph-image.tsx. */
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
-  keywords: ["WebNEWS", "news", "Kannada news", "Karnataka news", "India news", "citizen journalism", "breaking news", "local news"],
+  keywords: ["WebNewsX", "news", "Kannada news", "Karnataka news", "India news", "citizen journalism", "breaking news", "local news"],
   openGraph: { type: "website", url: "/", siteName: SITE_NAME, title: `${SITE_NAME} — ${TAGLINE}`, description: SITE_DESCRIPTION, locale: "en_IN" },
 };
 

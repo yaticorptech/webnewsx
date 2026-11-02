@@ -26,7 +26,7 @@ export function MoreMenu({ className }: { className?: string }) {
               { type: "separator" as const },
             ]
           : []),
-        { label: "About WebNEWS", href: "/about", icon: <Info aria-hidden /> },
+        { label: "About WebNewsX", href: "/about", icon: <Info aria-hidden /> },
         { label: "Terms & Conditions", href: "/terms", icon: <FileText aria-hidden /> },
         { label: "Privacy Policy", href: "/privacy", icon: <ShieldCheck aria-hidden /> },
         { type: "separator" },

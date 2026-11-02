@@ -25,7 +25,7 @@ const ACTION: Record<ContentLogAction, { label: string; tone: string }> = {
 function deviceOf(ua: string | null): string {
   if (!ua) return "—";
   const os = /Android/i.test(ua) ? "Android" : /iPhone|iPad/i.test(ua) ? "iPhone" : /Windows/i.test(ua) ? "Windows" : /Mac OS X/i.test(ua) ? "Mac" : /Linux/i.test(ua) ? "Linux" : "Other";
-  const app = /wv\)|WebNEWSApp/i.test(ua) ? "WebNEWS app" : /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : /Firefox\//.test(ua) ? "Firefox" : "Browser";
+  const app = /wv\)|WebNewsXApp/i.test(ua) ? "WebNewsX app" : /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : /Firefox\//.test(ua) ? "Firefox" : "Browser";
   return `${app} · ${os}`;
 }
 

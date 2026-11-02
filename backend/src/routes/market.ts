@@ -17,7 +17,7 @@ import type { AppEnv } from "../types.js";
 
 const QUOTES_TTL = 60;
 const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/";
-const HEADERS = { "User-Agent": "Mozilla/5.0 (compatible; WebNEWS market ticker)" };
+const HEADERS = { "User-Agent": "Mozilla/5.0 (compatible; WebNewsX market ticker)" };
 const TIMEOUT_MS = 10_000;
 const TROY_OUNCE_G = 31.1034768;
 /** At most this many chart points per quote: plenty for a line, small on the wire. */

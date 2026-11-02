@@ -260,7 +260,7 @@ function reasonsLine(reasons: ReasonCount[] | null): string {
 function BadgedAvatar({ actor, badge }: { actor: AppNotification["actor"]; badge: ReactNode }) {
   return (
     <span className="relative block">
-      <Avatar src={actor?.image} name={actor?.name ?? "WebNEWS"} size={40} decorative />
+      <Avatar src={actor?.image} name={actor?.name ?? "WebNewsX"} size={40} decorative />
       <span className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-brand text-brand-contrast ring-2 ring-surface [&_svg]:size-2.75">
         {badge}
       </span>
@@ -476,7 +476,7 @@ export function notificationParts(item: AppNotification, username: string, onNav
     detail = (
       <>
         {item.note && <span className="line-clamp-3 block italic text-ink-2">&ldquo;{item.note}&rdquo;</span>}
-        <span className="mt-0.5 block">Readers reported it. Please review it and follow the WebNEWS guidelines.</span>
+        <span className="mt-0.5 block">Readers reported it. Please review it and follow the WebNewsX guidelines.</span>
       </>
     );
   } else if (item.type === "story_reported") {
@@ -646,7 +646,7 @@ function pressMeetRow(item: AppNotification, actorName: string): { href: string 
         ) : (
           <>Reminder: you have a press meet today at {meet ? meetTime(meet.startsAt) : ""} IST</>
         ),
-        detail: meet?.platform === "google_meet" ? "On Google Meet — the link is on the press meet page." : "On WebNEWS Live.",
+        detail: meet?.platform === "google_meet" ? "On Google Meet — the link is on the press meet page." : "On WebNewsX Live.",
       };
     case "press_meet_live":
       return {
@@ -657,7 +657,7 @@ function pressMeetRow(item: AppNotification, actorName: string): { href: string 
             {name} has started the press meet. <strong className="font-bold text-brand">Join now</strong>
           </>
         ),
-        detail: meet?.platform === "google_meet" ? "On Google Meet" : "On WebNEWS Live",
+        detail: meet?.platform === "google_meet" ? "On Google Meet" : "On WebNewsX Live",
       };
     case "press_meet_cancelled":
       return { href, icon: <MeetIcon actor={item.actor} badge={<CalendarX2 aria-hidden />} />, text: <>{name} has cancelled the press meet</>, detail: when };
@@ -693,13 +693,13 @@ function pressMeetRow(item: AppNotification, actorName: string): { href: string 
         href,
         icon: <MeetIcon actor={item.actor} badge={<FileText aria-hidden />} />,
         text: <>{name} has submitted their coverage of your press meet for verification</>,
-        detail: "Read it and verify it — it goes live on WebNEWS once you do.",
+        detail: "Read it and verify it — it goes live on WebNewsX once you do.",
       };
     case "press_meet_approved":
       return {
         href,
         icon: <MeetIcon actor={item.actor} badge={<BadgeCheck aria-hidden />} />,
-        text: <>{name} has verified your story — it&rsquo;s live on WebNEWS</>,
+        text: <>{name} has verified your story — it&rsquo;s live on WebNewsX</>,
         detail: amount ? `Your fee of ${amount} will be released to you shortly.` : null,
       };
     case "press_meet_changes":

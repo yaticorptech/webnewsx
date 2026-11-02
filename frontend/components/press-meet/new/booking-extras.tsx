@@ -213,7 +213,7 @@ export function PlatformFeePay({ payment, onPaid }: { payment: PlatformFeePaymen
             <>
               <span className="block font-wide text-xl font-black tabular-nums text-ink">{inr(amount ?? 0)}</span>
               <span className="mt-0.5 block text-xs text-muted">
-                WebNEWS&rsquo;s fee to book this press meet, paid now. Test payment — no money is charged while online payments are being set up.
+                WebNewsX&rsquo;s fee to book this press meet, paid now. Test payment — no money is charged while online payments are being set up.
               </span>
             </>
           )}

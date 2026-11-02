@@ -35,7 +35,7 @@ export function PlatformChip({ platform }: { platform: PressMeetPlatform }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted [&_svg]:size-3.5">
       {platform === "google_meet" ? <Video aria-hidden /> : <MonitorPlay aria-hidden className="text-brand" />}
-      {platform === "google_meet" ? "Google Meet" : "WebNEWS Live"}
+      {platform === "google_meet" ? "Google Meet" : "WebNewsX Live"}
     </span>
   );
 }

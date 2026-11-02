@@ -49,8 +49,8 @@ export function ReadWallHost() {
       title={hard ? "Sign in to read this story" : "Sign up to continue reading"}
       description={
         hard
-          ? "This story is for WebNEWS members. Create a free account or log in to read it — it takes less than a minute."
-          : "Create a free WebNEWS account to keep reading. It takes less than a minute."
+          ? "This story is for WebNewsX members. Create a free account or log in to read it — it takes less than a minute."
+          : "Create a free WebNewsX account to keep reading. It takes less than a minute."
       }
       dismissible={!hard}
       size="sm"

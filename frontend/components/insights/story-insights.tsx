@@ -128,7 +128,7 @@ function Dashboard({ data }: { data: StoryInsights }) {
             <div className="mt-4">
               <Split
                 rows={[
-                  { label: "WebNEWS app", value: data.audience.app },
+                  { label: "WebNewsX app", value: data.audience.app },
                   { label: "Website", value: data.audience.web },
                 ]}
               />

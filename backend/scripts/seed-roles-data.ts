@@ -103,7 +103,7 @@ export const DEMO_ADMIN: DemoPerson = {
 export const DEMO_TRAINEE: DemoPerson & { press: DemoPress } = {
   username: "ward.watch",
   name: "Ward Watch",
-  bio: "Civic reporting from the wards of Kaveripura.\nTrainee reporter on WebNEWS.",
+  bio: "Civic reporting from the wards of Kaveripura.\nTrainee reporter on WebNewsX.",
   press: {
     mobile: "+919000000007",
     reporterType: "citizen",

@@ -95,7 +95,7 @@ const SECTIONS: Record<SectionKey, Section> = {
 /**
  * /settings (owner 2026-10-01, from every account's menu) as options, one under the other below the "Settings"
  * heading (owner 2026-10-02: no "View profile" link here): **Drafts** (in the app only, owner 2026-10-09: moved here
- * from the profile's tabs) · **Advertorial price** (owner 2026-10-05, was "Press meet price"; reporters and the Editor Desk) · **Notifications** (in the WebNEWS app: push on / off,
+ * from the profile's tabs) · **Advertorial price** (owner 2026-10-05, was "Press meet price"; reporters and the Editor Desk) · **Notifications** (in the WebNewsX app: push on / off,
  * owner 2026-10-02) · **Connected accounts** (Instagram / Facebook for
  * Verified reporters, then the Account card with Log out) · **Reset password** · **Help center**. ≥1024px: the full
  * screen width — heading and options on the left, the chosen one beside them; phones (owner 2026-10-02): every
@@ -393,7 +393,7 @@ function MembershipPriceCard({ price, eligible }: { price: number | null; eligib
       id="settings-membership"
       icon={<Crown aria-hidden />}
       title="Premium membership"
-      description={`Readers pay this every ${MEMBERSHIP_DAYS} days to read your members-only stories (tick “Premium” when you publish). WebNEWS keeps a ${MEMBERSHIP_FEE_PERCENT}% platform fee.`}
+      description={`Readers pay this every ${MEMBERSHIP_DAYS} days to read your members-only stories (tick “Premium” when you publish). WebNewsX keeps a ${MEMBERSHIP_FEE_PERCENT}% platform fee.`}
     >
       {backToStory && (
         <Link href={backToStory} className="-mt-1 inline-flex w-fit items-center gap-1 text-sm font-bold text-brand hover:text-brand-hover">
@@ -782,7 +782,7 @@ const FAQ: ReadonlyArray<{ q: string; a: ReactNode }> = [
   },
   {
     q: "What is News radio?",
-    a: "Tap the radio icon and WebNEWS reads the headlines aloud one after another, moving to the next story on its own. Tap the red icon to stop.",
+    a: "Tap the radio icon and WebNewsX reads the headlines aloud one after another, moving to the next story on its own. Tap the red icon to stop.",
   },
 ];
 
@@ -818,7 +818,7 @@ function HelpCenterCard() {
         <a href={`mailto:${COMPANY.email}`} className="font-semibold text-brand underline underline-offset-2 hover:text-brand-hover">
           {COMPANY.email}
         </a>{" "}
-        or read <Link href="/about" className="font-semibold text-brand underline underline-offset-2 hover:text-brand-hover">About WebNEWS</Link>.
+        or read <Link href="/about" className="font-semibold text-brand underline underline-offset-2 hover:text-brand-hover">About WebNewsX</Link>.
       </p>
     </Card>
   );

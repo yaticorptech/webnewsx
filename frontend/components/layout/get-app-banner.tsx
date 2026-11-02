@@ -9,7 +9,7 @@ import { isNativeApp } from "@/lib/native-app";
 import { track } from "@/lib/track";
 
 /*
- * "Get the WebNEWS app" (owner 2026-10-16): people reading in a phone's browser are invited to the app — a small card
+ * "Get the WebNewsX app" (owner 2026-10-16): people reading in a phone's browser are invited to the app — a small card
  * above the bottom bar, a few seconds after they arrive. It comes back now and then (AFTER_GOT_MS / AFTER_NOT_NOW_MS). Never in the app itself, never on computers, never on the Desk.
  * Android only for now (there's no iPhone app). A browser can't see which apps are installed, so the tap counts.
  */
@@ -81,7 +81,7 @@ export function GetAppBanner() {
     <AnimatePresence>
       {open && (
         <motion.aside
-          aria-label="Get the WebNEWS app"
+          aria-label="Get the WebNewsX app"
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0, transition: { duration: 0.15 } }}
@@ -100,7 +100,7 @@ export function GetAppBanner() {
           <div className="flex items-center gap-3 pr-7">
             <img src="/icons/icon-192.png" alt="" width={48} height={48} className="size-12 shrink-0 rounded-xl shadow-sm" />
             <div className="min-w-0">
-              <p className="font-wide text-[0.9375rem] font-extrabold leading-tight text-ink">WebNEWS is better in the app</p>
+              <p className="font-wide text-[0.9375rem] font-extrabold leading-tight text-ink">WebNewsX is better in the app</p>
               <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-xs text-muted">
                 <span className="inline-flex items-center gap-1">
                   <Zap aria-hidden className="size-3 text-brand" /> Faster
@@ -147,7 +147,7 @@ export function GetAppButton({ className }: { className?: string }) {
       href={APP_URL}
       download
       onClick={() => track("get_app_nav")}
-      aria-label="Download the WebNEWS app"
+      aria-label="Download the WebNewsX app"
       className={`inline-flex h-10 shrink-0 flex-col items-center justify-center rounded-full bg-tint px-2.5 text-brand transition-colors active:bg-brand active:text-brand-contrast ${className ?? ""}`}
     >
       <Download aria-hidden className="size-4" strokeWidth={2.4} />

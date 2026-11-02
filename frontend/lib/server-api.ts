@@ -64,7 +64,7 @@ import {
 } from "./shared/contracts";
 
 /**
- * Server-side access to the WebNEWS API. Server Components call the backend directly at
+ * Server-side access to the WebNewsX API. Server Components call the backend directly at
  * BACKEND_URL and forward the visitor's cookie (Better Auth session) and client IP.
  * The frontend never touches the database.
  */
@@ -94,7 +94,7 @@ export class ServerApiError extends Error {
 /** The backend could not be reached (connection refused, DNS, timeout). `status` is 0. */
 export class BackendUnavailableError extends ServerApiError {
   constructor(path: string, cause: unknown) {
-    super(0, "backend_unavailable", `WebNEWS API unreachable (${path})`);
+    super(0, "backend_unavailable", `WebNewsX API unreachable (${path})`);
     this.name = "BackendUnavailableError";
     this.cause = cause;
   }

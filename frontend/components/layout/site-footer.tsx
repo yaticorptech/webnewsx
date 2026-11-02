@@ -8,7 +8,7 @@ export type SiteFooterProps = {
 };
 
 /**
- * The end of a page: WebNEWS's social icons only (owner 2026-10-05: no footer, no address — just the social icons).
+ * The end of a page: WebNewsX's social icons only (owner 2026-10-05: no footer, no address — just the social icons).
  * Server-safe.
  */
 export function SiteFooter({ variant = "full", className }: SiteFooterProps) {

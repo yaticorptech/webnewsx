@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function ExplorePage() {
   return (
     <>
-      <h1 className="sr-only">Search and explore WebNEWS</h1>
+      <h1 className="sr-only">Search and explore WebNewsX</h1>
       <ExploreView />
     </>
   );
