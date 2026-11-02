@@ -8,6 +8,7 @@ import type { ArticleCard, Page, ShareChannel } from "../shared/contracts.js";
 import { findVisibleAuthor, listVisibleCardsByIds, visibleWhere } from "./articles.js";
 import { beforeCursor, isUuid } from "./shared.js";
 import { followerCount } from "./users.js";
+import { plusDemo } from "../lib/demo-engagement.js";
 
 /* ─────────────── Likes ─────────────── */
 
@@ -24,7 +25,7 @@ export async function setLike(liker: Liker, articleId: string, liked: boolean): 
   return db.transaction(async (tx) => {
     // Lock the article row so concurrent like/unlike updates serialize cleanly.
     const [target] = await tx
-      .select({ id: article.id, likeCount: article.likeCount, authorId: article.authorId, title: article.title })
+      .select({ id: article.id, likeCount: article.likeCount, demoLikes: article.demoLikes, authorId: article.authorId, title: article.title })
       .from(article)
       .innerJoin(user, eq(user.id, article.authorId))
       .where(and(eq(article.id, articleId), visibleWhere()))
@@ -52,7 +53,7 @@ export async function setLike(liker: Liker, articleId: string, liked: boolean): 
               .returning({ articleId: articleAnonLike.articleId });
     const changed = rows.length > 0;
 
-    if (!changed) return { liked, likeCount: target.likeCount };
+    if (!changed) return { liked, likeCount: plusDemo(target.likeCount, target.demoLikes) };
     const [updated] = await tx
       .update(article)
       .set({ likeCount: liked ? sql`${article.likeCount} + 1` : sql`greatest(${article.likeCount} - 1, 0)` })
@@ -60,7 +61,7 @@ export async function setLike(liker: Liker, articleId: string, liked: boolean): 
       .returning({ likeCount: article.likeCount });
     await publishEvent(tx, { t: "article.stats", id: articleId });
     if (liked) await notifyLiked(tx, target, liker.kind === "user" ? liker.id : null);
-    return { liked, likeCount: updated?.likeCount ?? target.likeCount };
+    return { liked, likeCount: plusDemo(updated?.likeCount ?? target.likeCount, target.demoLikes) };
   });
 }
 
@@ -121,14 +122,14 @@ export async function recordShare(articleId: string, channel: ShareChannel, view
   return db.transaction(async (tx) => {
     // Row lock: concurrent shares by the same viewer serialize, so the dedupe check below can't be raced.
     const [target] = await tx
-      .select({ id: article.id, shareCount: article.shareCount })
+      .select({ id: article.id, shareCount: article.shareCount, demoShares: article.demoShares })
       .from(article)
       .innerJoin(user, eq(user.id, article.authorId))
       .where(and(eq(article.id, articleId), visibleWhere()))
       .for("update", { of: article })
       .limit(1);
     if (!target) return null;
-    if (!viewerKey) return { shareCount: target.shareCount, counted: false };
+    if (!viewerKey) return { shareCount: plusDemo(target.shareCount, target.demoShares), counted: false };
 
     const since = new Date(Date.now() - SHARE_DEDUPE_MS);
     const [recent] = await tx
@@ -136,7 +137,7 @@ export async function recordShare(articleId: string, channel: ShareChannel, view
       .from(articleShare)
       .where(and(eq(articleShare.articleId, articleId), eq(articleShare.viewerKey, viewerKey), gt(articleShare.createdAt, since)))
       .limit(1);
-    if (recent) return { shareCount: target.shareCount, counted: false };
+    if (recent) return { shareCount: plusDemo(target.shareCount, target.demoShares), counted: false };
 
     const [updated] = await tx
       .update(article)
@@ -145,7 +146,7 @@ export async function recordShare(articleId: string, channel: ShareChannel, view
       .returning({ shareCount: article.shareCount });
     await tx.insert(articleShare).values({ articleId, channel, viewerKey });
     await publishEvent(tx, { t: "article.stats", id: articleId });
-    return { shareCount: updated?.shareCount ?? target.shareCount + 1, counted: true };
+    return { shareCount: plusDemo(updated?.shareCount ?? target.shareCount + 1, target.demoShares), counted: true };
   });
 }
 

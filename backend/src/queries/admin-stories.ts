@@ -25,6 +25,7 @@ import { createNotice } from "./notices.js";
 import { notifyFollowers, notifyReturned } from "./notifications.js";
 import { setPassLevel } from "./press-pass.js";
 import { isUuid } from "./shared.js";
+import { plusDemo } from "../lib/demo-engagement.js";
 
 /** The admin performing an action. */
 export type Actor = { id: string };
@@ -96,9 +97,9 @@ function toRow(r: Row): AdminStoryRow {
     updatedAt: a.updatedAt.toISOString(),
     publishedAt: iso(a.publishedAt),
     submittedAt: iso(a.submittedAt),
-    viewCount: a.viewCount,
-    likeCount: a.likeCount,
-    shareCount: a.shareCount,
+    viewCount: plusDemo(a.viewCount, a.demoViews),
+    likeCount: plusDemo(a.likeCount, a.demoLikes),
+    shareCount: plusDemo(a.shareCount, a.demoShares),
     openFlags: Number(r.openFlags),
     editorsPick: a.pinnedAt !== null,
     pinOrder: a.pinnedAt ? a.pinOrder : null,

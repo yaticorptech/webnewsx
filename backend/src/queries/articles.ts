@@ -25,6 +25,7 @@ import {
   type FlagReason,
 } from "../shared/contracts.js";
 import { badgeLevelSql, beforeCursor, descNullsLast, isUuid } from "./shared.js";
+import { shownCount } from "../lib/demo-engagement.js";
 
 /* ─────────────── Visibility (SPEC §3.11) ─────────────── */
 
@@ -86,9 +87,9 @@ function cardColumns(viewerId: string | null) {
     posterZoom: article.posterZoom,
     posterOverlayUrl: article.posterOverlayUrl,
     readingMinutes: article.readingMinutes,
-    viewCount: article.viewCount,
-    likeCount: article.likeCount,
-    shareCount: article.shareCount,
+    viewCount: shownCount(article.viewCount, article.demoViews),
+    likeCount: shownCount(article.likeCount, article.demoLikes),
+    shareCount: shownCount(article.shareCount, article.demoShares),
     commentCount: article.commentCount,
     publishedAt: article.publishedAt,
     authorId: user.id,
@@ -868,7 +869,13 @@ export function toOwnedArticle(row: ArticleRecord): OwnedArticle {
 export async function getStats(id: string, executor: Executor = db): Promise<ArticleStats | null> {
   if (!isUuid(id)) return null;
   const [row] = await executor
-    .select({ id: article.id, viewCount: article.viewCount, likeCount: article.likeCount, shareCount: article.shareCount, commentCount: article.commentCount })
+    .select({
+      id: article.id,
+      viewCount: shownCount(article.viewCount, article.demoViews),
+      likeCount: shownCount(article.likeCount, article.demoLikes),
+      shareCount: shownCount(article.shareCount, article.demoShares),
+      commentCount: article.commentCount,
+    })
     .from(article)
     .where(and(eq(article.id, id), eq(article.status, "published")))
     .limit(1);

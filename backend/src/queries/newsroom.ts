@@ -15,6 +15,7 @@ import type {
 } from "../shared/contracts.js";
 import { storyStatus } from "./articles.js";
 import { ALL_LIKES, isUuid } from "./shared.js";
+import { plusDemo } from "../lib/demo-engagement.js";
 
 const DAY_MS = 86_400_000;
 export const DEFAULT_TIME_ZONE = "Asia/Kolkata";
@@ -290,10 +291,10 @@ export async function newsroomStories(userId: string, opts: { cursor: string | u
         publishedAt: a.publishedAt?.toISOString() ?? null,
         submittedAt: a.submittedAt?.toISOString() ?? null,
         updatedAt: a.updatedAt.toISOString(),
-        viewCount: a.viewCount,
+        viewCount: plusDemo(a.viewCount, a.demoViews),
         readCount: Number(readCount),
-        likeCount: a.likeCount,
-        shareCount: a.shareCount,
+        likeCount: plusDemo(a.likeCount, a.demoLikes),
+        shareCount: plusDemo(a.shareCount, a.demoShares),
         engagementRate: a.viewCount > 0 ? Math.round(((a.likeCount + a.shareCount) / a.viewCount) * 10_000) / 10_000 : 0,
         editorsPick: a.pinnedAt !== null,
         spotlight: order

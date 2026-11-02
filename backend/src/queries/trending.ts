@@ -5,6 +5,7 @@ import { toReporterLevel } from "../lib/roles.js";
 import { ALL_LIKES, BADGE_LEVEL_U } from "./shared.js";
 import { VISIBLE_SQL } from "./articles.js";
 import type { TrendingHeadline } from "../shared/contracts.js";
+import { shownCountRaw } from "../lib/demo-engagement.js";
 
 const num = (value: number) => sql.raw(String(value));
 
@@ -69,7 +70,8 @@ export async function listTrending(limit: number, now: Date = new Date()): Promi
     select a.id, a.slug, a.title,
       (extract(epoch from a.published_at) * 1000)::float8 as "publishedAtMs",
       u.username, u.name, ${BADGE_LEVEL_U} as "reporterLevel",
-      a.view_count as "viewCount", a.like_count as "likeCount", a.share_count as "shareCount",
+      ${shownCountRaw("a.view_count", "a.demo_views")} as "viewCount", ${shownCountRaw("a.like_count", "a.demo_likes")} as "likeCount",
+      ${shownCountRaw("a.share_count", "a.demo_shares")} as "shareCount",
       (coalesce(v.n, 0) * ${num(w.view)} + coalesce(l.n, 0) * ${num(w.like)} + coalesce(s.n, 0) * ${num(w.share)}) as score,
       (a.id in (select id from newest)) as newest
     from cand

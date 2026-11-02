@@ -88,6 +88,8 @@ import type {
   Category,
   CommentInput,
   ContentLogEntry,
+  DemoAction,
+  DemoEngagementStatus,
   GifSearchResponse,
   Wish,
   WishComment,
@@ -1001,6 +1003,9 @@ export const api = {
     pressMeets: (cursor?: string | null, signal?: AbortSignal) =>
       request<{ items: AdminPressMeetRow[]; nextCursor: string | null }>(`/api/admin/press-meets${query({ cursor })}`, { signal }),
 
+    /** Demo engagement (local / staging only): status, and enable / disable / generate / reset. */
+    demo: (signal?: AbortSignal) => request<DemoEngagementStatus>("/api/admin/demo", { signal }),
+    demoAction: (action: DemoAction) => request<DemoEngagementStatus>("/api/admin/demo", { method: "POST", body: { action } }),
     /** Reporter activity, newest first (owner 2026-10-31); `q` = a username or story title. */
     activity: (params: { cursor?: string | null; q?: string } = {}, signal?: AbortSignal) =>
       request<Page<ContentLogEntry>>(`/api/admin/activity${query({ cursor: params.cursor, q: params.q || undefined })}`, { signal }),

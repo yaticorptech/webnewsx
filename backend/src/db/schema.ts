@@ -260,6 +260,14 @@ export const article = pgTable(
     dislikeCount: integer("dislike_count").notNull().default(0),
     shareCount: integer("share_count").notNull().default(0),
     commentCount: integer("comment_count").notNull().default(0),
+    /**
+     * Demo engagement (owner 2026-11-02): generated numbers for testing the UI on local / staging, kept apart from the
+     * real counts above. Added to the shown counts only while demo mode is on, which the server never allows on the
+     * public site (lib/demo-engagement.ts).
+     */
+    demoViews: integer("demo_views").notNull().default(0),
+    demoLikes: integer("demo_likes").notNull().default(0),
+    demoShares: integer("demo_shares").notNull().default(0),
     createdAt: tsMs("created_at").notNull().defaultNow(),
     updatedAt: tsMs("updated_at").notNull().defaultNow(),
     publishedAt: tsMs("published_at"),

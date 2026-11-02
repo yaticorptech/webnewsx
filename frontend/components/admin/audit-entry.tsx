@@ -7,6 +7,7 @@ import {
   EyeOff,
   FileX2,
   Flag,
+  FlaskConical,
   FolderInput,
   IdCard,
   MessageSquareWarning,
@@ -112,6 +113,7 @@ export function describeAudit(entry: AuditEntry): Described {
       return { icon: FolderInput, tone: "muted", text: <>moved {quoted} to <Target>{section}</Target></> };
     },
     "story.edit": () => ({ icon: PenLine, tone: "muted", text: <>edited {quoted}</> }),
+    "demo.engagement": () => ({ icon: FlaskConical, tone: "muted", text: <>demo engagement: {str(meta.action) ?? "updated"}</> }),
     "flags.resolve": () => {
       const count = num(meta.flags) ?? 0;
       const reports = `${count} report${count === 1 ? "" : "s"}`;

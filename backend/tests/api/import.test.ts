@@ -17,7 +17,7 @@ describe("POST /api/import/story (scheduled morning import)", () => {
     // The source image, served without the network.
     const png = await samplePng();
     const realFetch = globalThis.fetch;
-    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) =>
+    vi.stubGlobal("fetch", (input: string | URL | Request, init?: RequestInit) =>
       String(input).startsWith("https://static.pib.gov.in/") ? Promise.resolve(new Response(new Uint8Array(png), { status: 200 })) : realFetch(input, init),
     );
     const story = {

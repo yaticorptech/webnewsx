@@ -837,6 +837,23 @@ export type Wish = {
   comments: WishComment[];
 };
 
+/* ─────────────── Demo engagement (owner 2026-11-02; local / staging only) ─────────────── */
+
+export type EngagementTotals = { views: number; likes: number; shares: number };
+/** `GET /api/admin/demo` — `allowed` false on the public site, where nothing can switch it on. */
+export type DemoEngagementStatus = {
+  allowed: boolean;
+  enabled: boolean;
+  generatedAt: string | null;
+  stories: number;
+  actual: EngagementTotals;
+  demo: EngagementTotals;
+  shown: EngagementTotals;
+};
+export const DEMO_ACTIONS = ["enable", "disable", "generate", "reset"] as const;
+export type DemoAction = (typeof DEMO_ACTIONS)[number];
+export const demoActionSchema = z.object({ action: z.enum(DEMO_ACTIONS) });
+
 /**
  * Reporter activity (owner 2026-10-31: kept for legal requests): one story action by an account, with where it came from.
  * `GET /api/admin/activity?cursor=&q=` (newest first; `q` = a username or story title).
@@ -2059,6 +2076,7 @@ export type AuditAction =
   | "story.pins_reorder"
   | "story.category"
   | "story.edit"
+  | "demo.engagement"
   | "flags.resolve"
   | "user.role"
   | "user.auto_admin"

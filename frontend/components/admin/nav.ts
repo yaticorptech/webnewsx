@@ -3,6 +3,7 @@ import {
   Building2,
   Crown,
   FileClock,
+  FlaskConical,
   Flag,
   IdCard,
   Inbox,
@@ -58,6 +59,8 @@ export const DESK_SECTIONS: readonly DeskSection[] = [
   // Every story reporters publish / edit / delete, with IP and device (owner 2026-10-31: kept for legal requests).
   { key: "activity", href: "/admin/activity", label: "Reporter activity", short: "Activity", icon: FileClock, group: "System" },
   { key: "audit", href: "/admin/audit", label: "Audit log", short: "Audit", icon: ScrollText, group: "System" },
+  // Generated counts for testing the UI on local / staging (owner 2026-11-02); locked off on the public site.
+  { key: "demo", href: "/admin/demo", label: "Demo engagement", short: "Demo", icon: FlaskConical, group: "System" },
 ];
 
 /*

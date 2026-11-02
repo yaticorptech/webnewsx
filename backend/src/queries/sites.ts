@@ -36,6 +36,7 @@ import { listMemberGroups } from "./groups.js";
 import { dnsHost, pointingRecords } from "./press-pass.js";
 import { descNullsLast, isUuid } from "./shared.js";
 import type { z } from "zod";
+import { shownCount } from "../lib/demo-engagement.js";
 
 /*
  * Publisher websites (owner 2026-10-29): a verified domain's news site in the webnews.in layout. The owner sets it up
@@ -566,7 +567,7 @@ export async function changeSitePassword(site: PublisherSiteRecord, current: str
 
 export async function siteAdminStories(site: PublisherSiteRecord): Promise<SiteAdminStory[]> {
   const rows = await db
-    .select({ id: article.id, slug: article.slug, title: article.title, coverUrl: article.coverUrl, publishedAt: article.publishedAt, viewCount: article.viewCount })
+    .select({ id: article.id, slug: article.slug, title: article.title, coverUrl: article.coverUrl, publishedAt: article.publishedAt, viewCount: shownCount(article.viewCount, article.demoViews) })
     .from(article)
     .innerJoin(user, eq(user.id, article.authorId))
     .where(and(visibleWhere(), eq(article.authorId, site.sourceId)))

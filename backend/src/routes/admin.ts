@@ -36,6 +36,7 @@ import {
 import { listContactMessages, replyContactMessage } from "../queries/contact.js";
 import { listFlagGroups, listStoryFlags, resolveFlags } from "../queries/flags.js";
 import { listContentLog } from "../queries/content-log.js";
+import { demoStatus, runDemoAction } from "../queries/demo-engagement.js";
 import { resolveTimeZone } from "../queries/newsroom.js";
 import { adminPlatformFee, listDeskPressMeets, setPlatformFee } from "../queries/press-meet-booking.js";
 import { clampLimit } from "../queries/shared.js";
@@ -60,6 +61,7 @@ import {
   suspendSchema,
   membershipRulesSchema,
   groupDecisionSchema,
+  demoActionSchema,
 } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 
@@ -294,6 +296,14 @@ export function adminRoutes() {
   // GET /api/admin/activity?cursor=&q= — Reporter activity (owner 2026-10-31): stories published / edited / deleted,
   // with the IP and browser each came from.
   app.get("/activity", async (c) => c.json(await listContentLog(c.req.query("cursor"), c.req.query("q")?.slice(0, 80))));
+
+  // GET / POST /api/admin/demo — demo engagement for testing the UI (owner 2026-11-02): local / staging only; the
+  // server refuses every change on the public site.
+  app.get("/demo", async (c) => c.json(await demoStatus()));
+  app.post("/demo", async (c) => {
+    const { action } = await readJson(c, demoActionSchema);
+    return c.json(await runDemoAction(action, actorOf(c).id));
+  });
 
   app.get("/audit", async (c) => {
     const { action, target } = parseWith(auditQuery, c.req.query());

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ContentLogEntry, MarketResponse, PublicPressPass, SiteArticle, SiteHome } from "@/lib/shared/contracts";
+import type { ContentLogEntry, DemoEngagementStatus, MarketResponse, PublicPressPass, SiteArticle, SiteHome } from "@/lib/shared/contracts";
 
 import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
@@ -493,6 +493,10 @@ export function getAdminPressMeets(): Promise<{ items: AdminPressMeetRow[]; next
 
 export async function getAdminSpotlightPackages(): Promise<SpotlightPackage[]> {
   return (await serverFetch<{ items: SpotlightPackage[] }>("/api/admin/spotlight/packages")).items;
+}
+
+export function getAdminDemo(): Promise<DemoEngagementStatus> {
+  return serverFetch<DemoEngagementStatus>("/api/admin/demo", { asAdmin: true });
 }
 
 export function getAdminActivity(q?: string): Promise<Page<ContentLogEntry>> {
