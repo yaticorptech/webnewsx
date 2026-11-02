@@ -133,22 +133,21 @@ export function AdminShell({ viewer, overview, children }: AdminShellProps) {
   );
 }
 
-function DeskPill({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "kicker inline-flex items-center gap-1.5 rounded-full bg-brand px-2.5 py-1 text-[0.625rem] text-brand-contrast shadow-[0_1px_2px_rgb(227_6_19/0.25)]",
-        className,
-      )}
-    >
-      <SpeedBarsSvg className="h-2 w-auto" />
-      Editor Desk
-    </span>
-  );
-}
-
 /** One sidebar group: its small heading (red with a dot when you're in it), opening and closing its sections. */
-function NavGroup({ group, current, kpis, expanded }: { group: DeskGroup; current: DeskSection | undefined; kpis: DeskKpis | null; expanded: boolean }) {
+function NavGroup({
+  group,
+  current,
+  kpis,
+  expanded,
+  onNavigate,
+}: {
+  group: DeskGroup;
+  current: DeskSection | undefined;
+  kpis: DeskKpis | null;
+  expanded: boolean;
+  /** The phone menu closes when a section is tapped. */
+  onNavigate?: () => void;
+}) {
   const sections = DESK_SECTIONS.filter((section) => section.group === group);
   const here = current?.group === group;
   const waiting = kpis ? sections.reduce((sum, section) => sum + (section.pending ? section.pending(kpis) : 0), 0) : 0;
@@ -172,7 +171,7 @@ function NavGroup({ group, current, kpis, expanded }: { group: DeskGroup; curren
         <ul className={cn("flex flex-col gap-0.5", expanded ? "pb-1.5 pt-0.5" : "pb-2")}>
           {sections.map((section) => (
             <li key={section.key}>
-              <SidebarLink section={section} active={current?.key === section.key} kpis={kpis} expanded={expanded} />
+              <SidebarLink section={section} active={current?.key === section.key} kpis={kpis} expanded={expanded} onNavigate={onNavigate} />
             </li>
           ))}
         </ul>
@@ -181,12 +180,34 @@ function NavGroup({ group, current, kpis, expanded }: { group: DeskGroup; curren
   );
 }
 
-function SidebarLink({ section, active, kpis, expanded }: { section: DeskSection; active: boolean; kpis: DeskKpis | null; expanded: boolean }) {
+function SidebarLink({
+  section,
+  active,
+  kpis,
+  expanded,
+  onNavigate,
+}: {
+  section: DeskSection;
+  active: boolean;
+  kpis: DeskKpis | null;
+  expanded: boolean;
+  onNavigate?: () => void;
+}) {
   const Icon = section.icon;
   const pending = kpis && section.pending ? section.pending(kpis) : 0;
   return (
     <Link
       href={section.href}
+      scroll={onNavigate ? !active : undefined}
+      onClick={
+        onNavigate
+          ? (event) => {
+              // The page you're already on: just close the menu (no reload, no jump to the top).
+              if (active) event.preventDefault();
+              onNavigate();
+            }
+          : undefined
+      }
       aria-current={active ? "page" : undefined}
       aria-label={pending > 0 ? `${section.label}, ${pending} waiting` : section.label}
       className={cn(
@@ -541,57 +562,25 @@ function MobileDrawer({
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 420, damping: 40 }}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4">
-              <div className="flex min-w-0 flex-col items-start gap-2">
-                <Link href={ADMIN_HOME} aria-label="Editor Desk overview" className="rounded-md outline-offset-4">
-                  <BrandLockup size="2xs" align="start" />
-                </Link>
-                <DeskPill />
-              </div>
+            {/* The same red header and grouped sections as the desk's side menu on computers (owner 2026-11-02). */}
+            <div className="flex h-16 shrink-0 items-center gap-2.5 bg-brand px-4">
+              <Link href={ADMIN_HOME} aria-label="Editor Desk dashboard" onClick={onClose} className="rounded-md bg-white px-2 py-1.5 outline-offset-2">
+                <BrandLockup size="2xs" align="start" />
+              </Link>
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[0.625rem] font-bold tracking-[0.12em] text-white">ADMIN</span>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close the menu"
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-tint hover:text-brand"
+                className="ml-auto inline-flex size-10 shrink-0 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/15 hover:text-white"
               >
                 <X aria-hidden className="size-5" />
               </button>
             </div>
             <nav aria-label="Editor Desk sections" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3">
-              <ul className="flex flex-col gap-0.5">
-                {DESK_SECTIONS.map((section) => {
-                  const active = current?.key === section.key;
-                  const pending = kpis && section.pending ? section.pending(kpis) : 0;
-                  const Icon = section.icon;
-                  return (
-                    <li key={section.key}>
-                      <Link
-                        href={section.href}
-                        onClick={(event) => {
-                          // The page you're already on: just close the menu — no reload, no jump to the top.
-                          if (active) event.preventDefault();
-                          onClose();
-                        }}
-                        scroll={!active}
-                        aria-current={active ? "page" : undefined}
-                        className={cn(
-                          "relative flex h-11 items-center gap-3 rounded-lg px-3 text-[0.9375rem] font-semibold transition-colors",
-                          active ? "bg-tint text-brand" : "text-ink-2 hover:bg-surface-2 hover:text-ink",
-                        )}
-                      >
-                        <Icon aria-hidden className={cn("size-5 shrink-0", active ? "text-brand" : "text-muted")} />
-                        <span className="min-w-0 flex-1 truncate">{section.label}</span>
-                        {pending > 0 && (
-                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-[0.6875rem] font-bold tabular-nums text-brand-contrast">
-                            {compactNumber(pending)}
-                            <span className="sr-only"> waiting</span>
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+              {DESK_GROUPS.map((group) => (
+                <NavGroup key={group} group={group} current={current} kpis={kpis} expanded onNavigate={onClose} />
+              ))}
             </nav>
             <div className="border-t border-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <div className="flex items-center gap-3 px-1">
