@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode 
 import { SpeedLines } from "@/components/brand/speed-lines";
 import { SelectBox } from "@/components/presspass/form-controls";
 import { NAV_MAIN, NAV_MORE } from "@/lib/categories";
-import { CATEGORY_LABELS, DISTRICT_CATEGORY, KARNATAKA_DISTRICTS, LIMITS, isCategory, type Category } from "@/lib/shared/contracts";
+import { ALL_KARNATAKA, CATEGORY_LABELS, DISTRICT_CATEGORY, DISTRICT_CHOICES, LIMITS, isCategory, type Category } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 
 /* ─────────────────────────── Section frame ─────────────────────────── */
@@ -286,9 +286,9 @@ export function CategoryPicker({
               <option value="" disabled>
                 Choose the district
               </option>
-              {KARNATAKA_DISTRICTS.map((name) => (
+              {DISTRICT_CHOICES.map((name) => (
                 <option key={name} value={name}>
-                  {name}
+                  {name === ALL_KARNATAKA ? "All Karnataka (whole state)" : name}
                 </option>
               ))}
             </SelectBox>

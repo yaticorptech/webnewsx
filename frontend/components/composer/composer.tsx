@@ -21,7 +21,8 @@ import { qk } from "@/lib/query-keys";
 import {
   LIMITS,
   BLURB,
-  KARNATAKA_DISTRICTS,
+  ALL_KARNATAKA,
+  DISTRICT_CHOICES,
   SUBCATEGORIES,
   PRESS_LANGUAGE_LABELS,
   PRESS_LANGUAGE_VALUES,
@@ -920,9 +921,9 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
                   <option value="" disabled>
                     Choose the district
                   </option>
-                  {KARNATAKA_DISTRICTS.map((name) => (
+                  {DISTRICT_CHOICES.map((name) => (
                     <option key={name} value={name}>
-                      {name}
+                      {name === ALL_KARNATAKA ? "All Karnataka (whole state)" : name}
                     </option>
                   ))}
                 </SelectBox>

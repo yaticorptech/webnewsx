@@ -354,6 +354,12 @@ export const DEFAULT_CATEGORY: Category = "others";
 export const DISTRICT_CATEGORY: Category = "karnataka";
 
 /**
+ * A Karnataka story for the whole state, not one district (owner 2026-11-02): picked like a district, filed on the
+ * Karnataka page only (no district page), labelled plain "Karnataka".
+ */
+export const ALL_KARNATAKA = "All Karnataka";
+
+/**
  * Sub categories (owner 2026-10-14, approved list): every story picks one when it goes live. Karnataka's are its
  * districts (KARNATAKA_DISTRICTS, stored in `district`); every other category's are below (stored in `subcategory`).
  */
@@ -407,7 +413,9 @@ export function districtFromSlug(slug: string): string | null {
 
 /** Public path of a category page (a Karnataka story with a district: that district's page). */
 export function categoryPath(category: Category, district?: string | null): string {
-  return category === DISTRICT_CATEGORY && district ? `/category/karnataka/${districtSlug(district)}` : `/category/${category}`;
+  return category === DISTRICT_CATEGORY && district && district !== ALL_KARNATAKA
+    ? `/category/karnataka/${districtSlug(district)}`
+    : `/category/${category}`;
 }
 
 /* ─────────────────────────── Poster templates (owner 2026-09-26) ─────────────────────────── */
@@ -496,12 +504,12 @@ export const posterFrameSchema = z.object({
 export function districtError(category: Category | null | undefined, district: string | null | undefined): string | null {
   if (category !== DISTRICT_CATEGORY) return null;
   if (!district) return "Choose the district";
-  return KARNATAKA_DISTRICTS.includes(district) ? null : "Choose a district from the list";
+  return DISTRICT_CHOICES.includes(district) ? null : "Choose a district from the list";
 }
 
 /** "Sports" · "Mysuru, Karnataka" (district stories) — the label printed on cards. */
 export function categoryLabel(category: Category, district?: string | null): string {
-  return category === DISTRICT_CATEGORY && district ? `${district}, ${CATEGORY_LABELS.karnataka}` : CATEGORY_LABELS[category];
+  return category === DISTRICT_CATEGORY && district && district !== ALL_KARNATAKA ? `${district}, ${CATEGORY_LABELS.karnataka}` : CATEGORY_LABELS[category];
 }
 
 /** Transparency labels on a story card (SPEC §3.11). */
@@ -1421,6 +1429,9 @@ export const KARNATAKA_DISTRICTS: readonly string[] = [
   "Ramanagara (Bengaluru South)", "Shivamogga", "Tumakuru", "Udupi", "Uttara Kannada", "Vijayanagara",
   "Vijayapura", "Yadgir",
 ];
+
+/** The district picker's choices: the whole state first, then every district. */
+export const DISTRICT_CHOICES: readonly string[] = [ALL_KARNATAKA, ...KARNATAKA_DISTRICTS];
 
 /**
  * `GET /api/places?q=&state=&district=` (owner 2026-10-05) — cities, towns and villages whose name (or an older

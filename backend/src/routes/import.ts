@@ -14,7 +14,7 @@ import { makeShortCode, makeSlug } from "../lib/slug.js";
 import { newImageKey, storage } from "../lib/storage.js";
 import { readJson } from "../lib/validate.js";
 import { notifyFollowers } from "../queries/notifications.js";
-import { BLURB, CATEGORY_VALUES, LIMITS, PRESS_LANGUAGE_VALUES } from "../shared/contracts.js";
+import { BLURB, CATEGORY_VALUES, LIMITS, PRESS_LANGUAGE_VALUES, districtError } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 
 /** Only openly licensed sources' images (PIB: Government of India, free to reuse with credit). */
@@ -32,6 +32,8 @@ const storySchema = z.object({
   subcategory: z.string().trim().max(40).nullable().optional(),
   district: z.string().trim().max(60).nullable().optional(),
   language: z.enum(PRESS_LANGUAGE_VALUES).default("en"),
+  /** Post as this verified reporter instead of the site's own account (owner 2026-11-02: reporters who agreed). */
+  authorUsername: z.string().trim().max(40).nullable().optional(),
 });
 
 const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -45,7 +47,7 @@ function authorized(header: string | undefined): boolean {
 
 /**
  * POST /api/import/story (owner 2026-10-31) — the scheduled morning run publishes a story here under the site's own
- * account (IMPORT_AUTHOR_USERNAME, @webnews.in). Bearer IMPORT_TOKEN only; the image must be from an openly licensed
+ * account (IMPORT_AUTHOR_USERNAME, @webnews.in), or a verified reporter named in `authorUsername`. Bearer IMPORT_TOKEN only; the image must be from an openly licensed
  * source and is copied into our storage; a headline already published by that account is skipped (repeat runs are
  * safe). Followers are notified like any new story, and it's written to Reporter activity.
  */
@@ -55,8 +57,19 @@ export function importRoutes() {
   app.post("/story", async (c) => {
     if (!authorized(c.req.header("authorization"))) throw new ApiError(401, "unauthorized", "Not allowed");
     const input = await readJson(c, storySchema);
-    const [author] = await db.select({ id: user.id, username: user.username }).from(user).where(eq(user.username, env.IMPORT_AUTHOR_USERNAME)).limit(1);
+    const username = input.authorUsername || env.IMPORT_AUTHOR_USERNAME;
+    const [author] = await db
+      .select({ id: user.id, username: user.username, reporterLevel: user.reporterLevel, suspendedAt: user.suspendedAt })
+      .from(user)
+      .where(eq(user.username, username))
+      .limit(1);
     if (!author) throw notFound("Import account not found");
+    if (input.authorUsername && (author.reporterLevel !== "verified" || author.suspendedAt)) {
+      throw new ApiError(400, "author_not_allowed", "Only verified, active reporters can be posted as");
+    }
+    if (input.category === "karnataka" && districtError("karnataka", input.district ?? null)) {
+      throw new ApiError(400, "invalid_district", "Choose a Karnataka district (or All Karnataka)");
+    }
 
     const [dup] = await db
       .select({ slug: article.slug })
