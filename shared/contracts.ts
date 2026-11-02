@@ -1947,7 +1947,12 @@ export type NewsroomSpotlight = {
   orders: SpotlightOrder[];
   paymentsEnabled: boolean;
   message: string;
+  /** Spotlight is on sale (owner 2026-11-02: Editor Desk switch); false = "Coming soon", requests refused. */
+  open: boolean;
 };
+/** `GET / PUT /api/admin/spotlight/status` — the Editor Desk's on/off switch for Spotlight. */
+export type SpotlightSales = { open: boolean };
+export const spotlightStatusSchema = z.object({ open: z.boolean() });
 
 /* ─────────────── Editor Desk (admin) ─────────────── */
 
@@ -2098,6 +2103,7 @@ export type AuditAction =
   | "user.delete"
   | "spotlight.grant"
   | "spotlight.decline"
+  | "spotlight.open"
   | "spotlight.package_create"
   | "spotlight.package_update"
   | "spotlight.package_delete"

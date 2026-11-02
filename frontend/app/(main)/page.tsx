@@ -12,7 +12,8 @@ import { getFeedPage, getTopPublishers } from "@/lib/server-api";
 import { newShuffleSeed, visitorShuffleSeed } from "@/lib/shuffle";
 import { getSiteViewer } from "@/lib/session";
 
-const SUGGESTED_PUBLISHERS = 5;
+// 12 fills two or three full columns of the full-width Following page (owner 2026-11-02).
+const SUGGESTED_PUBLISHERS = 12;
 
 /** Home's own canonical and preview (owner 2026-10-22, SEO before hosting); the share image is app/opengraph-image.tsx. */
 export const metadata: Metadata = {

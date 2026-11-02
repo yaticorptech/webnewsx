@@ -41,7 +41,17 @@ import { resolveTimeZone } from "../queries/newsroom.js";
 import { adminPlatformFee, listDeskPressMeets, setPlatformFee } from "../queries/press-meet-booking.js";
 import { clampLimit } from "../queries/shared.js";
 import { adminGroupDetail, approveGroupApplication, deleteGroupByDesk, listGroupApplications, rejectGroupApplication } from "../queries/groups.js";
-import { createPackage, declineOrder, deletePackage, grantOrder, listAdminOrders, listPackages, updatePackage } from "../queries/spotlight.js";
+import {
+  createPackage,
+  declineOrder,
+  deletePackage,
+  grantOrder,
+  listAdminOrders,
+  listPackages,
+  setSpotlightOpen,
+  spotlightOpen,
+  updatePackage,
+} from "../queries/spotlight.js";
 import {
   CATEGORY_VALUES,
   ROLE_VALUES,
@@ -56,6 +66,7 @@ import {
   reviewReturnSchema,
   setRoleSchema,
   spotlightDecisionSchema,
+  spotlightStatusSchema,
   spotlightPackageSchema,
   spotlightPackageUpdateSchema,
   suspendSchema,
@@ -231,6 +242,12 @@ export function adminRoutes() {
   app.delete("/users/:id", async (c) => c.json(await deleteAccount(actorOf(c), c.req.param("id"))));
 
   /* Spotlight */
+  // GET / PUT /api/admin/spotlight/status — on sale or "Coming soon" (owner 2026-11-02).
+  app.get("/spotlight/status", async (c) => c.json({ open: await spotlightOpen() }));
+  app.put("/spotlight/status", async (c) => {
+    const { open } = await readJson(c, spotlightStatusSchema);
+    return c.json({ open: await setSpotlightOpen(open, actorOf(c)) });
+  });
   app.get("/spotlight/orders", async (c) => {
     const { status } = parseWith(ordersQuery, c.req.query());
     return c.json(await listAdminOrders({ status, cursor: c.req.query("cursor"), limit: limitOf(c.req.query("limit")) }));

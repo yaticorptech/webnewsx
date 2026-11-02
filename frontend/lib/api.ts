@@ -151,6 +151,7 @@ import type {
   UploadedImage,
   UploadedVideo,
   UserRow,
+  SpotlightSales,
   UsernameCheck,
   ViewerUser,
 } from "./shared/contracts";
@@ -980,6 +981,9 @@ export const api = {
     /** The account and everything it owns, for good. 409 `cannot_delete_admin` / `cannot_modify_self`. */
     deleteUser: (userId: string) => request<{ stories: number }>(`/api/admin/users/${enc(userId)}`, { method: "DELETE" }),
 
+    /** On sale or "Coming soon" (owner 2026-11-02). */
+    spotlightSales: (signal?: AbortSignal) => request<SpotlightSales>("/api/admin/spotlight/status", { signal }),
+    setSpotlightSales: (open: boolean) => request<SpotlightSales>("/api/admin/spotlight/status", { method: "PUT", body: { open } }),
     spotlightOrders: (status: AdminOrdersStatus = "pending", cursor?: string | null, signal?: AbortSignal) =>
       request<Page<AdminSpotlightOrder>>(`/api/admin/spotlight/orders${query({ status, cursor })}`, { signal }),
     /** Grant = comped / paid by hand: the boost runs from now for the package's hours. 409 `not_pending`. */

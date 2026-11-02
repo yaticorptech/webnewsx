@@ -144,12 +144,14 @@ export function SpotlightSheet({ open, onOpenChange, story, candidates = [], inN
   const busy = order.isPending || cancel.isPending;
   const close = () => onOpenChange(false);
 
-  let view: "sent" | "pick" | "loading" | "error" | "status" | "ineligible" | "choose";
+  let view: "sent" | "pick" | "loading" | "error" | "status" | "soon" | "ineligible" | "choose";
   if (result) view = "sent";
   else if (!picked) view = "pick";
   else if (data.isPending) view = "loading";
   else if (data.isError) view = "error";
   else if (existing && isOpenOrder(existing)) view = "status";
+  // Not on sale yet (owner 2026-11-02: the Editor Desk switches it on).
+  else if (!data.data.open) view = "soon";
   else if (!spotlightEligible(picked.publishedAt)) view = "ineligible";
   else view = "choose";
 
@@ -232,7 +234,7 @@ export function SpotlightSheet({ open, onOpenChange, story, candidates = [], inN
       footer = <Button onClick={close}>Close</Button>;
   }
 
-  const description = view === "choose" || view === "pick" ? "Boost your story to more readers in For You." : undefined;
+  const description = view === "choose" || view === "pick" || view === "soon" ? "Boost your story to more readers in For You." : undefined;
   const body = (
     <div data-spotlight-sheet={view} className="flex flex-col gap-5">
       {picked && view !== "sent" && <StoryStrip story={picked} />}
@@ -247,6 +249,7 @@ export function SpotlightSheet({ open, onOpenChange, story, candidates = [], inN
         </Notice>
       )}
       {view === "status" && existing && <OpenOrderStatus order={existing} />}
+      {view === "soon" && <ComingSoon />}
       {view === "ineligible" && (
         <Notice icon={<Clock3 aria-hidden />}>
           Spotlight is available for your live stories from the last {SPOTLIGHT_WINDOW_DAYS} days. This one is older — boost a newer
@@ -294,6 +297,33 @@ function StoryStrip({ story }: { story: SpotlightStory }) {
         {story.coverUrl && <img src={story.coverUrl} alt="" width={192} height={108} className="absolute inset-0 size-full object-cover" />}
       </span>
       <p className="line-clamp-2 min-w-0 font-wide text-[0.9375rem] font-extrabold leading-snug text-ink">{story.title || "Untitled story"}</p>
+    </div>
+  );
+}
+
+/** Spotlight isn't on sale yet: what it will do, and that it's on its way. */
+function ComingSoon() {
+  return (
+    <div data-spotlight-soon="" className="flex flex-col gap-5">
+      <div className="panel-tint relative overflow-hidden px-5 py-6 text-center sm:px-8">
+        <SpeedBarsSvg aria-hidden className="pointer-events-none absolute -right-6 top-1/2 h-24 w-40 -translate-y-1/2 text-brand/10" />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-white">
+          <Clock3 aria-hidden className="size-3.5" />
+          Coming soon
+        </span>
+        <p className="mx-auto mt-3 max-w-md font-wide text-lg font-extrabold leading-snug text-ink">Spotlight boosts are almost here</p>
+        <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-muted">
+          You&apos;ll soon be able to put your best stories in front of more readers. We&apos;ll let you know the moment it opens.
+        </p>
+      </div>
+      <ul className="grid gap-x-6 gap-y-3 text-sm text-ink-2 sm:grid-cols-2">
+        {PERKS.map((perk) => (
+          <li key={perk.text} className="flex items-start gap-2.5 [&>svg]:mt-0.5 [&>svg]:size-4.5 [&>svg]:shrink-0 [&>svg]:text-brand">
+            {perk.icon}
+            {perk.text}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

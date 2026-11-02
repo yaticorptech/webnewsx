@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Sparkles, X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, Clock3, Sparkles, X } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
@@ -8,11 +9,12 @@ import { UserHandle } from "@/components/brand/user-handle";
 import { VerifiedBadge } from "@/components/brand/verified-badge";
 import { Button } from "@/components/ui/button";
 import { TimeAgo } from "@/components/ui/time-ago";
-import { api } from "@/lib/api";
+import { toast } from "@/components/ui/toast";
+import { api, errorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { useNow } from "@/lib/hooks/use-now";
 import { qk } from "@/lib/query-keys";
-import { SPOTLIGHT_RANKING, type AdminOrdersStatus, type AdminSpotlightOrder, type Page, type SpotlightPackage } from "@/lib/shared/contracts";
+import { type AdminOrdersStatus, type AdminSpotlightOrder, type Page, type SpotlightPackage } from "@/lib/shared/contracts";
 import { ActionDialog } from "./action-dialog";
 import { SpotlightStatusChip } from "./chips";
 import { DeskDate } from "./desk-date";
@@ -67,10 +69,9 @@ export function SpotlightView({ initialOrders, initialPackages }: SpotlightViewP
 
   return (
     <div className="animate-fade-up flex flex-col gap-8">
-      <SectionHeader
-        title="Spotlight"
-        description={`Paid boosts. Payments aren't connected yet, so every request waits here: grant it (comped or paid by hand) and the story gets a ×${SPOTLIGHT_RANKING.multiplier} boost in For You with a clear Spotlight label — or decline it.`}
-      />
+      <SectionHeader title="Spotlight" />
+
+      <SalesSwitch />
 
       <section aria-label="Spotlight requests" className="flex flex-col gap-4">
         <Segmented label="Spotlight orders" options={TABS} value={status} onChange={setStatus} />
@@ -238,5 +239,61 @@ function OrderStatus({ order }: { order: AdminSpotlightOrder }) {
       ) : null}
       {order.note && <span className="line-clamp-2 max-w-56 text-xs italic text-muted">“{order.note}”</span>}
     </div>
+  );
+}
+
+/**
+ * On sale or "Coming soon" (owner 2026-11-02): while off, reporters see "Coming soon" in the Spotlight sheet and new
+ * requests are refused. Requests already waiting or running are unaffected.
+ */
+function SalesSwitch() {
+  const client = useQueryClient();
+  const key = ["admin", "spotlight-sales"] as const;
+  const sales = useQuery({ queryKey: key, queryFn: ({ signal }) => api.admin.spotlightSales(signal) });
+  const toggle = useMutation({
+    mutationFn: (open: boolean) => api.admin.setSpotlightSales(open),
+    onSuccess: (result) => {
+      client.setQueryData(key, result);
+      toast.success(result.open ? "Spotlight is on sale" : "Spotlight shows “Coming soon”", { id: "spotlight-sales" });
+    },
+    onError: (error) => toast.error("Couldn't change Spotlight", { id: "spotlight-sales", description: errorMessage(error) }),
+  });
+  const open = sales.data?.open ?? false;
+
+  return (
+    <section aria-label="Spotlight sales" className="card flex flex-wrap items-center gap-4 p-5">
+      <span
+        aria-hidden
+        className={`grid size-11 shrink-0 place-items-center rounded-full ${open ? "bg-tint text-brand" : "bg-surface-2 text-muted"} [&_svg]:size-5`}
+      >
+        {open ? <Sparkles /> : <Clock3 />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 font-bold text-ink">
+          Spotlight for reporters
+          <span
+            className={`rounded-full px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.12em] ${open ? "bg-brand text-white" : "bg-surface-2 text-muted ring-1 ring-border ring-inset"}`}
+          >
+            {sales.isPending ? "…" : open ? "On sale" : "Coming soon"}
+          </span>
+        </p>
+        <p className="mt-0.5 text-sm text-muted">
+          {open
+            ? "Reporters can choose a package and send a request."
+            : "Reporters see “Coming soon” and can't send requests. Waiting and running Spotlights are unaffected."}
+        </p>
+      </div>
+      <Button
+        variant={open ? "outline" : "primary"}
+        loading={toggle.isPending}
+        disabled={sales.isPending || sales.isError}
+        onClick={() => {
+          if (open && !window.confirm("Switch Spotlight to “Coming soon”? Reporters won't be able to send new requests.")) return;
+          toggle.mutate(!open);
+        }}
+      >
+        {open ? "Switch to Coming soon" : "Put on sale"}
+      </Button>
+    </section>
   );
 }

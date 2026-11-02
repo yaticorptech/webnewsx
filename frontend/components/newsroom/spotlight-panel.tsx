@@ -59,7 +59,9 @@ export function SpotlightPanel({ data, onBoost, onOpenStory }: SpotlightPanelPro
           <Button onClick={onBoost} leftIcon={<Sparkles aria-hidden />} data-boost-story>
             Boost a story
           </Button>
-          <p className="text-xs leading-relaxed text-muted">{data.paymentsEnabled ? "Pay securely at checkout." : "Payments launch soon — requests go to the Editor Desk."}</p>
+          <p className="text-xs leading-relaxed text-muted">
+            {!data.open ? "Coming soon." : data.paymentsEnabled ? "Pay securely at checkout." : "Payments launch soon — requests go to the Editor Desk."}
+          </p>
         </div>
       </div>
 

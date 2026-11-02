@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDatabase, db } from "../../src/db/client.js";
-import { article, spotlightOrder } from "../../src/db/schema.js";
+import { article, siteSetting, spotlightOrder } from "../../src/db/schema.js";
 import { makeShortCode } from "../../src/lib/slug.js";
 import {
   DEFAULT_POSTER_TEMPLATE,
@@ -68,6 +68,41 @@ async function activePackages(): Promise<SpotlightPackage[]> {
 }
 
 describe("Spotlight", () => {
+  // Spotlight is "Coming soon" until the Desk puts it on sale: open it for these tests, then put back what was there.
+  let saved: unknown;
+  beforeAll(async () => {
+    const [row] = await db.select({ value: siteSetting.value }).from(siteSetting).where(eq(siteSetting.key, "spotlight_open")).limit(1);
+    saved = row?.value;
+    await setOpen(true);
+  });
+  afterAll(async () => {
+    if (saved === undefined) await db.delete(siteSetting).where(eq(siteSetting.key, "spotlight_open"));
+    else await db.update(siteSetting).set({ value: saved }).where(eq(siteSetting.key, "spotlight_open"));
+  });
+  const setOpen = (open: boolean) =>
+    db
+      .insert(siteSetting)
+      .values({ key: "spotlight_open", value: { open }, updatedAt: new Date() })
+      .onConflictDoUpdate({ target: siteSetting.key, set: { value: { open } } });
+
+  it("Coming soon: the Desk switch turns requests off and on", async () => {
+    const desk = await adminUser(app);
+    const reporter = await reporterUser(app);
+    const [pkg] = await activePackages();
+    if (!pkg) throw new Error("no Spotlight package");
+    const story = await publishArticle(reporter, "Coming soon check from the harbour desk");
+
+    const off = await desk.req("/api/admin/spotlight/status", { method: "PUT", json: { open: false } });
+    expect(await json<{ open: boolean }>(off)).toEqual({ open: false });
+    expect((await json<{ open: boolean }>(await reporter.req("/api/newsroom/spotlight"))).open).toBe(false);
+    const refused = await reporter.req("/api/spotlight/orders", { json: { articleId: story.id, packageId: pkg.id } });
+    expect(refused.status).toBe(403);
+
+    await desk.req("/api/admin/spotlight/status", { method: "PUT", json: { open: true } });
+    expect((await json<{ open: boolean }>(await desk.req("/api/admin/spotlight/status"))).open).toBe(true);
+    await requestSpotlight(reporter, story.id, pkg);
+  });
+
   it("lists the default packages (6h ₹99 · 24h ₹249 · 72h ₹599)", async () => {
     const items = await activePackages();
     const byHours = new Map(items.map((p) => [p.hours, p.priceInr]));

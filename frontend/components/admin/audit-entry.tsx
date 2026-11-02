@@ -164,6 +164,11 @@ export function describeAudit(entry: AuditEntry): Described {
       note,
     }),
     "spotlight.decline": () => ({ icon: Sparkles, tone: "muted", text: <>declined a Spotlight request for {quoted}</>, note }),
+    "spotlight.open": () => ({
+      icon: Sparkles,
+      tone: meta.open ? "live" : "muted",
+      text: meta.open ? <>put Spotlight on sale</> : <>switched Spotlight to “Coming soon”</>,
+    }),
     "spotlight.package_create": () => ({
       icon: Package,
       tone: "live",

@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gt, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { article, spotlightOrder, spotlightPackage, user, type SpotlightOrderRecord } from "../db/schema.js";
+import { article, siteSetting, spotlightOrder, spotlightPackage, user, type SpotlightOrderRecord } from "../db/schema.js";
 import { writeAudit } from "../lib/audit.js";
 import { decodeCursor, encodeCursor } from "../lib/cursor.js";
 import { ApiError, notFound } from "../lib/errors.js";
@@ -125,7 +125,29 @@ async function spotlightResults(orderIds: string[]): Promise<Map<string, Spotlig
  * A reporter asks for a Spotlight on one of their own live stories (published in the For You window).
  * Payments aren't connected, so the order waits as `pending` for the Editor Desk (provider `manual`).
  */
+/**
+ * Spotlight on sale or "Coming soon" (owner 2026-11-02): the Editor Desk's switch. Off until the Desk turns it on;
+ * while off, reporters see "Coming soon" and new requests are refused.
+ */
+const OPEN_KEY = "spotlight_open";
+
+export async function spotlightOpen(): Promise<boolean> {
+  const [row] = await db.select({ value: siteSetting.value }).from(siteSetting).where(eq(siteSetting.key, OPEN_KEY)).limit(1);
+  return Boolean((row?.value as { open?: boolean } | undefined)?.open);
+}
+
+export async function setSpotlightOpen(open: boolean, actor: Actor): Promise<boolean> {
+  const now = new Date();
+  await db
+    .insert(siteSetting)
+    .values({ key: OPEN_KEY, value: { open }, updatedBy: actor.id, updatedAt: now })
+    .onConflictDoUpdate({ target: siteSetting.key, set: { value: { open }, updatedBy: actor.id, updatedAt: now } });
+  await writeAudit(db, { actorId: actor.id, action: "spotlight.open", targetType: "setting", targetId: OPEN_KEY, targetLabel: "Spotlight", meta: { open } });
+  return open;
+}
+
 export async function createOrder(reporter: { id: string; email: string }, articleId: string, packageId: string): Promise<SpotlightOrderResponse> {
+  if (!(await spotlightOpen())) throw new ApiError(403, "spotlight_closed", "Spotlight is coming soon");
   await expireSpotlights();
   const [story] = await db
     .select({ id: article.id, authorId: article.authorId, title: article.title, slug: article.slug, coverUrl: article.coverUrl, publishedAt: article.publishedAt })

@@ -58,11 +58,14 @@ export function LatestEmpty({ kicker = "Home" }: { kicker?: string }) {
   );
 }
 
-/** Following is empty: suggest publishers (following one refetches the tab automatically). */
+/**
+ * Following is empty: suggest publishers (following one refetches the tab automatically). Full screen width
+ * (owner 2026-11-02, `data-grid-page`), publishers in a grid of rows.
+ */
 export function FollowingEmpty({ suggestions }: { suggestions: UserRow[] }) {
   const rows = suggestions.filter((user) => !user.isViewer);
   return (
-    <div className="mt-6 flex flex-col gap-5">
+    <div data-grid-page="" className="mt-6 flex flex-col gap-5">
       <EmptyState
         icon={<Users aria-hidden />}
         kicker="Following"
@@ -80,9 +83,12 @@ export function FollowingEmpty({ suggestions }: { suggestions: UserRow[] }) {
             <SpeedLines className="text-[0.8rem]" />
             Publishers to follow
           </h2>
-          <ul>
+          <ul className="grid border-t border-border md:grid-cols-2 xl:grid-cols-3">
             {rows.map((user) => (
-              <li key={user.id} className="flex items-center gap-3 border-t border-border px-5 py-3.5">
+              <li
+                key={user.id}
+                className="-mt-px flex items-center gap-3 border-t border-border px-5 py-3.5 md:border-r md:[&:nth-child(2n)]:border-r-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(3n)]:border-r-0"
+              >
                 <Link href={`/${user.username}`} className="group flex min-w-0 flex-1 items-center gap-3 rounded-md outline-offset-2">
                   <Avatar src={user.image} name={user.name} size="md" decorative />
                   <span className="min-w-0">

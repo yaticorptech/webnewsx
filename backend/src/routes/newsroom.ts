@@ -8,7 +8,7 @@ import { findPressPass, toPassSummary } from "../queries/press-pass.js";
 import { getStoryInsights } from "../queries/behaviour.js";
 import { notFound } from "../lib/errors.js";
 import { clampLimit } from "../queries/shared.js";
-import { listMyOrders, listPackages } from "../queries/spotlight.js";
+import { listMyOrders, listPackages, spotlightOpen } from "../queries/spotlight.js";
 import { NEWSROOM_RANGES, SPOTLIGHT_PENDING_MESSAGE, type NewsroomRange, type NewsroomSpotlight } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 
@@ -59,8 +59,8 @@ export function newsroomRoutes() {
   // GET /api/newsroom/spotlight — packages + your Spotlight history.
   app.get("/spotlight", async (c) => {
     const viewer = mustViewer(c);
-    const [packages, orders] = await Promise.all([listPackages(), listMyOrders(viewer.id)]);
-    const body: NewsroomSpotlight = { packages, orders, paymentsEnabled: activePaymentProvider().enabled, message: SPOTLIGHT_PENDING_MESSAGE };
+    const [packages, orders, open] = await Promise.all([listPackages(), listMyOrders(viewer.id), spotlightOpen()]);
+    const body: NewsroomSpotlight = { packages, orders, paymentsEnabled: activePaymentProvider().enabled, message: SPOTLIGHT_PENDING_MESSAGE, open };
     return c.json(body);
   });
 
