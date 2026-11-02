@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Bookmark, Building2, Cake, ChevronDown, Download, Info, LogOut, Settings, ShieldAlert } from "lucide-react";
+import { BadgeCheck, Bookmark, Building2, ChevronDown, Download, Info, LogOut, Settings, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserHandle, handleText } from "@/components/brand/user-handle";
@@ -153,12 +153,11 @@ export function UserMenu({
             </div>
           </div>
         }
-        items={[
+        // Birthday wishes left the menu (owner 2026-11-02): reached from Publish (Article | Birthday wish / invitation).
+        items={withoutLeadingSeparator([
           ...(canGetApp
             ? [{ label: <span className="font-bold text-brand">Download app</span>, onSelect: () => downloadApp("get_app_menu"), icon: <Download aria-hidden /> }]
             : []),
-          // Any member (owner 2026-10-31): no Press Pass needed.
-          { label: "Birthday wish / invitation", href: "/wishes/new", icon: <Cake aria-hidden /> },
           ...switchItems(viewer, switchTo),
           ...menuItems({
             username,
@@ -167,7 +166,7 @@ export function UserMenu({
             unreadNotices,
             logOut,
           }),
-        ]}
+        ])}
       />
     </div>
   );
@@ -177,6 +176,13 @@ export function UserMenu({
  * "Switch account" (owner 2026-10-23, like Instagram): your own account and each group account you belong to, then the
  * Groups page (invitations, applying, members).
  */
+/** A menu never starts with a divider. */
+function withoutLeadingSeparator(items: DropdownItem[]): DropdownItem[] {
+  let start = 0;
+  while (start < items.length && "type" in items[start]! && items[start]!.type === "separator") start++;
+  return items.slice(start);
+}
+
 function switchItems(
   viewer: ViewerUser | null,
   switchTo: (group: { id: string; name: string } | null) => void,
