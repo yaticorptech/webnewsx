@@ -145,6 +145,11 @@ export const env = {
   PRESS_MEET_REPORTS_DIR: fromBackendRoot(raw.PRESS_MEET_REPORTS_DIR),
   HOST: raw.HOST ?? (raw.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1"),
   isProduction: raw.NODE_ENV === "production",
+  /**
+   * A staging copy that shares the live database (owner 2026-11-02): STAGING_READ_ONLY=1 — no background jobs, and real
+   * data can't be changed from it (middleware/staging.ts); only signing in and the demo engagement controls write.
+   */
+  stagingReadOnly: process.env.STAGING_READ_ONLY === "1",
   pressMeetStartAnytime: raw.PRESS_MEET_START_ANYTIME && raw.NODE_ENV !== "production",
   isTest: raw.NODE_ENV === "test" || Boolean(process.env.VITEST),
   /** Emails are really sent only with a Resend key (lib/mail.ts). */

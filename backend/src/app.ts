@@ -29,6 +29,7 @@ import { mediaRoutes } from "./routes/media.js";
 import { meRoutes } from "./routes/me.js";
 import { membershipRoutes } from "./routes/memberships.js";
 import { gifRoutes } from "./routes/gifs.js";
+import { stagingReadOnly } from "./middleware/staging.js";
 import { importRoutes } from "./routes/import.js";
 import { wishRoutes } from "./routes/wishes.js";
 import { marketRoutes } from "./routes/market.js";
@@ -145,6 +146,7 @@ export function createApp(options: CreateAppOptions = {}) {
   });
 
   app.use("/api/*", originGuard);
+  app.use("/api/*", stagingReadOnly);
   app.use("/api/*", sessionMiddleware);
   // Posting as a group account: what the member's role allows (owner 2026-10-23).
   app.use("/api/*", actingGuard);

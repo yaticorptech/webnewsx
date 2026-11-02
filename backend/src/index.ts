@@ -34,11 +34,16 @@ const server = serve({ fetch: app.fetch, port: env.PORT, hostname: env.HOST }, (
   console.log(`[webnews] frontend origin: ${env.FRONTEND_URL} · storage: ${storage.kind} · google: ${env.googleEnabled ? "on" : "off"} · push: ${env.pushEnabled ? "on" : "off"} · cache: ${cacheStatus()}`);
 });
 
-const stopUploadSweeper = startUploadSweeper();
-const stopSocialPoster = startSocialPoster();
-const stopPressMeetWorker = startPressMeetWorker();
-const stopPushWorker = startPushWorker();
-const stopMembershipWorker = startMembershipWorker();
+// A staging copy sharing the live database (owner 2026-11-02, STAGING_READ_ONLY=1) runs none of the background jobs —
+// the live backend does them; running them twice would post, notify or tidy the same live data twice.
+const noop = () => {};
+const background = !env.stagingReadOnly;
+if (!background) console.log("[webnews] staging (read-only): background workers are off");
+const stopUploadSweeper = background ? startUploadSweeper() : noop;
+const stopSocialPoster = background ? startSocialPoster() : noop;
+const stopPressMeetWorker = background ? startPressMeetWorker() : noop;
+const stopPushWorker = background ? startPushWorker() : noop;
+const stopMembershipWorker = background ? startMembershipWorker() : noop;
 
 // The frontend's /api proxy keeps sockets alive (Node's agent drops idle ones after 5s). Node's server default
 // is also 5s, so under load the proxy could reuse a socket the API was closing at that moment → ECONNRESET.
