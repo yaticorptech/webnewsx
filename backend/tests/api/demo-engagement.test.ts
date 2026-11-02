@@ -24,6 +24,7 @@ describe("Demo engagement (local / staging only)", () => {
     expect(demoAllowedFor("https://staging.webnewsx.com", true, undefined)).toBe(false);
     expect(demoAllowedFor("https://staging.webnewsx.com", true, "1")).toBe(true);
     expect(demoAllowedFor("http://localhost:3000", false, undefined)).toBe(true);
+    expect(demoAllowedFor("https://www.webnewsx.com", true, "public")).toBe(true);
   });
 
   it("generates 1–200 numbers apart from real counts, shows real + demo only while on, resets cleanly", async () => {

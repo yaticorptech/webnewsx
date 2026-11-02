@@ -12,6 +12,9 @@ import { env } from "../env.js";
  * The public site can never turn it on — decided here on the server, not in the browser: demo mode is refused when the
  * site's address is a public WebNEWS domain, and in production unless the deployment explicitly sets
  * ALLOW_DEMO_ENGAGEMENT=1 (a staging deployment). The Editor Desk switch can't override either.
+ *
+ * Exception (owner 2026-11-02, before launch with no real readers yet): ALLOW_DEMO_ENGAGEMENT=public allows it on the
+ * public site too. Remove that setting (and Reset in the Desk) once real readers arrive.
  */
 const PUBLIC_HOSTS = new Set(["webnewsx.com", "www.webnewsx.com", "webnews.in", "www.webnews.in"]);
 
@@ -26,7 +29,9 @@ function hostOf(url: string): string | null {
 /** Whether a deployment may use demo mode at all (pure, for tests): never on a public domain. */
 export function demoAllowedFor(frontendUrl: string, isProduction: boolean, allowFlag: string | undefined): boolean {
   const host = hostOf(frontendUrl);
-  if (!host || PUBLIC_HOSTS.has(host)) return false;
+  if (!host) return false;
+  if (allowFlag === "public") return true;
+  if (PUBLIC_HOSTS.has(host)) return false;
   if (isProduction && allowFlag !== "1") return false;
   return true;
 }
