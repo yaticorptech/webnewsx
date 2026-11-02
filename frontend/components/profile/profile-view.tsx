@@ -94,6 +94,8 @@ export function ProfileView({ profile: initialProfile, initialPublished, initial
     queryKey: qk.profile(username),
     queryFn: ({ signal }) => api.profile(username, signal),
     initialData: initialProfile,
+    // Follower counts change without an event to the page (demo followers grow every minute): re-read while visible.
+    refetchInterval: 60_000,
   });
   const profile = profileQuery.data;
   const { isSelf } = profile.viewer;

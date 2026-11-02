@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { DEMO_ALLOWED, readDemoSetting } from "./demo-engagement.js";
+import { EVENTS_CHANNEL } from "./events.js";
 
 /**
  * Live demo engagement (owner 2026-11-02): while demo mode is on, the demo views / likes / shares (stories) and followers
@@ -33,6 +34,16 @@ export async function growDemoEngagement(): Promise<number> {
         else ${n(STORY_SHARE / 3)}
       end
     returning id`);
+  // Open pages update live: one `article.stats` per grown story (the same event a real like or share sends).
+  const ids = [...updated].map((r) => r.id);
+  if (ids.length > 0) {
+    await db.execute(sql`
+      select pg_notify(${EVENTS_CHANNEL}, json_build_object('t', 'article.stats', 'id', id)::text)
+      from unnest(array[${sql.join(
+        ids.map((id) => sql`${id}::text`),
+        sql`, `,
+      )}]) as id`);
+  }
   await db.execute(sql`
     update "user" set demo_followers = least(${n(CAP.followers)}, demo_followers + floor(random() * ${n(MAX_FOLLOWERS_PER_TICK)})::int + 1)
     where onboarded_at is not null and username is not null and suspended_at is null
