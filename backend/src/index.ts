@@ -11,6 +11,7 @@ import { startPushWorker } from "./lib/push-worker.js";
 import { startMembershipWorker } from "./lib/membership-worker.js";
 import { startUploadSweeper } from "./lib/upload-sweep.js";
 import { startDemoEngagementTicker } from "./lib/demo-engagement-ticker.js";
+import { startImportQueue } from "./routes/import.js";
 import { startSocialPoster } from "./queries/social-accounts.js";
 
 const app = createApp();
@@ -45,6 +46,8 @@ const stopSocialPoster = background ? startSocialPoster() : noop;
 const stopPressMeetWorker = background ? startPressMeetWorker() : noop;
 const stopPushWorker = background ? startPushWorker() : noop;
 const stopMembershipWorker = background ? startMembershipWorker() : noop;
+// Stories sent to the import with a later `publishAt` (owner 2026-11-02).
+const stopImportQueue = background ? startImportQueue() : noop;
 // Demo counts only (never on the public site) — like the Desk demo controls, it also runs on staging.
 const stopDemoTicker = startDemoEngagementTicker();
 
@@ -73,6 +76,7 @@ async function shutdown(signal: string): Promise<void> {
   stopPressMeetWorker();
   stopPushWorker();
   stopMembershipWorker();
+  stopImportQueue();
   stopDemoTicker();
   server.close();
   await realtime.stop();
