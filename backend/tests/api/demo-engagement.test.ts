@@ -61,6 +61,6 @@ describe("Demo engagement (local / staging only)", () => {
     await desk.req("/api/admin/demo", { json: { action: "disable" } });
     expect((await cardOf()).viewCount).toBe(0);
     const reset = await json<DemoEngagementStatus>(await desk.req("/api/admin/demo", { json: { action: "reset" } }));
-    expect(reset.demo).toEqual({ views: 0, likes: 0, shares: 0 });
+    expect(reset.demo).toEqual({ views: 0, likes: 0, shares: 0, followers: 0 });
   });
 });

@@ -838,13 +838,15 @@ export type Wish = {
 
 /* ─────────────── Demo engagement (owner 2026-11-02; local / staging only) ─────────────── */
 
-export type EngagementTotals = { views: number; likes: number; shares: number };
+export type EngagementTotals = { views: number; likes: number; shares: number; followers: number };
 /** `GET /api/admin/demo` — `allowed` false on the public site, where nothing can switch it on. */
 export type DemoEngagementStatus = {
   allowed: boolean;
   enabled: boolean;
   generatedAt: string | null;
   stories: number;
+  /** Accounts given demo followers by the last generate. */
+  accounts: number;
   actual: EngagementTotals;
   demo: EngagementTotals;
   shown: EngagementTotals;

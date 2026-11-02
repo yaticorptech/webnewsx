@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "demo_followers" integer DEFAULT 0 NOT NULL;

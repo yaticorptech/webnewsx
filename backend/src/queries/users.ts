@@ -2,6 +2,7 @@ import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, ne, or, sql, typ
 import { db, type Executor } from "../db/client.js";
 import { article, follow, pressPass, user, type PressPassRecord, type UserRecord } from "../db/schema.js";
 import { decodeCursor, paginate } from "../lib/cursor.js";
+import { shownFollowers } from "../lib/demo-engagement.js";
 import type { Page, ProfileData, UserRow, ViewerUser } from "../shared/contracts.js";
 import { countUnreadNotices } from "./notices.js";
 import { countUnreadChats } from "./messages.js";
@@ -104,7 +105,7 @@ export async function profileCounts(userId: string): Promise<ProfileData["counts
   const [row] = await db
     .select({
       articles: sql<number>`(select count(*)::int from ${article} where ${article.authorId} = ${userId} and ${article.status} = 'published' and ${article.hiddenAt} is null)`,
-      followers: sql<number>`(select count(*)::int from ${follow} where ${follow.followingId} = ${userId})`,
+      followers: shownFollowers(sql`(select count(*)::int from ${follow} where ${follow.followingId} = ${userId})`, userId),
       following: sql<number>`(select count(*)::int from ${follow} where ${follow.followerId} = ${userId})`,
     })
     .from(sql`(select 1) as one`);
@@ -113,7 +114,7 @@ export async function profileCounts(userId: string): Promise<ProfileData["counts
 
 export async function followerCount(userId: string, executor: Executor = db): Promise<number> {
   const [row] = await executor
-    .select({ n: sql<number>`count(*)::int` })
+    .select({ n: shownFollowers(sql`count(*)::int`, userId) })
     .from(follow)
     .where(eq(follow.followingId, userId));
   return row?.n ?? 0;
@@ -235,7 +236,7 @@ export async function listFollowUsers(opts: {
  * most followed first. The viewer is excluded.
  */
 export async function listTopPublishers(viewerId: string | null, limit: number): Promise<UserRow[]> {
-  const followers = sql<number>`(select count(*)::int from ${follow} tf where tf.following_id = ${USER_ID})`;
+  const followers = shownFollowers(sql`(select count(*)::int from ${follow} tf where tf.following_id = ${USER_ID})`, USER_ID);
   const published = sql<number>`(select count(*)::int from ${article} ta where ta.author_id = ${USER_ID} and ta.status = 'published' and ta.hidden_at is null)`;
   const conditions: SQL[] = [isNotNull(user.onboardedAt), isNotNull(user.username), isNull(user.suspendedAt), sql`${published} > 0`];
   if (viewerId) conditions.push(ne(user.id, viewerId));
@@ -258,7 +259,7 @@ const prefixPattern = (q: string) => `${q.replace(/[\\%_]/g, (ch) => `\\${ch}`)}
  */
 export async function searchUsers(q: string, viewerId: string | null, limit: number): Promise<UserRow[]> {
   const needle = q.toLowerCase();
-  const followers = sql<number>`(select count(*)::int from ${follow} sf where sf.following_id = ${USER_ID})`;
+  const followers = shownFollowers(sql`(select count(*)::int from ${follow} sf where sf.following_id = ${USER_ID})`, USER_ID);
   const rank = sql<number>`case
     when lower(${user.username}) = ${needle} then 0
     when lower(${user.username}) like ${prefixPattern(needle)} then 1

@@ -3,16 +3,18 @@ import { db } from "../db/client.js";
 import { DEMO_ALLOWED, readDemoSetting } from "./demo-engagement.js";
 
 /**
- * Live demo engagement (owner 2026-11-02): while demo mode is on, the demo views / likes / shares keep growing on their
- * own so the counts look alive. Only the demo columns are written — real counts are never touched — and it never runs
- * where demo mode isn't allowed (the public site). Tune the numbers here.
+ * Live demo engagement (owner 2026-11-02): while demo mode is on, the demo views / likes / shares (stories) and followers
+ * (accounts) keep growing on their own so the counts look alive. Only the demo columns are written — real counts are
+ * never touched — and it never runs where demo mode isn't allowed. Tune the numbers here.
  */
 const TICK_MS = 60_000; // how often the counts grow
 const STORY_SHARE = 0.35; // about this share of stories gains something each tick (newer stories more often)
 const MAX_VIEWS_PER_TICK = 6; // views added to a picked story: 1 … this
 const LIKE_CHANCE = 0.3; // chance a picked story also gains a like
 const SHARE_CHANCE = 0.08; // chance a picked story also gains a share
-const CAP = { views: 5000, likes: 2000, shares: 600 }; // demo numbers stop growing here
+const FOLLOW_CHANCE = 0.25; // chance an account gains a follower each tick
+const MAX_FOLLOWERS_PER_TICK = 2; // followers added to a picked account: 1 … this
+const CAP = { views: 5000, likes: 2000, shares: 600, followers: 3000 }; // demo numbers stop growing here
 
 /** A code constant written into the SQL as a literal (bound parameters get typed as integers here). */
 const n = (value: number) => sql.raw(String(value));
@@ -31,6 +33,11 @@ export async function growDemoEngagement(): Promise<number> {
         else ${n(STORY_SHARE / 3)}
       end
     returning id`);
+  await db.execute(sql`
+    update "user" set demo_followers = least(${n(CAP.followers)}, demo_followers + floor(random() * ${n(MAX_FOLLOWERS_PER_TICK)})::int + 1)
+    where onboarded_at is not null and username is not null and suspended_at is null
+      and demo_followers < ${n(CAP.followers)}
+      and random() < ${n(FOLLOW_CHANCE)}`);
   return [...updated].length;
 }
 

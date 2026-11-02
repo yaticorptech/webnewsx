@@ -38,16 +38,16 @@ export function demoAllowedFor(frontendUrl: string, isProduction: boolean, allow
 
 export const DEMO_ALLOWED = demoAllowedFor(env.FRONTEND_URL, env.isProduction, process.env.ALLOW_DEMO_ENGAGEMENT);
 export const DEMO_SETTING_KEY = "demo_engagement";
-export type DemoSetting = { enabled: boolean; generatedAt: string | null; stories: number };
+export type DemoSetting = { enabled: boolean; generatedAt: string | null; stories: number; accounts: number };
 
 const REFRESH_MS = 15_000;
-let cached: DemoSetting = { enabled: false, generatedAt: null, stories: 0 };
+let cached: DemoSetting = { enabled: false, generatedAt: null, stories: 0, accounts: 0 };
 let fetchedAt = 0;
 
 export async function readDemoSetting(): Promise<DemoSetting> {
   const [row] = await db.select({ value: siteSetting.value }).from(siteSetting).where(eq(siteSetting.key, DEMO_SETTING_KEY)).limit(1);
   const value = (row?.value ?? {}) as Partial<DemoSetting>;
-  cached = { enabled: Boolean(value.enabled), generatedAt: value.generatedAt ?? null, stories: Number(value.stories ?? 0) };
+  cached = { enabled: Boolean(value.enabled), generatedAt: value.generatedAt ?? null, stories: Number(value.stories ?? 0), accounts: Number(value.accounts ?? 0) };
   fetchedAt = Date.now();
   return cached;
 }
@@ -67,6 +67,15 @@ export function shownCount(real: AnyPgColumn, demo: AnyPgColumn): SQL<number> | 
 /** The same in raw SQL for queries written by hand (`a.view_count` → `(a.view_count + a.demo_views)`). */
 export function shownCountRaw(realExpr: string, demoExpr: string): SQL {
   return sql.raw(demoActive() ? `(${realExpr} + ${demoExpr})` : realExpr);
+}
+
+/**
+ * A shown follower count in SQL: `count` (the real follower count of the account `userId`), plus that account's demo
+ * followers while demo mode is on. Badges and other rules keep using the real count.
+ */
+export function shownFollowers(count: SQL, userId: SQL | string): SQL<number> {
+  if (!demoActive()) return sql<number>`${count}`.mapWith(Number);
+  return sql<number>`(${count} + coalesce((select du.demo_followers from "user" du where du.id = ${userId}), 0))`.mapWith(Number);
 }
 
 /** A shown count from numbers already loaded. */

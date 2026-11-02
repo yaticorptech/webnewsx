@@ -119,6 +119,8 @@ export const user = pgTable(
     accountType: text("account_type", { enum: ACCOUNT_TYPE_VALUES }).notNull().default("person"),
     /** Set when the account was created for the person by Claude (owner 2026-10-31): Editor Desk → Reporters → Added by Claude. */
     addedBy: text("added_by"),
+    /** Demo followers (owner 2026-11-02, lib/demo-engagement.ts): added to the shown follower count only while demo mode is on. */
+    demoFollowers: integer("demo_followers").notNull().default(0),
   },
   (t) => [
     check("user_username_format", sql`${t.username} ~ ${sql.raw(`'${USERNAME_REGEX.source}'`)}`),

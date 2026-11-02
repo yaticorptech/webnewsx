@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, FlaskConical, Heart, Lock, RotateCcw, Share2, Sparkles } from "lucide-react";
+import { Eye, FlaskConical, Heart, Lock, RotateCcw, Share2, Sparkles, Users } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
@@ -39,13 +39,13 @@ export function DemoView({ initial }: { initial: DemoEngagementStatus }) {
     }
   };
 
-  const generated = status.demo.views + status.demo.likes + status.demo.shares > 0;
+  const generated = status.demo.views + status.demo.likes + status.demo.shares + status.demo.followers > 0;
 
   return (
     <div className="animate-fade-up flex flex-col gap-8">
       <SectionHeader
         title="Demo engagement"
-        description="Generated views, likes and shares (1–200 per story) for testing the design on local development and staging. Real counts are never changed, and demo numbers can't be switched on for the public site."
+        description="Generated views, likes and shares (1–200 per story) and followers (1–200 per account), growing every minute while on, for testing the design. Real counts are never changed, and badges keep using real followers."
       />
 
       {!status.allowed && (
@@ -74,7 +74,7 @@ export function DemoView({ initial }: { initial: DemoEngagementStatus }) {
           </span>
           <span className="text-sm text-muted">
             {status.generatedAt
-              ? `Last generated ${new Date(status.generatedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })} · ${formatNumber(status.stories)} stories`
+              ? `Last generated ${new Date(status.generatedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })} · ${formatNumber(status.stories)} stories · ${formatNumber(status.accounts)} accounts`
               : "No demo numbers generated yet"}
           </span>
         </div>
@@ -114,10 +114,11 @@ export function DemoView({ initial }: { initial: DemoEngagementStatus }) {
         </div>
       </section>
 
-      <section aria-label="Engagement totals" className="grid gap-4 md:grid-cols-3">
+      <section aria-label="Engagement totals" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Totals icon={<Eye aria-hidden />} label="Views" actual={status.actual.views} demo={status.demo.views} shown={status.shown.views} />
         <Totals icon={<Heart aria-hidden />} label="Likes" actual={status.actual.likes} demo={status.demo.likes} shown={status.shown.likes} />
         <Totals icon={<Share2 aria-hidden />} label="Shares" actual={status.actual.shares} demo={status.demo.shares} shown={status.shown.shares} />
+        <Totals icon={<Users aria-hidden />} label="Followers" actual={status.actual.followers} demo={status.demo.followers} shown={status.shown.followers} />
       </section>
     </div>
   );
