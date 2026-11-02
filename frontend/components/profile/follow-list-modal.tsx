@@ -1,8 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { RotateCcw, UserRound, UsersRound } from "lucide-react";
-import { useState } from "react";
+import { RotateCcw, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { UserHandle, handleText } from "@/components/brand/user-handle";
 import { VerifiedBadge } from "@/components/brand/verified-badge";
@@ -15,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SpeedLinesLoader } from "@/components/ui/speed-lines-loader";
 import { TabPanel, Tabs } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
+import { formatNumber } from "@/lib/format";
 import { qk } from "@/lib/query-keys";
 import type { UserRow } from "@/lib/shared/contracts";
 import { flattenPages } from "./profile-cache";
@@ -90,17 +90,11 @@ function FollowList({
   });
 
   const rows = flattenPages(query.data);
-  // Followers counted but not listed (demo followers while demo mode is on): "Unknown reader" rows after the real ones,
-  // ANON_PAGE more each time the end of the list comes into view.
-  const unlisted = kind === "followers" && query.isSuccess && !query.hasNextPage ? Math.max(0, total - rows.length) : 0;
-  const [anonShown, setAnonShown] = useState(ANON_PAGE);
-  const anon = Math.min(unlisted, anonShown);
   const loadMore = () => {
     if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
-    else if (anon < unlisted) setAnonShown((n) => n + ANON_PAGE);
   };
   const sentinel = useInfiniteSentinel<HTMLDivElement>({
-    enabled: (query.hasNextPage && !query.isFetchingNextPage && !query.isFetchNextPageError) || anon < unlisted,
+    enabled: query.hasNextPage && !query.isFetchingNextPage && !query.isFetchNextPageError,
     onReach: loadMore,
     rootMargin: "240px 0px",
   });
@@ -131,6 +125,9 @@ function FollowList({
     );
   }
 
+  // Followers counted but not listed (demo followers while demo mode is on): a summary row instead of "No followers yet".
+  const unlisted = kind === "followers" && !query.hasNextPage ? Math.max(0, total - rows.length) : 0;
+
   if (rows.length === 0 && unlisted === 0) {
     return (
       <EmptyState
@@ -153,9 +150,7 @@ function FollowList({
         {rows.map((row) => (
           <UserRowItem key={row.id} row={row} onNavigate={onNavigate} />
         ))}
-        {Array.from({ length: anon }, (_, i) => (
-          <UnknownReaderRow key={`anon-${i}`} />
-        ))}
+        {unlisted > 0 && <MoreReaders count={unlisted} more={rows.length > 0} username={username} />}
       </ul>
       <div ref={sentinel} aria-hidden className="h-px" />
       {query.isFetchingNextPage && (
@@ -204,18 +199,24 @@ function UserRowItem({ row, onNavigate }: { row: UserRow; onNavigate: () => void
   );
 }
 
-const ANON_PAGE = 30;
-
-/** A follower without a profile to show (counted, not listed): no link, no Follow button. */
-function UnknownReaderRow() {
+/** "+76 readers": followers that are counted but have no row to show. */
+function MoreReaders({ count, more, username }: { count: number; more: boolean; username: string }) {
   return (
-    <li className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0 sm:px-6" data-testid="follow-row-unknown">
-      <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-2 text-muted">
-        <UserRound className="size-5" />
+    <li className="flex items-center gap-3 px-5 py-4 sm:px-6" data-testid="follow-more">
+      <span aria-hidden className="flex shrink-0 -space-x-3">
+        {["bg-tint text-brand", "bg-surface-2 text-muted", "bg-tint-border/60 text-brand"].map((tone, i) => (
+          <span key={i} className={`grid size-10 place-items-center rounded-full ring-2 ring-surface ${tone}`}>
+            <UsersRound className="size-4.5" />
+          </span>
+        ))}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-ink">Unknown reader</span>
-        <span className="block text-xs text-muted">Reader on WebNEWS</span>
+        <span className="block text-sm font-bold text-ink">
+          {more ? "and " : ""}
+          {formatNumber(count)} {more ? "more " : ""}
+          {count === 1 ? "reader" : "readers"}
+        </span>
+        <span className="block text-xs text-muted">Following {handleText(username)} for their stories</span>
       </span>
     </li>
   );
