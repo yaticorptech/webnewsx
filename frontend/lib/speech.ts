@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { toast } from "@/components/ui/toast";
-import { isNativeApp, nativeTextToSpeech, type TextToSpeechPlugin } from "./native-app";
+import { isNativeApp, nativeAudioFocus, nativeTextToSpeech, type TextToSpeechPlugin } from "./native-app";
 
 /*
  * Read-aloud with the device's own voice (Web Speech API) — the story page's "Listen" (components/article/listen-bar.tsx)
@@ -178,12 +178,59 @@ export type Speaker = { stop: () => void };
 let current: { id: number; onInterrupted?: () => void } | null = null;
 let nextId = 0;
 
+/** Leaving the app (home, app switcher, screen off) silences News radio and Listen, as the radio stops with the feed. */
+function silenceOnLeave() {
+  const speaking = current;
+  if (!speaking) return;
+  current = null;
+  cancelSpeech();
+  releaseAudioFocus();
+  speaking.onInterrupted?.();
+}
+/*
+ * Other apps' music and videos pause while the app reads aloud (Android audio focus). Let go a moment after the voice
+ * stops, so News radio moving to the next story doesn't hand the audio back in between.
+ */
+const RELEASE_FOCUS_MS = 1500;
+let focusTimer: ReturnType<typeof setTimeout> | null = null;
+let focusListening = false;
+function holdAudioFocus() {
+  const focus = nativeAudioFocus();
+  if (!focus) return;
+  if (focusTimer) clearTimeout(focusTimer);
+  focusTimer = null;
+  if (!focusListening) {
+    focusListening = true;
+    // A call, or the reader starting music elsewhere: stop reading.
+    void focus.addListener("lost", silenceOnLeave);
+  }
+  void focus.request().catch(() => {});
+}
+function releaseAudioFocus() {
+  const focus = nativeAudioFocus();
+  if (!focus || focusTimer) return;
+  focusTimer = setTimeout(() => {
+    focusTimer = null;
+    if (!current) void focus.abandon().catch(() => {});
+  }, RELEASE_FOCUS_MS);
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") silenceOnLeave();
+  });
+  // Capacitor's own "app went to the background" event (the WebView may not report visibility).
+  document.addEventListener("pause", silenceOnLeave);
+  window.addEventListener("pagehide", silenceOnLeave);
+}
+
 /** Reads `chunks` one after another in the voice for `lang`. */
 export function speak(chunks: readonly string[], options: SpeakOptions): Speaker {
   const previous = current;
   const id = ++nextId;
   current = { id, onInterrupted: options.onInterrupted };
   cancelSpeech();
+  holdAudioFocus();
   previous?.onInterrupted?.();
 
   const live = () => current?.id === id;
@@ -192,6 +239,7 @@ export function speak(chunks: readonly string[], options: SpeakOptions): Speaker
     if (!live()) return;
     current = null;
     cancelSpeech();
+    releaseAudioFocus();
   };
 
   const plugin = nativeVoice();
@@ -201,6 +249,7 @@ export function speak(chunks: readonly string[], options: SpeakOptions): Speaker
       if (!live()) return;
       if (index >= chunks.length) {
         current = null;
+        releaseAudioFocus();
         options.onDone?.();
         return;
       }
@@ -211,6 +260,7 @@ export function speak(chunks: readonly string[], options: SpeakOptions): Speaker
         .catch(() => {
           if (!live()) return;
           current = null;
+          releaseAudioFocus();
           options.onInterrupted?.();
         });
     };
@@ -222,6 +272,7 @@ export function speak(chunks: readonly string[], options: SpeakOptions): Speaker
     if (!live()) return;
     if (index >= chunks.length) {
       current = null;
+      releaseAudioFocus();
       options.onDone?.();
       return;
     }
@@ -237,6 +288,7 @@ export function speak(chunks: readonly string[], options: SpeakOptions): Speaker
     utterance.onerror = (event) => {
       if (!live() || event.error === "interrupted" || event.error === "canceled") return;
       current = null;
+      releaseAudioFocus();
       options.onInterrupted?.();
     };
     speechSynthesis.speak(utterance);

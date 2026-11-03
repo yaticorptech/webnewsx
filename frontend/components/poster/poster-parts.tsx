@@ -4,6 +4,7 @@ import { VerifiedBadge } from "@/components/brand/verified-badge";
 import { hasIndicScript, INDIC_HEADLINE } from "@/components/feed/script";
 import type { PosterFrame, ReporterLevel } from "@/lib/shared/contracts";
 import { cn, initialsOf } from "@/lib/utils";
+import { PosterTitleFit } from "./poster-title-fit";
 import { PosterVideo } from "./poster-video";
 
 /*
@@ -141,20 +142,23 @@ export type PosterTitleProps = {
  * open leading and no negative tracking (components/feed/script.ts); `dir="auto"` keeps RTL scripts right-aligned.
  */
 export function PosterTitle({ title, id, sizes, className, mark }: PosterTitleProps) {
+  const step = titleStep(title);
   return (
-    <p
+    <PosterTitleFit
       id={id}
       dir="auto"
       data-poster-text=""
+      sizes={sizes}
+      step={step}
       className={cn(
         "text-pretty break-words",
-        sizes[titleStep(title)],
+        sizes[step],
         className,
         hasIndicScript(title) && INDIC_HEADLINE,
       )}
     >
       {mark ? <span className={mark}>{title}</span> : title}
-    </p>
+    </PosterTitleFit>
   );
 }
 

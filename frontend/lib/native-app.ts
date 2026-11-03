@@ -62,6 +62,13 @@ export type PushNotificationsPlugin = {
  * "action" events (`position`: where the bar was dropped, in seconds). Builds from before 2026-10-07 don't have it;
  * the first 2026-10-07 build has no seek bar or back / forward.
  */
+/** Pauses other apps' audio while the app reads aloud (mobile/android AudioFocusPlugin, 2026-11-03; builds before 1.2 lack it). */
+export type AudioFocusPlugin = {
+  request(): Promise<{ granted: boolean }>;
+  abandon(): Promise<void>;
+  addListener(event: "lost", fn: () => void): Promise<PluginListener> | PluginListener;
+};
+
 export type MediaNotificationPlugin = {
   /** `position` / `duration` in seconds. */
   show(options: { title: string; artist: string; playing: boolean; position: number; duration: number }): Promise<void>;
@@ -117,6 +124,7 @@ type CapacitorGlobal = {
     Filesystem?: FilesystemPlugin;
     ShareTarget?: ShareTargetPlugin;
     MediaNotification?: MediaNotificationPlugin;
+    AudioFocus?: AudioFocusPlugin;
   };
 };
 
@@ -172,6 +180,13 @@ export function nativeTextToSpeech(): TextToSpeechPlugin | null {
   const cap = capacitor();
   const plugin = cap?.Plugins?.TextToSpeech;
   return plugin && (cap.isPluginAvailable?.("TextToSpeech") ?? true) ? plugin : null;
+}
+
+/** The app's audio focus, or null (the website, iOS, older builds). */
+export function nativeAudioFocus(): AudioFocusPlugin | null {
+  const cap = capacitor();
+  const plugin = cap?.Plugins?.AudioFocus;
+  return plugin && (cap.isPluginAvailable?.("AudioFocus") ?? false) ? plugin : null;
 }
 
 /** The app's "now playing" notification, or null (the website, older builds). */

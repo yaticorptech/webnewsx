@@ -49,6 +49,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PushSupportPlugin.class);
         registerPlugin(ShareTargetPlugin.class);
         registerPlugin(MediaNotificationPlugin.class);
+        registerPlugin(AudioFocusPlugin.class);
         super.onCreate(savedInstanceState);
         watchFirstPage((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
         SystemBarStyle bars = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT);

@@ -313,6 +313,67 @@ function dayTitle(key: string): string {
 
 const ROW_BUTTON = "inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-semibold transition-colors";
 
+function RowActions({
+  story,
+  pinsFull,
+  onRead,
+  onPin,
+  onUnpublish,
+  menuFor,
+  className,
+}: {
+  story: AdminStoryRow;
+  pinsFull: boolean;
+  onRead: (story: AdminStoryRow) => void;
+  onPin: (story: AdminStoryRow) => void;
+  onUnpublish: (story: AdminStoryRow) => void;
+  menuFor: (story: AdminStoryRow) => DropdownItem[];
+  className?: string;
+}) {
+  const live = story.status === "published";
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      {live && (
+        <button
+          type="button"
+          onClick={() => onPin(story)}
+          disabled={!story.editorsPick && pinsFull}
+          aria-pressed={story.editorsPick}
+          title={story.editorsPick ? "Remove from Editor's Picks" : pinsFull ? `Editor's Picks full (${MAX_PICKS})` : "Make Editor's Pick"}
+          className={cn(ROW_BUTTON, "w-9 px-0", story.editorsPick ? "border-brand/40 bg-tint text-brand" : "border-border text-muted hover:text-ink", "disabled:opacity-40")}
+        >
+          <Pin aria-hidden className="size-3.5" />
+        </button>
+      )}
+      <button type="button" onClick={() => onRead(story)} className={cn(ROW_BUTTON, "border-brand/40 text-brand hover:bg-tint")}>
+        Read
+      </button>
+      {/* The Editor Desk edits any story in the composer (owner 2026-10-31); it stays the reporter's. */}
+      <a href={`/publish/${story.id}`} className={cn(ROW_BUTTON, "gap-1.5 border-border text-ink hover:bg-surface-2")}>
+        <PenLine aria-hidden className="size-3.5" />
+        Edit
+      </a>
+      {live && story.slug && (
+        <a href={`/a/${story.slug}`} target="_blank" rel="noopener" className={cn(ROW_BUTTON, "border-[#bfe3c8] text-[#1f7a3d] hover:bg-[#f1faf3]")}>
+          View live
+        </a>
+      )}
+      {(live || story.status === "hidden") && (
+        <button type="button" onClick={() => onUnpublish(story)} className={cn(ROW_BUTTON, "border-[#f1d9a6] text-[#9a6200] hover:bg-[#fff8ea]")}>
+          Unpublish
+        </button>
+      )}
+      <DropdownMenu
+        label={`More for “${story.title || "Untitled story"}”`}
+        trigger={<Ellipsis aria-hidden className="size-4" />}
+        triggerClassName={cn(ROW_BUTTON, "w-9 border-border px-0 text-muted hover:text-ink")}
+        items={menuFor(story)}
+        floating
+      />
+    </div>
+  );
+}
+
 function DayGroups({
   stories,
   pinsFull,
@@ -346,7 +407,44 @@ function DayGroups({
             </span>
             <span aria-hidden className="h-px flex-1 bg-border" />
           </div>
-          <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgb(16_24_40/0.04)]">
+          {/* Phones: one stacked card per story so titles aren't cut to "Sin…" by a scrolling table. */}
+          <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgb(16_24_40/0.04)] md:hidden">
+            {day.stories.map((story) => (
+              <li key={story.id} className="flex flex-col gap-2 px-4 py-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <button type="button" onClick={() => onRead(story)} className="line-clamp-2 text-left font-medium leading-snug text-ink hover:text-brand">
+                    {story.title || "Untitled story"}
+                  </button>
+                  <span className="shrink-0">
+                    <StoryStatusChip status={story.status} />
+                  </span>
+                </div>
+                <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted">
+                  {story.category && <span>{categoryLabel(story.category, story.district)}</span>}
+                  {story.category && <span aria-hidden>·</span>}
+                  <Link href={deskPersonHref(story.author.username)} className="hover:text-brand">
+                    {story.author.name}
+                  </Link>
+                  <span aria-hidden>·</span>
+                  <span className="tabular-nums">{WHEN.format(new Date(storyTime(story)))}</span>
+                </p>
+                {(story.editorsPick || story.spotlight || story.openFlags > 0) && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {story.editorsPick && <EditorsPickChip order={story.pinOrder} />}
+                    {story.spotlight && <SpotlightChip />}
+                    {story.openFlags > 0 && (
+                      <Link href="/admin/flags" className="inline-flex items-center gap-1 text-xs font-semibold text-brand">
+                        <Flag aria-hidden className="size-3" />
+                        {story.openFlags} open report{story.openFlags === 1 ? "" : "s"}
+                      </Link>
+                    )}
+                  </div>
+                )}
+                <RowActions story={story} pinsFull={pinsFull} onRead={onRead} onPin={onPin} onUnpublish={onUnpublish} menuFor={menuFor} className="flex-wrap pt-1" />
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgb(16_24_40/0.04)] md:block">
             <table className="w-full min-w-[60rem] border-collapse text-left text-sm">
               <thead>
                 <tr className="border-b border-border">
@@ -359,7 +457,6 @@ function DayGroups({
               </thead>
               <tbody className="divide-y divide-border">
                 {day.stories.map((story) => {
-                  const live = story.status === "published";
                   return (
                     <tr key={story.id} className="transition-colors hover:bg-[#fafafa]">
                       <td className="max-w-0 px-4 py-3 md:w-full">
@@ -390,45 +487,7 @@ function DayGroups({
                         <StoryStatusChip status={story.status} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
-                          {live && (
-                            <button
-                              type="button"
-                              onClick={() => onPin(story)}
-                              disabled={!story.editorsPick && pinsFull}
-                              aria-pressed={story.editorsPick}
-                              title={story.editorsPick ? "Remove from Editor's Picks" : pinsFull ? `Editor's Picks full (${MAX_PICKS})` : "Make Editor's Pick"}
-                              className={cn(ROW_BUTTON, "w-9 px-0", story.editorsPick ? "border-brand/40 bg-tint text-brand" : "border-border text-muted hover:text-ink", "disabled:opacity-40")}
-                            >
-                              <Pin aria-hidden className="size-3.5" />
-                            </button>
-                          )}
-                          <button type="button" onClick={() => onRead(story)} className={cn(ROW_BUTTON, "border-brand/40 text-brand hover:bg-tint")}>
-                            Read
-                          </button>
-                          {/* The Editor Desk edits any story in the composer (owner 2026-10-31); it stays the reporter's. */}
-                          <a href={`/publish/${story.id}`} className={cn(ROW_BUTTON, "gap-1.5 border-border text-ink hover:bg-surface-2")}>
-                            <PenLine aria-hidden className="size-3.5" />
-                            Edit
-                          </a>
-                          {live && story.slug && (
-                            <a href={`/a/${story.slug}`} target="_blank" rel="noopener" className={cn(ROW_BUTTON, "border-[#bfe3c8] text-[#1f7a3d] hover:bg-[#f1faf3]")}>
-                              View live
-                            </a>
-                          )}
-                          {(live || story.status === "hidden") && (
-                            <button type="button" onClick={() => onUnpublish(story)} className={cn(ROW_BUTTON, "border-[#f1d9a6] text-[#9a6200] hover:bg-[#fff8ea]")}>
-                              Unpublish
-                            </button>
-                          )}
-                          <DropdownMenu
-                            label={`More for “${story.title || "Untitled story"}”`}
-                            trigger={<Ellipsis aria-hidden className="size-4" />}
-                            triggerClassName={cn(ROW_BUTTON, "w-9 border-border px-0 text-muted hover:text-ink")}
-                            items={menuFor(story)}
-                            floating
-                          />
-                        </div>
+                        <RowActions story={story} pinsFull={pinsFull} onRead={onRead} onPin={onPin} onUnpublish={onUnpublish} menuFor={menuFor} className="justify-end" />
                       </td>
                     </tr>
                   );
