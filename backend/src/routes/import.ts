@@ -327,5 +327,32 @@ export function importRoutes() {
     });
   });
 
+  // PATCH /api/import/queue/:id { publishAt } — move a waiting story to another time (owner 2026-11-03).
+  app.patch("/queue/:id", async (c) => {
+    if (!authorized(c.req.header("authorization")))
+      throw new ApiError(401, "unauthorized", "Not allowed");
+    const { publishAt } = await readJson(
+      c,
+      z.object({ publishAt: z.string().datetime({ offset: true }) }),
+    );
+    const queue = await readQueue();
+    const item = queue.find((q) => q.id === c.req.param("id"));
+    if (!item) throw notFound("Queued story not found");
+    item.publishAt = new Date(publishAt).toISOString();
+    await writeQueue(queue);
+    return c.json({ id: item.id, publishAt: item.publishAt });
+  });
+
+  // DELETE /api/import/queue/:id — drop a waiting story before it's published.
+  app.delete("/queue/:id", async (c) => {
+    if (!authorized(c.req.header("authorization")))
+      throw new ApiError(401, "unauthorized", "Not allowed");
+    const queue = await readQueue();
+    const rest = queue.filter((q) => q.id !== c.req.param("id"));
+    if (rest.length === queue.length) throw notFound("Queued story not found");
+    await writeQueue(rest);
+    return c.json({ ok: true });
+  });
+
   return app;
 }
