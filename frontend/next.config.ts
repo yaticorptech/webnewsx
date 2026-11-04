@@ -37,6 +37,9 @@ function toOrigin(value: string | undefined): string | null {
 }
 
 const streamOrigin = toOrigin(process.env.NEXT_PUBLIC_STREAM_URL);
+// Publisher site admins upload ad creatives straight to the API (owner 2026-11-04: Vercel's rewrite refuses bodies over
+// ~4.5 MB, "Request Entity Too Large"). Only for an https backend — dev and phone testing keep the same-origin rewrite.
+const directApiOrigin = backendUrl.startsWith("https://") ? toOrigin(backendUrl) : null;
 const mediaOrigins = (process.env.NEXT_PUBLIC_MEDIA_HOSTS ?? "")
   .split(/[\s,]+/)
   .map((host) => toOrigin(host.trim()))
@@ -53,7 +56,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   // The poster images shared / auto-posted (components/poster/poster-jpeg.tsx) read the cover and the author's photo
   // to draw them: the media hosts and Google profile photos.
-  ["connect-src 'self'", streamOrigin, "https://*.googleusercontent.com", "https://*.razorpay.com",
+  ["connect-src 'self'", streamOrigin, directApiOrigin, "https://*.googleusercontent.com", "https://*.razorpay.com",
     // Desktop masthead weather + reader's city (owner 2026-10-15; no keys, no cookies).
     "https://api.open-meteo.com",
     // Publisher sites' weather card finds the city by name first (components/publisher/weather-widget.tsx).
@@ -85,6 +88,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   distDir,
+  env: { NEXT_PUBLIC_DIRECT_API_ORIGIN: directApiOrigin ?? "" },
   // No dev-tools "N" badge on screen (owner 2026-10-01); compile and runtime errors still show.
   devIndicators: false,
   // The repo root has its own lockfile (root convenience scripts); pin Turbopack to this app.

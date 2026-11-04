@@ -70,10 +70,12 @@ const tooLarge = (message: string) => {
   throw new ApiError(413, "payload_too_large", message);
 };
 
+const SITE_UPLOAD_PATH = /^\/api\/sites\/d\/[^/]+\/admin\/upload$/;
+
 /** 1 MB for JSON, 200 MB (+ overhead) for /api/upload (images 8 MB, checked there). Better Auth routes use the JSON limit too. */
 const bodyLimits: MiddlewareHandler<AppEnv> = (c, next) => {
   // A publisher site admin's logo / ad creatives (images 8 MB, videos 50 MB — checked there; owner 2026-10-30).
-  const isUpload = c.req.path === "/api/upload" || /^\/api\/sites\/d\/[^/]+\/admin\/upload$/.test(c.req.path);
+  const isUpload = c.req.path === "/api/upload" || SITE_UPLOAD_PATH.test(c.req.path);
   // The composer's poster for auto-posting (a 1080×1920 image, checked there).
   const isPoster = c.req.path.startsWith("/api/social/poster/");
   // Press meet recordings arrive in pieces of a few seconds each (owner 2026-10-01).
@@ -120,16 +122,17 @@ export function createApp(options: CreateAppOptions = {}) {
       strictTransportSecurity: env.isProduction ? "max-age=15552000; includeSubDomains" : false,
     }),
   );
-  app.use(
-    "/api/*",
-    cors({
-      origin: env.FRONTEND_URL,
-      credentials: true,
-      allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization", VIEW_AS_VISITOR_HEADER],
-      maxAge: 600,
-    }),
-  );
+  const appCors = cors({
+    origin: env.FRONTEND_URL,
+    credentials: true,
+    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", VIEW_AS_VISITOR_HEADER],
+    maxAge: 600,
+  });
+  // A publisher site admin uploads ad creatives from their own domain straight here (owner 2026-11-04: Vercel's rewrite
+  // refuses bodies over ~4.5 MB). Any origin, no cookies: the site admin's Bearer token is the only credential.
+  const siteUploadCors = cors({ origin: "*", allowMethods: ["POST", "OPTIONS"], allowHeaders: ["Content-Type", "Authorization", "Accept"], maxAge: 600 });
+  app.use("/api/*", (c, next) => (SITE_UPLOAD_PATH.test(c.req.path) ? siteUploadCors(c, next) : appCors(c, next)));
   app.use("*", clientIpMiddleware);
   app.use("/api/*", bodyLimits);
   app.use("/api/*", noStoreByDefault);

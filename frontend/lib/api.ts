@@ -3,6 +3,7 @@
  * Next.js rewrite proxies to the backend, so Better Auth cookies are sent automatically.
  * Types come from the generated contract copy (lib/shared/contracts.ts).
  */
+import { directApiOrigin } from "@/lib/config";
 import type { MarketHistory, MarketRange, MarketResponse } from "@/lib/shared/contracts";
 import type { AdminGroupApplication, AdminGroupDetail, GroupApplication, GroupApplicationInput, GroupDetailResponse, MyGroupsResponse } from "@/lib/shared/contracts";
 import type {
@@ -365,7 +366,8 @@ export function uploadSiteFile(
   const form = new FormData();
   form.append("file", file, file.name);
   if (purpose) form.append("purpose", purpose);
-  return sendUpload<SiteUpload>(form, onProgress, undefined, `/api/sites/d/${encodeURIComponent(domain)}/admin/upload`, token);
+  // Straight to the API: Vercel's rewrite refuses bodies over ~4.5 MB (videos are up to 50 MB). Bearer token, no cookies.
+  return sendUpload<SiteUpload>(form, onProgress, undefined, `${directApiOrigin}/api/sites/d/${encodeURIComponent(domain)}/admin/upload`, token);
 }
 export type SiteUpload = { url: string; key: string; video: boolean };
 

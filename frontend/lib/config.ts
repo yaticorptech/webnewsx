@@ -18,6 +18,9 @@ export const googleWebClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 /** SSE endpoint. Same-origin through the rewrite unless a direct URL is configured. */
 export const streamUrl = process.env.NEXT_PUBLIC_STREAM_URL || "/api/stream";
 
+/** The API's own https origin in production builds (next.config.ts), "" otherwise: for uploads too big for the rewrite. */
+export const directApiOrigin = process.env.NEXT_PUBLIC_DIRECT_API_ORIGIN ?? "";
+
 export const SITE_NAME = "WebNewsX";
 export const TAGLINE = "Pulse of People";
 export const SITE_DESCRIPTION =
