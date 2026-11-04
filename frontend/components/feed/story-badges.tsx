@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * Transparency labels and press marks for stories (SPEC §3.11):
  *  - "Editor's Pick" — pinned by the Editor Desk (crimson pill, white star);
  *  - "Spotlight"     — a paid boost is running (white pill, red sparkles) — always labelled;
- *  - the byline mark — the animated Verified badge for Verified reporters, a grey "Trainee" chip otherwise.
+ *  - the byline mark — the animated Verified badge for Verified reporters (Trainees show none on bylines, owner 2026-11-04).
  */
 
 const PILL = "kicker inline-flex h-6 shrink-0 items-center gap-1 rounded-full pl-2 pr-2.5 leading-none [&_svg]:size-3.5";
@@ -104,7 +104,7 @@ export function TraineeChip({ className }: { className?: string }) {
   );
 }
 
-/** Press mark next to a byline: Verified badge (animated) · Trainee chip · nothing for readers. */
+/** Press mark next to a byline: Verified badge (animated) · nothing for Trainees (owner 2026-11-04: no chip on bylines) or readers. */
 export function ReporterMark({
   level,
   size = 16,
@@ -118,7 +118,6 @@ export function ReporterMark({
   className?: string;
 }) {
   if (level === "verified") return <VerifiedBadge size={size} focusable={focusable} className={className} />;
-  if (level === "trainee") return <TraineeChip className={className} />;
   return null;
 }
 
