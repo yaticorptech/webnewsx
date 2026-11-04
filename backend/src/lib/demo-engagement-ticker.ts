@@ -16,19 +16,26 @@ const LIKE_CHANCE = 0.3; // chance a picked story also gains a like
 const SHARE_CHANCE = 0.08; // chance a picked story also gains a share
 const FOLLOW_CHANCE = 0.25; // chance an account gains a follower each tick
 const MAX_FOLLOWERS_PER_TICK = 2; // followers added to a picked account: 1 … this
-const CAP = { views: 5000, likes: 2000, shares: 600, followers: 3000 }; // demo numbers stop growing here
+const CAP = { likes: 2000, shares: 600, followers: 3000 }; // demo numbers stop growing here
+// Views stop at a per-story ceiling between these (owner 2026-11-04: 3000-4000, not one round number for every story).
+const VIEWS_MIN = 3000;
+const VIEWS_SPREAD = 1000;
 
 /** A code constant written into the SQL as a literal (bound parameters get typed as integers here). */
 const n = (value: number) => sql.raw(String(value));
 
 export async function growDemoEngagement(): Promise<number> {
+  // Stable per story (hash of its id), so a story's ceiling never moves between ticks.
+  const viewsCap = sql`(${n(VIEWS_MIN)} + mod(abs(hashtext(id::text)), ${n(VIEWS_SPREAD)}))`;
+  // Stories already past their ceiling (the old flat 5000) come back down to it.
+  await db.execute(sql`update article set demo_views = ${viewsCap} where demo_views > ${viewsCap}`);
   const updated = await db.execute<{ id: string }>(sql`
     update article set
-      demo_views = least(${n(CAP.views)}, demo_views + floor(random() * ${n(MAX_VIEWS_PER_TICK)})::int + 1),
+      demo_views = least(${viewsCap}, demo_views + floor(random() * ${n(MAX_VIEWS_PER_TICK)})::int + 1),
       demo_likes = least(${n(CAP.likes)}, demo_likes + (random() < ${n(LIKE_CHANCE)})::int),
       demo_shares = least(${n(CAP.shares)}, demo_shares + (random() < ${n(SHARE_CHANCE)})::int)
     where status = 'published'
-      and demo_views < ${n(CAP.views)}
+      and demo_views < ${viewsCap}
       and random() < case
         when published_at > now() - interval '2 days' then ${n(Math.min(1, STORY_SHARE * 2))}
         when published_at > now() - interval '7 days' then ${n(STORY_SHARE)}
