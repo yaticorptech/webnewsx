@@ -29,17 +29,19 @@ const TABS: { key: Tab; label: string; icon: ReactNode }[] = [
 ];
 
 const tokenKey = (domain: string) => `wn_site_admin:${domain}`;
+// sessionStorage (owner 2026-11-04): closing the website ends the login; the token itself lasts 2 days at most.
 function readToken(domain: string): string | null {
   try {
-    return window.localStorage.getItem(tokenKey(domain));
+    window.localStorage.removeItem(tokenKey(domain)); // logins saved before this change
+    return window.sessionStorage.getItem(tokenKey(domain));
   } catch {
     return null;
   }
 }
 function writeToken(domain: string, token: string | null) {
   try {
-    if (token) window.localStorage.setItem(tokenKey(domain), token);
-    else window.localStorage.removeItem(tokenKey(domain));
+    if (token) window.sessionStorage.setItem(tokenKey(domain), token);
+    else window.sessionStorage.removeItem(tokenKey(domain));
   } catch {
     /* private mode: the session lasts this page only */
   }

@@ -48,7 +48,8 @@ const scrypt = promisify(scryptCallback) as (password: string, salt: Buffer, key
 const LATEST_LIMIT = 40;
 const TRENDING_LIMIT = 8;
 const TRENDING_DAYS = 30;
-const ADMIN_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+// A site admin login lasts 2 days at most (owner 2026-11-04); closing the website ends it sooner (sessionStorage).
+const ADMIN_TOKEN_TTL_MS = 2 * 24 * 60 * 60 * 1000;
 
 
 type Person = { id: string; name: string; username: string | null; image: string | null };
