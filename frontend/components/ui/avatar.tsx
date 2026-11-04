@@ -27,7 +27,7 @@ export function Avatar({ src, name, size = "md", ring = false, decorative = fals
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const showImage = Boolean(src) && failedSrc !== src;
-  // Once the photo is in, the initials and grey disc go: a logo with transparent parts must not show them through.
+  // Once the photo is in, the grey disc goes too: a logo with transparent parts must not show it through.
   const loaded = showImage && loadedSrc === src;
   // Errors that fire before hydration never reach onError: detect an already-broken image on mount.
   const imgRef = useCallback(
@@ -50,14 +50,16 @@ export function Avatar({ src, name, size = "md", ring = false, decorative = fals
       )}
       style={{ width: px, height: px } as CSSProperties}
     >
-      <span
-        aria-hidden
-        hidden={loaded}
-        className="font-wide font-extrabold uppercase leading-none text-brand-strong"
-        style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
-      >
-        {initialsOf(name)}
-      </span>
+      {/* Initials only when there is no photo (or it broke): drawn under a logo they would show through its transparent parts. */}
+      {!showImage && (
+        <span
+          aria-hidden
+          className="font-wide font-extrabold uppercase leading-none text-brand-strong"
+          style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
+        >
+          {initialsOf(name)}
+        </span>
+      )}
       {showImage && src ? (
         <img
           ref={imgRef}
