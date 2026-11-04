@@ -103,6 +103,7 @@ async function ensurePublisher(p: Pick<DemoPublisher, "username" | "name" | "bio
       image,
       username: p.username,
       bio: p.bio,
+      addedBy: "claude",
       onboardedAt: joined,
       termsAcceptedAt: joined,
       termsVersion: TERMS_VERSION,

@@ -94,6 +94,7 @@ async function main() {
               bio: `Reporter in ${r.city}. Local news, civic issues and culture.`,
               role: "reporter",
               reporterLevel: "verified",
+              addedBy: "claude",
               pressMeetPrice: 500 + ((index * 137) % 26) * 100,
               onboardedAt: joined,
               termsAcceptedAt: joined,
