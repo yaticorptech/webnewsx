@@ -25,11 +25,16 @@ const PX: Record<Exclude<AvatarSize, number>, number> = { xs: 24, sm: 32, md: 40
 export function Avatar({ src, name, size = "md", ring = false, decorative = false, priority, className }: AvatarProps) {
   const px = typeof size === "number" ? size : PX[size];
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const showImage = Boolean(src) && failedSrc !== src;
+  // Once the photo is in, the initials and grey disc go: a logo with transparent parts must not show them through.
+  const loaded = showImage && loadedSrc === src;
   // Errors that fire before hydration never reach onError: detect an already-broken image on mount.
   const imgRef = useCallback(
     (img: HTMLImageElement | null) => {
-      if (img?.complete && img.naturalWidth === 0 && src) setFailedSrc(src);
+      if (!img?.complete || !src) return;
+      if (img.naturalWidth === 0) setFailedSrc(src);
+      else setLoadedSrc(src);
     },
     [src],
   );
@@ -37,7 +42,8 @@ export function Avatar({ src, name, size = "md", ring = false, decorative = fals
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-tint-2 align-middle",
+        "relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full align-middle",
+        !loaded && "bg-tint-2",
         ring && "ring-2 ring-offset-2 ring-offset-bg",
         ring && (ring === "ink" ? "ring-ink" : "ring-brand"),
         className,
@@ -46,6 +52,7 @@ export function Avatar({ src, name, size = "md", ring = false, decorative = fals
     >
       <span
         aria-hidden
+        hidden={loaded}
         className="font-wide font-extrabold uppercase leading-none text-brand-strong"
         style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
       >
@@ -62,9 +69,10 @@ export function Avatar({ src, name, size = "md", ring = false, decorative = fals
           decoding="async"
           referrerPolicy="no-referrer"
           draggable={false}
+          onLoad={() => setLoadedSrc(src)}
           onError={() => setFailedSrc(src)}
           // text-transparent: a broken image must never show its alt text over the initials.
-          className="absolute inset-0 size-full bg-tint-2 object-cover text-transparent"
+          className="absolute inset-0 size-full object-cover text-transparent"
         />
       ) : (
         !decorative && <span className="sr-only">{name}</span>
