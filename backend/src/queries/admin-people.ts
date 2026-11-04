@@ -50,7 +50,8 @@ export async function listUsers(filters: UserFilters): Promise<Page<AdminUserRow
     conditions.push(or(ilike(user.username, pattern), ilike(user.name, pattern), ilike(user.email, pattern)) as SQL);
   }
   if (filters.role) conditions.push(eq(user.role, filters.role));
-  if (filters.added) conditions.push(isNotNull(user.addedBy));
+  // "All readers" lists real people only; Claude's accounts sit under "Added by Claude" (owner 2026-11-04).
+  conditions.push(filters.added ? isNotNull(user.addedBy) : isNull(user.addedBy));
   if (filters.status === "suspended") conditions.push(isNotNull(user.suspendedAt));
   if (filters.status === "active") conditions.push(isNull(user.suspendedAt));
   if (cursor) conditions.push(sql`(${user.createdAt}, ${user.id}) < (${cursor.at.toISOString()}::timestamptz, ${cursor.id}::text)`);
@@ -243,9 +244,10 @@ export type ReporterFilters = {
 export async function listReporters(filters: ReporterFilters): Promise<Page<AdminReporterRow>> {
   const cursor = decodeCursor(filters.cursor);
   const conditions: SQL[] = [];
-  if (filters.level === "added") conditions.push(isNotNull(user.addedBy));
-  else if (filters.level === "revoked") conditions.push(isNotNull(pressPass.revokedAt));
-  else if (filters.level) conditions.push(and(isNull(pressPass.revokedAt), eq(pressPass.level, filters.level)) as SQL);
+  // Every other view lists real reporters only; Claude's accounts sit under "Added by Claude" (owner 2026-11-04).
+  conditions.push(filters.level === "added" ? isNotNull(user.addedBy) : isNull(user.addedBy));
+  if (filters.level === "revoked") conditions.push(isNotNull(pressPass.revokedAt));
+  else if (filters.level && filters.level !== "added") conditions.push(and(isNull(pressPass.revokedAt), eq(pressPass.level, filters.level)) as SQL);
   if (filters.q) {
     const pattern = likePattern(filters.q.replace(/^@/, ""));
     // Mobile numbers are stored as +91XXXXXXXXXX: match on the typed digits ("98450 12345" → 9845012345).
