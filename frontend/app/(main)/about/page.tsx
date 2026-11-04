@@ -6,7 +6,6 @@ import { BrandLockup } from "@/components/brand/brand-lockup";
 import { SpeedLines } from "@/components/brand/speed-lines";
 import { publishActionFor, type PublishAction } from "@/components/layout/publish-action";
 import { InfoPagesNav } from "@/components/layout/info-pages-nav";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { SocialLinks } from "@/components/layout/social-links";
 import { Button } from "@/components/ui/button";
 import { COMPANY } from "@/lib/company";
@@ -163,7 +162,6 @@ export default async function AboutPage() {
         </p>
       </Section>
 
-      <SiteFooter className="rounded-2xl border" />
     </article>
   );
 }

@@ -5,7 +5,6 @@ import { BrandLockup } from "@/components/brand/brand-lockup";
 import { SpeedLines } from "@/components/brand/speed-lines";
 import { ContactForm } from "@/components/contact/contact-form";
 import { InfoPagesNav } from "@/components/layout/info-pages-nav";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { SocialLinks } from "@/components/layout/social-links";
 import { COMPANY } from "@/lib/company";
 import { SITE_NAME } from "@/lib/config";
@@ -63,7 +62,6 @@ export default async function ContactPage() {
         </aside>
       </div>
 
-      <SiteFooter className="rounded-2xl border" />
     </article>
   );
 }
