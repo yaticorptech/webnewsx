@@ -9,6 +9,7 @@ import { getAdminMemberships, recordPayout } from "../queries/membership-dashboa
 import { adminOverview, listAudit } from "../queries/admin-overview.js";
 import {
   deleteAccount,
+  getPersonDetail,
   getReporterRow,
   getUserRow,
   listReporters,
@@ -221,6 +222,8 @@ export function adminRoutes() {
     const filters = parseWith(usersQuery, c.req.query());
     return c.json(await listUsers({ ...filters, cursor: c.req.query("cursor"), limit: limitOf(c.req.query("limit")), viewerId: mustViewer(c).id }));
   });
+  // The person popup on Readers / Reporters (owner 2026-11-04).
+  app.get("/users/:id/details", async (c) => c.json(await getPersonDetail(c.req.param("id"), mustViewer(c).id)));
   app.post("/users/:id/role", async (c) => {
     const { role } = await readJson(c, setRoleSchema);
     const id = c.req.param("id");

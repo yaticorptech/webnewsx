@@ -55,6 +55,7 @@ import type {
   AdminStoriesQuery,
   AdminStoryDetailResponse,
   AdminStoryRow,
+  AdminPersonDetail,
   AdminUserRow,
   AdminUsersQuery,
   ApiErrorBody,
@@ -974,6 +975,9 @@ export const api = {
 
     users: (params: AdminUsersQuery = {}, signal?: AbortSignal) =>
       request<Page<AdminUserRow>>(`/api/admin/users${query(params)}`, { signal }),
+    /** The person popup on Readers / Reporters: full profile, logins (IP + browser), activity IPs, Press Pass. */
+    personDetail: (userId: string, signal?: AbortSignal) =>
+      request<AdminPersonDetail>(`/api/admin/users/${enc(userId)}/details`, { signal }),
     /** 400 `cannot_modify_self` for your own account. */
     setRole: (userId: string, role: Role) =>
       request<{ user: AdminUserRow }>(`/api/admin/users/${enc(userId)}/role`, { method: "POST", body: { role } }),

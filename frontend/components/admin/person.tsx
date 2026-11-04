@@ -27,11 +27,13 @@ type PersonCellProps = {
   size?: "sm" | "md";
   /** Link the name to the public profile (default true when the person has a username). */
   link?: boolean;
+  /** Clicking the photo or name opens this instead (the Desk's person popup, owner 2026-11-04). */
+  onOpen?: () => void;
   className?: string;
 };
 
 /** Avatar + display name (+ Verified badge) + handle, used in every desk table. */
-export function PersonCell({ person, detail, size = "md", link = true, className }: PersonCellProps) {
+export function PersonCell({ person, detail, size = "md", link = true, onOpen, className }: PersonCellProps) {
   const name = (
     <span className="flex min-w-0 items-center gap-1.5">
       <span className="truncate font-bold text-ink">{person.name || "Unnamed"}</span>
@@ -40,9 +42,19 @@ export function PersonCell({ person, detail, size = "md", link = true, className
   );
   return (
     <div className={cn("flex min-w-0 items-center gap-3", className)}>
-      <Avatar src={person.image ?? null} name={person.name || person.username || "?"} size={size === "sm" ? "sm" : "md"} decorative />
+      {onOpen ? (
+        <button type="button" onClick={onOpen} aria-label={`Profile details for ${person.name || person.username || "this person"}`} className="shrink-0 rounded-full transition-transform active:scale-95">
+          <Avatar src={person.image ?? null} name={person.name || person.username || "?"} size={size === "sm" ? "sm" : "md"} decorative />
+        </button>
+      ) : (
+        <Avatar src={person.image ?? null} name={person.name || person.username || "?"} size={size === "sm" ? "sm" : "md"} decorative />
+      )}
       <div className={cn("flex min-w-0 flex-col", size === "sm" ? "text-[0.8125rem]" : "text-sm")}>
-        {link && person.username ? (
+        {onOpen ? (
+          <button type="button" onClick={onOpen} className="min-w-0 rounded-sm text-left hover:[&_span.truncate]:text-brand">
+            {name}
+          </button>
+        ) : link && person.username ? (
           <Link href={deskPersonHref(person.username)} className="min-w-0 rounded-sm hover:[&_span.truncate]:text-brand">
             {name}
           </Link>

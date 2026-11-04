@@ -14,6 +14,7 @@ import { ActionDialog } from "./action-dialog";
 import { Chip, LevelChip, RoleChip } from "./chips";
 import { DeskDate } from "./desk-date";
 import { ListEmpty, ListError, ListLoading, LiveCount, LoadMore, SearchBox, Segmented, SelectFilter } from "./list-parts";
+import { PersonDetailModal } from "./person-detail";
 import { PersonCell } from "./person";
 import { SectionHeader } from "./section-header";
 import { TBody, THead, Table, Td, Th, Tr } from "./table";
@@ -57,6 +58,7 @@ export function PeopleView({ initialFilters, initial }: { initialFilters: People
   });
   const undo = useUndo();
   const [pending, setPending] = useState<Pending | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const patch = (client: Parameters<typeof patchLists>[0], id: string, update: (row: AdminUserRow) => AdminUserRow) =>
     patchLists<AdminUserRow>(client, PEOPLE, (row) => row.id === id, update);
 
@@ -200,7 +202,7 @@ export function PeopleView({ initialFilters, initial }: { initialFilters: People
               {items.map((row, i) => (
                 <Tr key={row.id} index={i} className="relative">
                   <Td className="max-md:basis-full max-md:pr-10 md:w-full md:max-w-0">
-                    <PersonCell person={row} detail={row.email} />
+                    <PersonCell person={row} detail={row.email} onOpen={() => setOpenId(row.id)} />
                   </Td>
                   <Td>
                     <span className="flex flex-wrap items-center gap-1.5">
@@ -260,6 +262,7 @@ export function PeopleView({ initialFilters, initial }: { initialFilters: People
         </Table>
       )}
       <LoadMore hasMore={Boolean(list.hasNextPage)} loading={list.isFetchingNextPage} onLoad={() => void list.fetchNextPage()} />
+      <PersonDetailModal userId={openId} onClose={() => setOpenId(null)} />
 
       <ActionDialog
         open={pending?.kind === "role"}

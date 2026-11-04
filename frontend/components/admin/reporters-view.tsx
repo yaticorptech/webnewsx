@@ -26,6 +26,7 @@ import { Chip, LevelChip } from "./chips";
 import { DeskDate } from "./desk-date";
 import { ListEmpty, ListError, ListLoading, LiveCount, LoadMore, SearchBox, Segmented } from "./list-parts";
 import { deskPersonHref } from "./nav";
+import { PersonDetailModal } from "./person-detail";
 import { PersonCell } from "./person";
 import { SectionHeader } from "./section-header";
 import { TBody, THead, Table, Td, Th, Tr } from "./table";
@@ -83,6 +84,7 @@ export function ReportersView({ initialFilters, initial }: ReportersViewProps) {
   const [pending, setPending] = useState<{ action: ReporterAction; row: AdminReporterRow } | null>(null);
   /** The reporter whose personal details are open (owner 2026-10-07). */
   const [details, setDetails] = useState<AdminReporterRow | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const act = useDeskAction({
     run: ({ row, action, reason }: { row: AdminReporterRow; action: ReporterAction; reason: string }) =>
@@ -173,6 +175,7 @@ export function ReportersView({ initialFilters, initial }: ReportersViewProps) {
                       <PersonCell
                         person={{ ...row.user, reporterLevel: revoked ? null : row.pass.level }}
                         detail={row.user.email}
+                        onOpen={() => setOpenId(row.user.id)}
                       />
                     </Td>
                     <Td>
@@ -230,6 +233,7 @@ export function ReportersView({ initialFilters, initial }: ReportersViewProps) {
       <LoadMore hasMore={Boolean(list.hasNextPage)} loading={list.isFetchingNextPage} onLoad={() => void list.fetchNextPage()} />
 
       <PersonalDetails row={details} onClose={() => setDetails(null)} />
+      <PersonDetailModal userId={openId} onClose={() => setOpenId(null)} />
 
       <ActionDialog
         open={pending !== null}

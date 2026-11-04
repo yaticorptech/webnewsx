@@ -1,14 +1,14 @@
 import { and, eq, ilike, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { db, type Transaction } from "../db/client.js";
 import { purgeAccount } from "../db/purge.js";
-import { article, follow, pressPass, session, user, type PressPassRecord, type UserRecord } from "../db/schema.js";
+import { account, article, follow, pressPass, session, user, userEvent, type PressPassRecord, type UserRecord } from "../db/schema.js";
 import { writeAudit } from "../lib/audit.js";
 import { decodeCursor, encodeCursor } from "../lib/cursor.js";
 import { ApiError, isUniqueViolation, notFound } from "../lib/errors.js";
 import { publishEvent } from "../lib/events.js";
 import { hasPasswordLogin } from "../lib/desk-sign-in.js";
 import { isAdminEmail } from "../lib/roles.js";
-import type { AdminReporterRow, AdminUserRow, Page, ReporterLevel, Role } from "../shared/contracts.js";
+import type { AdminPersonDetail, AdminReporterRow, AdminUserRow, Page, ReporterLevel, Role } from "../shared/contracts.js";
 import { newPassNumber, setPassLevel, toPressPass } from "./press-pass.js";
 import { unpinAuthorStories, type Actor } from "./admin-stories.js";
 
@@ -92,6 +92,65 @@ function toUserRow(u: UserRecord, published: number, followers: number, viewerId
     followers,
     isSelf: u.id === viewerId,
     adminEmail: isAdminEmail(u.email),
+  };
+}
+
+/** The Desk's person popup (owner 2026-11-04): the full profile, how they sign in, logins with IP + browser, the IPs
+ * their activity came from, and the Press Pass. */
+export async function getPersonDetail(id: string, viewerId: string): Promise<AdminPersonDetail> {
+  const row = await getUserRow(id, viewerId);
+  const [[u], providers, sessions, ips, [pass]] = await Promise.all([
+    db.select().from(user).where(eq(user.id, id)).limit(1),
+    db.select({ providerId: account.providerId }).from(account).where(eq(account.userId, id)),
+    db
+      .select({ createdAt: session.createdAt, updatedAt: session.updatedAt, expiresAt: session.expiresAt, ip: session.ipAddress, userAgent: session.userAgent })
+      .from(session)
+      .where(eq(session.userId, id))
+      .orderBy(sql`${session.createdAt} desc`)
+      .limit(20),
+    db
+      .select({
+        ip: userEvent.ip,
+        firstSeen: sql<Date>`min(${userEvent.createdAt})`,
+        lastSeen: sql<Date>`max(${userEvent.createdAt})`,
+        events: sql<number>`count(*)::int`,
+        via: sql<string[]>`array_agg(distinct ${userEvent.platform})`,
+      })
+      .from(userEvent)
+      .where(and(eq(userEvent.userId, id), isNotNull(userEvent.ip)))
+      .groupBy(userEvent.ip)
+      .orderBy(sql`max(${userEvent.createdAt}) desc`)
+      .limit(20),
+    db.select().from(pressPass).where(eq(pressPass.userId, id)).limit(1),
+  ]);
+  if (!u) throw notFound("Account not found");
+  const iso = (d: Date | string) => new Date(d).toISOString();
+  const now = Date.now();
+  return {
+    user: {
+      ...row,
+      bio: u.bio,
+      phoneNumber: u.phoneNumber,
+      phoneNumberVerified: u.phoneNumberVerified,
+      emailVerified: u.emailVerified,
+      preferredLanguages: u.preferredLanguages,
+      onboardedAt: u.onboardedAt?.toISOString() ?? null,
+      termsAcceptedAt: u.termsAcceptedAt?.toISOString() ?? null,
+      termsVersion: u.termsVersion,
+      lastActiveAt: u.lastActiveAt?.toISOString() ?? null,
+      addedByClaude: Boolean(u.addedBy),
+    },
+    signIn: [...new Set(providers.map((p) => p.providerId))],
+    sessions: sessions.map((s) => ({
+      createdAt: iso(s.createdAt),
+      lastUsedAt: iso(s.updatedAt),
+      expiresAt: iso(s.expiresAt),
+      ip: s.ip,
+      userAgent: s.userAgent,
+      current: s.expiresAt.getTime() > now,
+    })),
+    ips: ips.map((r) => ({ ip: r.ip ?? "", firstSeen: iso(r.firstSeen), lastSeen: iso(r.lastSeen), events: Number(r.events), via: r.via ?? [] })),
+    pressPass: pass ? toPressPass(pass, u) : null,
   };
 }
 

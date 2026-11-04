@@ -2076,6 +2076,32 @@ export type AdminUserRow = {
   adminEmail: boolean;
 };
 
+/**
+ * Everything the Editor Desk knows about one account (owner 2026-11-04: the popup on Readers / Reporters). A device's
+ * MAC address never reaches a website or app, so devices are the browser / app seen at each login, with its IP.
+ */
+export type AdminPersonDetail = {
+  user: AdminUserRow & {
+    bio: string | null;
+    phoneNumber: string | null;
+    phoneNumberVerified: boolean;
+    emailVerified: boolean;
+    preferredLanguages: PressLanguage[];
+    onboardedAt: string | null;
+    termsAcceptedAt: string | null;
+    termsVersion: string | null;
+    lastActiveAt: string | null;
+    addedByClaude: boolean;
+  };
+  /** How they sign in: "credential" (password), "google", … */
+  signIn: string[];
+  /** Logins, newest first (Better Auth sessions: IP and browser at sign-in). */
+  sessions: { createdAt: string; lastUsedAt: string; expiresAt: string; ip: string | null; userAgent: string | null; current: boolean }[];
+  /** IP addresses their taps came from (Behaviour tracking), most recent first. */
+  ips: { ip: string; firstSeen: string; lastSeen: string; events: number; /** "web" / "app" taps from this IP. */ via: string[] }[];
+  pressPass: PressPass | null;
+};
+
 export type AdminSpotlightOrder = SpotlightOrder & {
   reporter: AuthorSummary & { reporterLevel: ReporterLevel | null };
   grantedBy: { id: string; username: string | null; name: string } | null;

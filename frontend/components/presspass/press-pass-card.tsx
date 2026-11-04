@@ -33,6 +33,8 @@ export type PressPassCardProps = {
   animateIn?: boolean;
   /** Form mock-up: empty fields show what to fill in ("Your region") instead of "—". */
   hints?: boolean;
+  /** Always scale the whole card like a photo, never the text floors (narrow spots on wide screens: the Desk popup). */
+  scaled?: boolean;
   className?: string;
 };
 
@@ -55,7 +57,7 @@ function nameSize(name: string): number {
  * issue date and the barcode. Issue sequence: the card rises in 3D and a sheen sweeps across; it stays still under
  * the pointer (owner 2026-10-08). Reduced motion: a plain fade.
  */
-export function PressPassCard({ data, animateIn = true, hints = false, className }: PressPassCardProps) {
+export function PressPassCard({ data, animateIn = true, hints = false, scaled = false, className }: PressPassCardProps) {
   const reduce = useReducedMotion() ?? false;
   const [portraitFailed, setPortraitFailed] = useState<string | null>(null);
   const revoked = data.status === "revoked";
@@ -101,7 +103,7 @@ export function PressPassCard({ data, animateIn = true, hints = false, className
         style={{ aspectRatio: `${CARD_W} / ${CARD_H}`, borderRadius: `max(0.75rem, ${((32 / CARD_W) * 100).toFixed(3)}cqw)` }}
         // --pp-floor: text size floors (press-pass-layout.ts `fs`) apply from 640px; on phones the card is the desktop one
         // scaled down whole, like a photo of it (owner 2026-10-09: "same like the desktop ID card").
-        className="@container bg-[#fdf6f6] text-ink leading-none [--pp-floor:0] sm:[--pp-floor:1]"
+        className={cn("@container bg-[#fdf6f6] text-ink leading-none [--pp-floor:0]", !scaled && "sm:[--pp-floor:1]")}
       >
         {/* The reference artwork. */}
         <img src={CARD_ART} alt="" width={CARD_W} height={CARD_H} decoding="async" draggable={false} className="absolute inset-0 size-full object-cover" />
