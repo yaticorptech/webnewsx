@@ -211,11 +211,15 @@ export function PosterByline({ author, tone, italic = false, prefix, priority = 
       className={cn(
         "relative inline-flex size-[calc(var(--bu)*6.4)] shrink-0 items-center justify-center overflow-hidden rounded-full",
         light
-          ? "bg-white/20 text-white shadow-[0_0_0_0.4cqw_rgb(255_255_255/0.85)]"
-          : "bg-tint-2 text-brand shadow-[0_0_0_0.3cqw_var(--border-strong)]",
+          ? "text-white shadow-[0_0_0_0.4cqw_rgb(255_255_255/0.85)]"
+          : "text-brand shadow-[0_0_0_0.3cqw_var(--border-strong)]",
+        !author.image && (light ? "bg-white/20" : "bg-tint-2"),
       )}
     >
-      <span className="font-wide text-[length:calc(var(--bu)*2.6)] font-extrabold uppercase leading-none">{initialsOf(author.name)}</span>
+      {/* Initials only without a photo: under a logo with transparent parts they would show through. */}
+      {!author.image && (
+        <span className="font-wide text-[length:calc(var(--bu)*2.6)] font-extrabold uppercase leading-none">{initialsOf(author.name)}</span>
+      )}
       {author.image && (
         <img
           src={author.image}
@@ -224,7 +228,7 @@ export function PosterByline({ author, tone, italic = false, prefix, priority = 
           decoding="async"
           referrerPolicy="no-referrer"
           draggable={false}
-          // text-transparent + empty alt: a broken photo shows nothing, so the initials stay visible.
+          // text-transparent + empty alt: a broken photo never shows its alt text.
           className="absolute inset-0 size-full object-cover text-transparent"
         />
       )}

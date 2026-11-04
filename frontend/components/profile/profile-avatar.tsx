@@ -97,7 +97,7 @@ export function ProfileAvatar({ src, name, className, shape = "circle", large = 
             aria-hidden
             className={cn(
               "font-wider text-[2rem] font-black uppercase leading-none tracking-[-0.03em] text-brand sm:text-5xl",
-              lifted && "invisible",
+              (lifted || showImage) && "invisible",
             )}
           >
             {initialsOf(name)}

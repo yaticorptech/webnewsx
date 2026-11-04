@@ -240,7 +240,7 @@ function Badge({ name, image, className }: { name: string; image: string | null;
         className,
       )}
     >
-      {initialsOf(name)}
+      {!show && initialsOf(name)}
       {show && image && (
         <img
           src={image}
