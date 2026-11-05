@@ -103,7 +103,7 @@ export function PersonalStep({ values, errors, onChange, options, pinPlace = nul
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Government ID" required hint="Aadhaar is optional — only its last 4 digits are saved." error={errors.idType}>
+        <Field label="Government ID" required hint="For Aadhaar, only the last 4 digits are saved." error={errors.idType}>
           <SelectBox
             value={values.idType}
             // Another ID type starts its number afresh (an Aadhaar number never lingers in another field).
@@ -261,7 +261,7 @@ export function VerifyStep({
             <Field
               label={staff ? "News outlet" : "Outlets you write for"}
               required={staff}
-              hint={staff ? "The newspaper, TV channel or news site you work for." : "Optional — where your work has appeared."}
+              hint={staff ? "The newspaper, TV channel or news site you work for." : "Where your work has appeared."}
               error={errors.outlet}
             >
               <Input
@@ -339,7 +339,6 @@ export function VerifyStep({
         </Field>
         <Field
           label="District"
-          hint={districts ? undefined : "Optional"}
           error={errors.district}
         >
           {districts ? (
@@ -480,7 +479,7 @@ export function AboutStep({ values, errors, onChange }: StepProps) {
       <fieldset aria-describedby={`${uid}-links-hint`}>
         <legend className={LEGEND}>Portfolio &amp; social links</legend>
         <p id={`${uid}-links-hint`} className="mt-1 text-xs text-muted">
-          Optional — up to {LIMITS.linksMax}. Earlier reporting, a blog, your X or Instagram.
+          Up to {LIMITS.linksMax}. Earlier reporting, a blog, your X or Instagram.
         </p>
         <ul className="mt-3 flex flex-col gap-2.5">
           {links.map((link, index) => (

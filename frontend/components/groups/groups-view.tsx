@@ -968,7 +968,7 @@ function ApplyForm() {
           placeholder="Local news from Mangaluru and Dakshina Kannada."
         />
       </Field>
-      <Field label="Website or page (optional)" error={errors.link}>
+      <Field label="Website or page" error={errors.link}>
         <Input
           value={link}
           onChange={(e) => setLink(e.target.value)}

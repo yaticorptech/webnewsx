@@ -69,9 +69,7 @@ export function Section({ id, label, htmlFor, required, marker = true, aside, hi
               <span aria-hidden className="text-brand">
                 *
               </span>
-            ) : (
-              <span className="font-semibold normal-case tracking-normal text-faint">(optional)</span>
-            )}
+            ) : null}
           </Label>
           {hint && <p className="text-[0.8125rem] text-muted">{hint}</p>}
         </div>

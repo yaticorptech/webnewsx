@@ -132,7 +132,7 @@ export function ReviewView({ initial }: { initial: Page<AdminStoryRow> | null })
         description="The story goes live right away and appears in every open feed."
         confirmLabel="Approve & publish"
         confirmIcon={<Check aria-hidden />}
-        note={{ label: "Note to the reporter", placeholder: "Optional — e.g. what they did well", maxLength: 1000 }}
+        note={{ label: "Note to the reporter", placeholder: "E.g. what they did well", maxLength: 1000 }}
         onConfirm={async (note) => {
           if (decision) await approve.mutateAsync({ story: decision.story, note });
         }}

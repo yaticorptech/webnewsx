@@ -276,10 +276,10 @@ function PayoutDialog({ row, onClose }: { row: AdminMembershipReporterRow | null
         <Field label="Amount paid (₹)" required error={error}>
           <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} prefix={<span className="font-bold text-ink-2">₹</span>} />
         </Field>
-        <Field label="Reference" hint="Bank / UPI transaction ID (optional)">
+        <Field label="Reference" hint="Bank / UPI transaction ID">
           <Input value={reference} maxLength={120} onChange={(e) => setReference(e.target.value)} placeholder="e.g. UPI 4521 8890 1123" />
         </Field>
-        <Field label="Note" hint="Optional">
+        <Field label="Note">
           <Input value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="e.g. October payout" />
         </Field>
       </form>

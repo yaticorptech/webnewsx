@@ -270,7 +270,7 @@ export function StoriesView({ initialFilters, initial, initialPins }: StoriesVie
         description="It goes back to the reporter's drafts as “returned”, with your reason shown to them. They can fix it and publish again."
         confirmLabel="Unpublish"
         confirmIcon={<FileX2 aria-hidden />}
-        note={{ label: "Reason for the reporter", placeholder: "Optional — what needs to change", maxLength: 1000 }}
+        note={{ label: "Reason for the reporter", placeholder: "What needs to change", maxLength: 1000 }}
         onConfirm={async (reason) => {
           if (pending) await actions.unpublish.mutateAsync({ story: pending.story, reason });
         }}
@@ -285,7 +285,7 @@ export function StoriesView({ initialFilters, initial, initialPins }: StoriesVie
         description="The story, its likes, views and reports are removed for good. This can't be undone."
         confirmLabel="Delete permanently"
         confirmIcon={<Trash2 aria-hidden />}
-        note={{ label: "Reason (kept in the audit log)", placeholder: "Optional", maxLength: 500 }}
+        note={{ label: "Reason (kept in the audit log)", maxLength: 500 }}
         onConfirm={async (reason) => {
           if (pending) await actions.remove.mutateAsync({ story: pending.story, reason });
         }}

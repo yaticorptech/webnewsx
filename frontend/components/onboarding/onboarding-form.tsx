@@ -348,7 +348,7 @@ export function OnboardingForm({ viewer, next }: { viewer: ViewerUser; next: str
                     onBusyChange={setAvatarBusy}
                     sourceBadge={googlePhoto && image === googlePhoto ? "From your Google account" : null}
                   />
-                  <Field label="Bio (optional)" error={errors.bio} hint="Line breaks are kept.">
+                  <Field label="Bio" error={errors.bio} hint="Line breaks are kept.">
                     <Textarea
                       ref={bioRef}
                       name="bio"

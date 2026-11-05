@@ -167,7 +167,7 @@ export function SpotlightView({ initialOrders, initialPackages }: SpotlightViewP
         }
         confirmLabel="Grant Spotlight"
         confirmIcon={<Sparkles aria-hidden />}
-        note={{ label: "Note", placeholder: "Optional — e.g. Paid by UPI, ref …  /  Comped for launch week", maxLength: 1000 }}
+        note={{ label: "Note", placeholder: "E.g. Paid by UPI, ref …  /  Comped for launch week", maxLength: 1000 }}
         onConfirm={async (note) => {
           if (pending) await decide.mutateAsync({ order: pending.order, kind: "grant", note });
         }}
@@ -182,7 +182,7 @@ export function SpotlightView({ initialOrders, initialPackages }: SpotlightViewP
         description="Nothing is charged. The reporter sees your note in their Newsroom and can request again later."
         confirmLabel="Decline request"
         confirmIcon={<X aria-hidden />}
-        note={{ label: "Note to the reporter", placeholder: "Optional — why it wasn't a fit", maxLength: 1000 }}
+        note={{ label: "Note to the reporter", placeholder: "Why it wasn't a fit", maxLength: 1000 }}
         onConfirm={async (note) => {
           if (pending) await decide.mutateAsync({ order: pending.order, kind: "decline", note });
         }}

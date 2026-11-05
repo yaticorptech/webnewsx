@@ -57,7 +57,7 @@ const ACTIONS: Record<CardAction, ActionCopy> = {
     title: "Dismiss these reports?",
     description: "The story stays up and every open report on it is closed.",
     confirm: "Dismiss reports",
-    note: { label: "Note for the audit log", placeholder: "Optional — why the story is fine" },
+    note: { label: "Note for the audit log", placeholder: "Why the story is fine" },
     done: "Reports dismissed",
   },
   hide: {
@@ -66,7 +66,7 @@ const ACTIONS: Record<CardAction, ActionCopy> = {
     title: "Hide the story and close the reports?",
     description: "It disappears from every public feed at once. The reporter is notified (banner + Newsroom) and still sees it, marked hidden.",
     confirm: "Hide story",
-    note: { label: "Reason (sent to the reporter)", placeholder: "Optional — defaults to “Hidden after reader reports”" },
+    note: { label: "Reason (sent to the reporter)", placeholder: "Defaults to “Hidden after reader reports”" },
     done: "Story hidden",
   },
   warn: {
@@ -85,7 +85,7 @@ const ACTIONS: Record<CardAction, ActionCopy> = {
     title: "Suspend the reporter?",
     description: "They're signed out everywhere, can't sign in, and all their stories leave the public feeds until the suspension is lifted.",
     confirm: "Suspend reporter",
-    note: { label: "Reason (shown to them at sign-in)", placeholder: "Optional — defaults to “Suspended after reader reports”" },
+    note: { label: "Reason (shown to them at sign-in)", placeholder: "Defaults to “Suspended after reader reports”" },
     done: "Reporter suspended",
   },
   delete: {
@@ -94,7 +94,7 @@ const ACTIONS: Record<CardAction, ActionCopy> = {
     title: "Delete the story for good?",
     description: "The story and every report on it are removed permanently. This can't be undone.",
     confirm: "Delete story",
-    note: { label: "Reason (for the audit log)", placeholder: "Optional — why it was removed" },
+    note: { label: "Reason (for the audit log)", placeholder: "Why it was removed" },
     done: "Story deleted",
   },
 };

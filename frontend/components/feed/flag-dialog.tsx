@@ -204,7 +204,7 @@ export function FlagDialog({ articleId, title, open, onOpenChange }: FlagDialogP
               )}
             </div>
           </fieldset>
-          <Field label="Add details (optional)" hint="Links to the original, what's false, anything that helps the desk decide.">
+          <Field label="Add details" hint="Links to the original, what's false, anything that helps the desk decide.">
             <Textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}

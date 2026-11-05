@@ -207,8 +207,7 @@ export function WishComposer({
 
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold text-ink">
-              {kind === "birthday" ? "Whose birthday?" : "Event name"}{" "}
-              <span className="font-normal text-muted">(optional with a photo)</span>
+              {kind === "birthday" ? "Whose birthday?" : "Event name"}
             </span>
             <input
               className={cn(input, errors.title && "border-brand")}
@@ -257,7 +256,7 @@ export function WishComposer({
           </label>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-semibold text-ink">{template === "custom" ? "Your design (required)" : "Photo (optional)"}</span>
+            <span className="text-sm font-semibold text-ink">{template === "custom" ? "Your design (required)" : "Photo"}</span>
             {template === "custom" && (
               <span className="text-xs text-muted">Upload a finished card image (JPG or PNG). It&rsquo;s shown exactly as it is.</span>
             )}

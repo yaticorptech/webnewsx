@@ -53,7 +53,7 @@ export function NewChatModal({ open, onOpenChange }: { open: boolean; onOpenChan
               value={name}
               onChange={(event) => setName(event.target.value)}
               maxLength={CHAT_LIMITS.nameMax}
-              placeholder="Group name (optional)"
+              placeholder="Group name"
               aria-label="Group name"
               className="h-11 w-full rounded-xl border border-border-strong bg-surface px-3.5 text-[0.9375rem] text-ink outline-none focus:border-brand"
             />

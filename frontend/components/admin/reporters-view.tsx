@@ -242,7 +242,7 @@ export function ReportersView({ initialFilters, initial }: ReportersViewProps) {
         description={copy?.description}
         confirmLabel={copy?.confirm ?? "Confirm"}
         confirmIcon={copy?.icon}
-        note={{ label: "Reason (kept in the audit log)", placeholder: "Optional", maxLength: 1000 }}
+        note={{ label: "Reason (kept in the audit log)", maxLength: 1000 }}
         onConfirm={async (reason) => {
           if (pending) await act.mutateAsync({ row: pending.row, action: pending.action, reason });
         }}

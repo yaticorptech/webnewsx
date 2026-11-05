@@ -146,7 +146,7 @@ export function ReporterPicker({
                 <input
                   value={districtText}
                   onChange={(event) => setDistrictText(event.target.value)}
-                  placeholder="District (optional)"
+                  placeholder="District"
                   aria-label="District"
                   className="min-w-0 flex-1 bg-transparent text-[0.9375rem] text-ink outline-none placeholder:text-muted"
                 />

@@ -481,7 +481,7 @@ function AdForm({
         <input required maxLength={SITE_LIMITS.adTitleMax} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Diwali sale — City Mall" className={`${input} mt-1.5`} />
       </label>
       <label className="block text-sm font-semibold">
-        Link (optional)
+        Link
         <input type="url" value={targetUrl} onChange={(e) => setTargetUrl(e.target.value)} placeholder="https://" className={`${input} mt-1.5`} />
       </label>
       <label className="block text-sm font-semibold">
@@ -489,7 +489,7 @@ function AdForm({
         <input type="date" required value={start} onChange={(e) => setStart(e.target.value)} className={`${input} mt-1.5`} />
       </label>
       <label className="block text-sm font-semibold">
-        End (optional)
+        End
         <input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} className={`${input} mt-1.5`} />
       </label>
       <div className="sm:col-span-2">

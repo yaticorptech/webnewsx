@@ -70,7 +70,7 @@ export function CommunityFields({ value, onChange }: { value: CommunityFormValue
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="kicker text-muted">About (optional)</span>
+        <span className="kicker text-muted">About</span>
         <textarea
           value={value.description}
           onChange={(event) => onChange({ ...value, description: event.target.value })}

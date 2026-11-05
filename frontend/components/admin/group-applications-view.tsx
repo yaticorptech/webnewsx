@@ -123,7 +123,7 @@ function PendingCard({ app, busy, onDecide }: { app: AdminGroupApplication; busy
           </div>
         )}
       </dl>
-      <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={500} placeholder="Note to the applicant (optional — shown on their Groups page)" />
+      <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={500} placeholder="Note to the applicant (shown on their Groups page)" />
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" size="sm" disabled={busy} leftIcon={<CircleSlash aria-hidden />} onClick={() => onDecide("reject", note.trim() || undefined)}>
           Turn down

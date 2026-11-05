@@ -339,7 +339,7 @@ function InviteRow({ meet, invite }: { meet: PressMeetDetail; invite: PressMeetI
           </>
         }
       >
-        <Field label="Payment reference" hint="UPI transaction ID or bank reference (optional, shown to the reporter).">
+        <Field label="Payment reference" hint="UPI transaction ID or bank reference (shown to the reporter).">
           <Input value={reference} maxLength={PRESS_MEET.referenceMax} placeholder="e.g. 427813902456" onChange={(event) => setReference(event.target.value)} />
         </Field>
       </Modal>
