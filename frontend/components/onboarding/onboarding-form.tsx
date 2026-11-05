@@ -117,7 +117,6 @@ export function OnboardingForm({ viewer, next }: { viewer: ViewerUser; next: str
     if (index === 0 && !name.trim()) found.name = "Name is required";
     if (index === 1) {
       if (!image) found.image = "Please add a profile photo";
-      if (!bio.trim()) found.bio = "Bio is required";
       if (languages.length === 0) found.languages = "Pick at least one language you read";
     }
     if (index === 2 && !acceptTerms) found.acceptTerms = TERMS_REQUIRED;
@@ -349,7 +348,7 @@ export function OnboardingForm({ viewer, next }: { viewer: ViewerUser; next: str
                     onBusyChange={setAvatarBusy}
                     sourceBadge={googlePhoto && image === googlePhoto ? "From your Google account" : null}
                   />
-                  <Field label="Bio" required error={errors.bio} hint="Line breaks are kept.">
+                  <Field label="Bio (optional)" error={errors.bio} hint="Line breaks are kept.">
                     <Textarea
                       ref={bioRef}
                       name="bio"

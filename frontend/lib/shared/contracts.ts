@@ -949,6 +949,16 @@ export type MarketQuote = {
 };
 export type MarketResponse = { quotes: MarketQuote[]; fetchedAt: string };
 
+/**
+ * Farm prices (owner 2026-11-05): Karnataka APMC mandi prices from AGMARKNET (data.gov.in), ₹ per quintal — the latest
+ * day each market reported. `configured` false = no data.gov.in key on the server (the section is left out).
+ */
+export type MandiPrice = { market: string; district: string; variety: string; min: number; max: number; modal: number; date: string };
+export const MANDI_GROUPS = ["plantation", "grains", "vegetables", "fruits", "other"] as const;
+export type MandiGroup = (typeof MANDI_GROUPS)[number];
+export type MandiCommodity = { id: string; name: string; nameKn: string; group: MandiGroup; prices: MandiPrice[] };
+export type MandiResponse = { configured: boolean; commodities: MandiCommodity[]; fetchedAt: string };
+
 /** The Market page's chart ranges: today (5-minute points), the week (30-minute), the month (daily). */
 export const MARKET_RANGE_VALUES = ["1d", "5d", "1mo"] as const;
 export type MarketRange = (typeof MARKET_RANGE_VALUES)[number];
@@ -1136,7 +1146,8 @@ const readLanguagesSchema = z
 export const onboardingSchema = z.object({
   username: newUsernameSchema,
   name: z.string().trim().min(1, "Name is required").max(LIMITS.nameMax),
-  bio: z.string().trim().min(1, "Bio is required").max(LIMITS.bioMax),
+  /** Optional (owner 2026-11-05); empty = no bio. */
+  bio: z.string().trim().max(LIMITS.bioMax).optional().transform((v) => v || null),
   image: z.string().trim().min(1, "Profile photo is required").max(LIMITS.linkMax),
   /** The sign-up form asks for at least one; older clients may leave it out. */
   languages: readLanguagesSchema.optional(),
@@ -1148,7 +1159,7 @@ export const updateMeSchema = z
   .object({
     username: usernameSchema,
     name: z.string().trim().min(1).max(LIMITS.nameMax),
-    bio: z.string().trim().min(1).max(LIMITS.bioMax),
+    bio: z.string().trim().max(LIMITS.bioMax).transform((v) => v || null),
     image: z.string().trim().min(1).max(LIMITS.linkMax),
     languages: readLanguagesSchema.refine((list) => list.length > 0, "Pick at least one language"),
   })

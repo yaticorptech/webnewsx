@@ -43,6 +43,7 @@ import { pressMeetRoutes } from "./routes/press-meets.js";
 import { placeRoutes } from "./routes/places.js";
 import { siteRoutes } from "./routes/sites.js";
 import { pressPassRoutes } from "./routes/press-pass.js";
+import { apiKeyRoutes, publishApiRoutes } from "./routes/publish-api.js";
 import { spotlightRoutes } from "./routes/spotlight.js";
 import { streamRoutes } from "./routes/stream.js";
 import { uploadRoutes } from "./routes/upload.js";
@@ -71,6 +72,8 @@ const tooLarge = (message: string) => {
 };
 
 const SITE_UPLOAD_PATH = /^\/api\/sites\/d\/[^/]+\/admin\/upload$/;
+/** The Publishing API (routes/publish-api.ts): any website calls it with its key, no cookies — it sets its own CORS. */
+const PUBLISH_API_PATH = /^\/api\/v1(\/|$)/;
 
 /** 1 MB for JSON, 200 MB (+ overhead) for /api/upload (images 8 MB, checked there). Better Auth routes use the JSON limit too. */
 const bodyLimits: MiddlewareHandler<AppEnv> = (c, next) => {
@@ -132,7 +135,9 @@ export function createApp(options: CreateAppOptions = {}) {
   // A publisher site admin uploads ad creatives from their own domain straight here (owner 2026-11-04: Vercel's rewrite
   // refuses bodies over ~4.5 MB). Any origin, no cookies: the site admin's Bearer token is the only credential.
   const siteUploadCors = cors({ origin: "*", allowMethods: ["POST", "OPTIONS"], allowHeaders: ["Content-Type", "Authorization", "Accept"], maxAge: 600 });
-  app.use("/api/*", (c, next) => (SITE_UPLOAD_PATH.test(c.req.path) ? siteUploadCors(c, next) : appCors(c, next)));
+  app.use("/api/*", (c, next) =>
+    PUBLISH_API_PATH.test(c.req.path) ? next() : SITE_UPLOAD_PATH.test(c.req.path) ? siteUploadCors(c, next) : appCors(c, next),
+  );
   app.use("*", clientIpMiddleware);
   app.use("/api/*", bodyLimits);
   app.use("/api/*", noStoreByDefault);
@@ -176,6 +181,8 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route("/api/social", socialRoutes());
   app.route("/api/press-pass", pressPassRoutes(deps));
   app.route("/api/sites", siteRoutes(deps));
+  app.route("/api/api-keys", apiKeyRoutes(deps));
+  app.route("/api/v1", publishApiRoutes(deps));
   app.route("/api/press-meets", pressMeetRoutes(deps));
   app.route("/api/places", placeRoutes());
   app.route("/api/gifs", gifRoutes());

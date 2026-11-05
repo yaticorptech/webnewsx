@@ -2,6 +2,8 @@ import { DEFAULT_COUNTRY, countryByIso, splitPhone } from "@/lib/countries";
 import {
   PRESS_ID_TYPE_LABELS,
   PRESS_PASS_LIMITS,
+  PRESS_PASS_MIN_AGE,
+  ageOn,
   isMaskedAadhaar,
   isValidAadhaar,
   isValidIdNumber,
@@ -229,6 +231,18 @@ function errorsFromIssues(issues: readonly { path: readonly PropertyKey[]; messa
  * Every problem with the form. `needsPledge` = the pledge step is part of this flow (apply, or
  * completing a pass that was never signed). `displayName` = what the signature must match.
  */
+/**
+ * The date of birth's problem as soon as a full date is in the box (owner 2026-11-05: "validate this 18+ only" — at
+ * the field, not only after Continue); null while it's empty or still being typed.
+ */
+export function dateOfBirthProblem(value: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const age = ageOn(value);
+  if (age === null || age > 120) return "Enter a valid date of birth";
+  if (age < PRESS_PASS_MIN_AGE) return `You must be ${PRESS_PASS_MIN_AGE} or older to get a Press Pass`;
+  return null;
+}
+
 export function validate(values: PressPassValues, { needsPledge, displayName }: { needsPledge: boolean; displayName: string }): PressErrors {
   const input = toApplyInput(values);
   const parsed = pressPassApplySchema.safeParse(needsPledge ? input : { ...input, pledgeSignature: displayName || "-", acceptPledge: true });

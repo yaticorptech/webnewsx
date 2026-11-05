@@ -589,6 +589,20 @@
       "when": 1793774625167,
       "tag": "0083_test_readers_added_by",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1793791213888,
+      "tag": "0084_publishing_api",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1793868873575,
+      "tag": "0085_mandi_price",
+      "breakpoints": true
     }
   ]
 }

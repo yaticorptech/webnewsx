@@ -3,6 +3,7 @@ import { cached } from "../lib/cache.js";
 import { ApiError, validationError } from "../lib/errors.js";
 import { MARKET_RANGE_VALUES, type MarketHistory, type MarketQuote, type MarketRange, type MarketResponse } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
+import { mandiPrices } from "./mandi.js";
 
 /*
  * GET /api/market (owner 2026-10-22: "live Nifty, Sensex, NSE, gold rate… all live market prices"): the Market page's
@@ -11,7 +12,7 @@ import type { AppEnv } from "../types.js";
  * every QUOTES_TTL seconds and shared by everyone (lib/cache.ts), so a busy page costs the source one request a minute.
  * GET /api/market/history?id=&range= gives one quote's chart over the week or the month (today's points come with the
  * quote itself). Gold and silver are the world price (COMEX futures, dollars per troy ounce) converted at the live
- * USD/INR rate to ₹ per 10 g and ₹ per kg — the international rate, not a jeweller's board (that adds import duty, GST
+ * USD/INR rate to ₹ per 8 g of gold (one pavan, owner 2026-11-05) and ₹ per gram of silver — the international rate, not a jeweller's board (that adds import duty, GST
  * and making). A symbol the source can't give is left out rather than failing the page; none at all is a 503.
  */
 
@@ -38,18 +39,18 @@ const SOURCES: Source[] = [
   { id: "banknifty", symbol: "^NSEBANK", group: "indices", name: "Bank Nifty", unit: "NSE" },
   { id: "niftyit", symbol: "^CNXIT", group: "indices", name: "Nifty IT", unit: "NSE" },
   { id: "niftynext50", symbol: "^NSMIDCP", group: "indices", name: "Nifty Next 50", unit: "NSE" },
-  { id: "gold", symbol: "GC=F", group: "commodities", name: "Gold", unit: "₹ per 10 g" },
-  { id: "silver", symbol: "SI=F", group: "commodities", name: "Silver", unit: "₹ per kg" },
+  { id: "gold", symbol: "GC=F", group: "commodities", name: "Gold", unit: "₹ per 8 g (1 pavan)" },
+  { id: "silver", symbol: "SI=F", group: "commodities", name: "Silver", unit: "₹ per gram" },
   { id: "crude", symbol: "BZ=F", group: "commodities", name: "Crude oil (Brent)", unit: "$ per barrel" },
   { id: "usdinr", symbol: "INR=X", group: "currency", name: "US dollar", unit: "₹ per $" },
   { id: "eurinr", symbol: "EURINR=X", group: "currency", name: "Euro", unit: "₹ per €" },
   { id: "bitcoin", symbol: "BTC-INR", group: "crypto", name: "Bitcoin", unit: "₹ per BTC" },
 ];
 
-/** ₹ per 10 g of gold / ₹ per kg of silver from the world price ($ per troy ounce) at `usdInr`. */
+/** ₹ per 8 g (a pavan) of gold / ₹ per gram of silver from the world price ($ per troy ounce) at `usdInr`. */
 const RUPEE_FACTOR: Record<string, (usdInr: number) => number> = {
-  gold: (usdInr) => (usdInr * 10) / TROY_OUNCE_G,
-  silver: (usdInr) => (usdInr * 1000) / TROY_OUNCE_G,
+  gold: (usdInr) => (usdInr * 8) / TROY_OUNCE_G,
+  silver: (usdInr) => usdInr / TROY_OUNCE_G,
 };
 
 type Chart = {
@@ -106,9 +107,9 @@ function thin<T>(values: T[], max: number): T[] {
 
 const round = (value: number, digits: number) => Number(value.toFixed(digits));
 
-/** Decimals shown: indices, currencies and dollar prices to the paisa / cent; the big rupee amounts (gold, silver, Bitcoin) whole. */
+/** Decimals shown: indices, currencies, dollar prices and silver's per-gram rate to the paisa / cent; the big rupee amounts (gold, Bitcoin) whole. */
 function digitsFor(source: Source): number {
-  return source.unit.startsWith("$") || source.group === "indices" || source.group === "currency" ? 2 : 0;
+  return source.unit.startsWith("$") || source.group === "indices" || source.group === "currency" || source.id === "silver" ? 2 : 0;
 }
 
 /** The rupee conversion for gold / silver (1 for everything else); null when it can't be done (no dollar rate). */
@@ -185,6 +186,8 @@ export function marketRoutes() {
   const app = new Hono<AppEnv>();
   // GET /api/market — the live quotes with today's chart points, one source round per minute for everyone.
   app.get("/", async (c) => c.json(await quotes()));
+  // GET /api/market/mandi — Karnataka APMC farm prices (routes/mandi.ts), refreshed every half hour.
+  app.get("/mandi", async (c) => c.json(await mandiPrices()));
   // GET /api/market/history?id=nifty50&range=5d|1mo — one quote's chart over a longer range.
   app.get("/history", async (c) => {
     const source = SOURCES.find((s) => s.id === c.req.query("id"));

@@ -98,7 +98,6 @@ export function ProfileSettingsForm({ viewer }: { viewer: ViewerUser }) {
     const usernameError = await verifyUsername();
     if (usernameError) found.username = usernameError;
     if (!form.name.trim()) found.name = "Name is required";
-    if (!form.bio.trim()) found.bio = "Bio is required";
     if (!form.image) found.image = "Please add a profile photo";
     if (form.languages.length === 0) found.languages = "Pick at least one language you read";
     setErrors(found);
@@ -200,7 +199,7 @@ export function ProfileSettingsForm({ viewer }: { viewer: ViewerUser }) {
             size="lg"
           />
         </Field>
-        <Field label="Bio" required error={errors.bio} hint="Line breaks are kept.">
+        <Field label="Bio (optional)" error={errors.bio} hint="Line breaks are kept.">
           <Textarea
             ref={bioRef}
             name="bio"

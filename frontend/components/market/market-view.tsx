@@ -13,6 +13,7 @@ import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { qk } from "@/lib/query-keys";
 import type { MarketQuote, MarketResponse } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
+import { FarmPrices } from "./farm-prices";
 import { Change, LiveBadge, QuoteDetails, clock, money, number } from "./quote-details";
 
 /*
@@ -116,8 +117,11 @@ export function MarketView({ initial }: { initial: MarketResponse | null }) {
         })
       )}
 
+      <FarmPrices />
+
       <p className="text-xs leading-relaxed text-muted">
-        Indices and prices are delayed by a few minutes and are for information only, not investment advice. Gold and silver
+        Farm prices are APMC auction reports from AGMARKNET (Government of India) and can differ from a trader&apos;s or
+        CAMPCO&apos;s buying rate. Indices and prices are delayed by a few minutes and are for information only, not investment advice. Gold and silver
         are the international price converted to rupees; a jeweller&apos;s board adds duty, GST and making charges.
       </p>
 

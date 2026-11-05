@@ -13,6 +13,7 @@ import { startUploadSweeper } from "./lib/upload-sweep.js";
 import { startDemoEngagementTicker } from "./lib/demo-engagement-ticker.js";
 import { startImportQueue } from "./routes/import.js";
 import { startSocialPoster } from "./queries/social-accounts.js";
+import { startMandiCollector } from "./routes/mandi.js";
 
 const app = createApp();
 
@@ -46,6 +47,8 @@ const stopSocialPoster = background ? startSocialPoster() : noop;
 const stopPressMeetWorker = background ? startPressMeetWorker() : noop;
 const stopPushWorker = background ? startPushWorker() : noop;
 const stopMembershipWorker = background ? startMembershipWorker() : noop;
+// Farm prices history (owner 2026-11-05): APMC reports saved through the day.
+const stopMandiCollector = background ? startMandiCollector() : noop;
 // Stories sent to the import with a later `publishAt` (owner 2026-11-02).
 const stopImportQueue = background ? startImportQueue() : noop;
 // Demo counts only (never on the public site) — like the Desk demo controls, it also runs on staging.
@@ -76,6 +79,7 @@ async function shutdown(signal: string): Promise<void> {
   stopPressMeetWorker();
   stopPushWorker();
   stopMembershipWorker();
+  stopMandiCollector();
   stopImportQueue();
   stopDemoTicker();
   server.close();

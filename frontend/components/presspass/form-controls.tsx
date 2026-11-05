@@ -2,7 +2,7 @@
 
 import { Check, ChevronDown } from "lucide-react";
 import { motion } from "motion/react";
-import { useId, type ReactNode, type Ref, type SelectHTMLAttributes } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type Ref, type SelectHTMLAttributes } from "react";
 import { useFieldControl } from "@/components/ui/field";
 import { controlBox } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -143,6 +143,142 @@ export function SelectBox({ invalid, className, children, ref, ...props }: Selec
         {children}
       </select>
       <ChevronDown aria-hidden className="pointer-events-none absolute right-3.5 size-4.5 text-muted" />
+    </div>
+  );
+}
+
+export type PickBoxOption = { value: string; label: string };
+
+/**
+ * A dropdown whose list stays inside the page (owner 2026-11-05: the native picker for long choices like "Why I
+ * report" ran off phone screens): the box looks like SelectBox, the list opens right under it at the box's own
+ * width, long choices wrap, and it scrolls. Keyboard: Enter / Space / ↓ opens, ↑ ↓ move, Enter picks, Escape closes.
+ * Wires into <Field> like SelectBox.
+ */
+export function PickBox({
+  value,
+  options,
+  placeholder,
+  onChange,
+  invalid,
+}: {
+  value: string;
+  options: PickBoxOption[];
+  placeholder: string;
+  onChange: (value: string) => void;
+  invalid?: boolean;
+}) {
+  const field = useFieldControl({ "aria-invalid": invalid });
+  const listId = useId();
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const selected = options.find((o) => o.value === value) ?? null;
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    return () => document.removeEventListener("pointerdown", onPointer);
+  }, [open]);
+
+  // Keeps the highlighted choice in view while moving with the keys.
+  useEffect(() => {
+    if (open && active >= 0) listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
+  }, [open, active]);
+
+  const openList = () => {
+    setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+    setOpen(true);
+  };
+  const pick = (index: number) => {
+    const option = options[index];
+    if (!option) return;
+    onChange(option.value);
+    setOpen(false);
+    buttonRef.current?.focus();
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (!open) {
+      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+        event.preventDefault();
+        openList();
+      }
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActive((i) => Math.min(options.length - 1, i + 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActive((i) => Math.max(0, i - 1));
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      pick(active);
+    } else if (event.key === "Tab") {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={wrapRef} className="relative w-full">
+      <button
+        ref={buttonRef}
+        type="button"
+        {...field}
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
+        onClick={() => (open ? setOpen(false) : openList())}
+        onKeyDown={onKeyDown}
+        className={cn(
+          "flex min-h-11 w-full items-center gap-2 py-2.5 pl-3.5 pr-10 text-left text-[0.9375rem] font-semibold leading-snug",
+          controlBox,
+          selected ? "text-ink" : "text-muted",
+        )}
+      >
+        <span className="min-w-0 flex-1">{selected?.label ?? placeholder}</span>
+        <ChevronDown aria-hidden className={cn("pointer-events-none absolute right-3.5 size-4.5 text-muted transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <ul
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          className="absolute inset-x-0 top-full z-50 mt-1.5 max-h-[min(60vh,22rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface p-1.5 shadow-pop"
+        >
+          {options.map((option, index) => {
+            const on = option.value === value;
+            return (
+              <li
+                key={option.value}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={on}
+                onPointerEnter={() => setActive(index)}
+                onClick={() => pick(index)}
+                className={cn(
+                  "flex cursor-pointer items-start gap-2 rounded-lg px-3 py-2.5 text-sm leading-snug",
+                  index === active ? "bg-tint text-brand" : "text-ink-2",
+                  on && "font-bold text-brand",
+                )}
+              >
+                <Check aria-hidden className={cn("mt-0.5 size-4 shrink-0", on ? "opacity-100" : "opacity-0")} strokeWidth={3} />
+                <span className="min-w-0">{option.label}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

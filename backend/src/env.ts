@@ -134,6 +134,12 @@ const schema = z.object({
   VERCEL_PROJECT_ID: z.preprocess(blankToUndefined, z.string().default("prj_ZzVMaYiXGeGyDBAls4HvgfmW9I20")),
   /** The team's id (`team_…`) or slug. */
   VERCEL_TEAM: z.preprocess(blankToUndefined, z.string().default("yaticorptechs-projects")),
+  /**
+   * Farm prices on the Market page (owner 2026-11-05: "arecanut price… agriculture market price API, free"): the free
+   * data.gov.in key for AGMARKNET's daily mandi prices (sign up at data.gov.in → My Account → API key). Without it the
+   * Farm prices section is left out.
+   */
+  DATA_GOV_IN_API_KEY: optionalString,
   LOG_REQUESTS: z.preprocess(blankToUndefined, z.enum(["0", "1"]).default("1")).transform((v) => v === "1"),
 });
 

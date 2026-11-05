@@ -1,9 +1,10 @@
 import { randomBytes, randomInt } from "node:crypto";
 import { resolveTxt } from "node:dns/promises";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { db, type Executor } from "../db/client.js";
 import { pressPass, user, type PressPassRecord, type UserRecord } from "../db/schema.js";
 import { ApiError, isUniqueViolation, validationError } from "../lib/errors.js";
+import { isKnownPincode } from "../lib/pincode.js";
 import {
   EXPERIENCE_LABELS,
   EXPERIENCE_VALUES,
@@ -161,8 +162,41 @@ function signatureError(): ApiError {
   return validationError({ pledgeSignature: "Type your display name exactly as it appears on your profile" });
 }
 
-function mobileTakenError(): ApiError {
-  return validationError({ mobile: "This mobile number is already on another Press Pass" });
+/** "An account already exists with this number: Name (@username)" (owner 2026-11-05) — or the plain message. */
+export function mobileTakenMessage(owner: { name: string; username: string | null } | null): string {
+  if (!owner) return "An account already exists with this number";
+  const who = owner.name.trim() || (owner.username ? `@${owner.username}` : "another account");
+  return `An account already exists with this number: ${who}${owner.username && owner.name.trim() ? ` (@${owner.username})` : ""}`;
+}
+
+function mobileTakenError(owner: { name: string; username: string | null } | null = null): ApiError {
+  return validationError({ mobile: mobileTakenMessage(owner) });
+}
+
+/**
+ * Who else already has this mobile number (owner 2026-11-05: one account per number): another person's Press Pass, or
+ * another account that signs in with it (WhatsApp number). Null when it's free — or only the viewer's own.
+ */
+export async function mobileOwner(mobile: string, viewerId: string): Promise<{ name: string; username: string | null } | null> {
+  const [onPass] = await db
+    .select({ name: user.name, username: user.username })
+    .from(pressPass)
+    .innerJoin(user, eq(user.id, pressPass.userId))
+    .where(and(eq(pressPass.mobile, mobile), ne(pressPass.userId, viewerId)))
+    .limit(1);
+  if (onPass) return onPass;
+  const [signIn] = await db
+    .select({ name: user.name, username: user.username })
+    .from(user)
+    .where(and(eq(user.phoneNumber, mobile), ne(user.id, viewerId)))
+    .limit(1);
+  return signIn ?? null;
+}
+
+/** Owner 2026-11-05: only real Indian PIN codes (India Post's directory, lib/pincode.ts). */
+export const PINCODE_UNKNOWN = "This PIN code doesn't exist. Check the 6 digits.";
+function pincodeError(): ApiError {
+  return validationError({ pincode: PINCODE_UNKNOWN });
 }
 
 function idTakenError(): ApiError {
@@ -210,6 +244,10 @@ export async function applyForPressPass(holder: HolderFields & { role: string },
     throw new ApiError(403, "press_pass_revoked", "Your Press Pass was revoked by the Editor Desk. Contact the WebNewsX team to have it reinstated.");
   }
 
+  if (!isKnownPincode(input.pincode)) throw pincodeError();
+  const taken = await mobileOwner(input.mobile, holder.id);
+  if (taken) throw mobileTakenError(taken);
+
   const now = new Date();
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
@@ -252,6 +290,9 @@ export async function updatePressPass(holder: HolderFields, input: PressPassUpda
   if (!existing) throw new ApiError(404, "not_found", "You don't have an active Press Pass");
   // Once the pass is complete its details are fixed (owner 2026-10-31: "after the press card is created, no edits").
   if (isPassComplete(existing)) throw new ApiError(409, "press_pass_locked", "Your Press Pass details can't be changed once it's issued");
+  if (!isKnownPincode(input.pincode)) throw pincodeError();
+  const taken = await mobileOwner(input.mobile, holder.id);
+  if (taken) throw mobileTakenError(taken);
   const changes: Partial<typeof pressPass.$inferInsert> = { ...passDetails(input), updatedAt: new Date() };
   if (!existing.pledgeSignedAt) {
     if (!input.acceptPledge || !input.pledgeSignature) {

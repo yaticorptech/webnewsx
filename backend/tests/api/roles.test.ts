@@ -152,6 +152,8 @@ describe("Press Pass", () => {
     await bad({ dateOfBirth: "1990-02-30" }, "dateOfBirth");
     await bad({ address: "" }, "address");
     await bad({ pincode: "012345" }, "pincode");
+    // Six digits but not a real PIN code (owner 2026-11-05: India Post's directory).
+    await bad({ pincode: "999999" }, "pincode");
     // Aadhaar is accepted, masked (only the last 4 digits are kept).
     await bad({ idType: "pan", idNumber: "1234" }, "idNumber");
 
@@ -203,7 +205,7 @@ describe("Press Pass", () => {
     const other = await onboardedUser(app);
     const taken = await other.req("/api/press-pass", { json: { ...PASS_APPLICATION(), mobile: `0${mobile}` } });
     expect(taken.status).toBe(400);
-    expect((await json<ApiErrorBody>(taken)).error.fields?.mobile).toMatch(/already on another Press Pass/);
+    expect((await json<ApiErrorBody>(taken)).error.fields?.mobile).toMatch(/^An account already exists with this number: .+ \(@.+\)$/);
     // … and per government ID.
     const sameId = await other.req("/api/press-pass", { json: { ...PASS_APPLICATION(), idType: "pan", idNumber: application.idNumber } });
     expect(sameId.status).toBe(400);

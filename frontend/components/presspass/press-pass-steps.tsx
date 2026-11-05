@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PRESS_PASS_MIN_AGE, formatIdNumber, isMaskedAadhaar, type PressPassOptions } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 import { CityInput } from "./city-input";
-import { ChoiceCard, SelectBox } from "./form-controls";
+import { ChoiceCard, PickBox, SelectBox } from "./form-controls";
 import { LanguagePicker } from "./language-picker";
 import { LIMITS, MOBILE_INPUT_MAX, mobileInput, signatureMatches, type PressErrors, type PressPassValues } from "./press-pass-model";
 import { COUNTRIES, countryByIso, flagOf } from "@/lib/countries";
@@ -50,7 +50,7 @@ function adultCutoff(): string {
  * Who the reporter is, for legal matters (owner 2026-10-07): full name as on their ID, date of birth, home address and
  * one government ID. Private — only the Editor Desk sees them. No Aadhaar (a private platform may not collect it).
  */
-export function PersonalStep({ values, errors, onChange, options }: StepProps & { options: PressPassOptions }) {
+export function PersonalStep({ values, errors, onChange, options, pinPlace = null }: StepProps & { options: PressPassOptions; pinPlace?: string | null }) {
   const idHint = options.idTypes.find((type) => type.value === values.idType)?.hint;
   return (
     <div className="flex flex-col gap-6">
@@ -89,7 +89,8 @@ export function PersonalStep({ values, errors, onChange, options }: StepProps & 
             onChange={(event) => onChange({ address: event.target.value })}
           />
         </Field>
-        <Field label="PIN code" required error={errors.pincode}>
+        {/* Owner 2026-11-05: the PIN's own place under the box ("Mangaluru, Dakshina Kannada, Karnataka"). */}
+        <Field label="PIN code" required error={errors.pincode} hint={!errors.pincode && pinPlace ? `📍 ${pinPlace}` : "Any PIN code in India."}>
           <Input
             value={values.pincode}
             inputMode="numeric"
@@ -405,30 +406,76 @@ export function VerifyStep({
 
 /* ─────────────────────────── 03 · About your reporting ─────────────────────────── */
 
+/**
+ * "Why I report" choices (owner 2026-11-05: predefined dropdown; "Other" opens a box to write your own). The chosen
+ * sentence is what's stored, so the pass, the Desk and older passes need nothing new.
+ */
+export const REPORT_REASONS = [
+  "To report local news from my town and district",
+  "To bring civic problems — roads, water, power, garbage — to the authorities' notice",
+  "To give a voice to people and issues that are not heard",
+  "To cover farmers, agriculture and rural life",
+  "To report on crime, courts and public safety in my area",
+  "To cover politics, elections and local government",
+  "To cover education, schools and students",
+  "To cover health, hospitals and public services",
+  "To cover business, markets and jobs in my region",
+  "To cover sports and local talent",
+  "To cover culture, festivals, temples and community events",
+  "To cover cinema and entertainment",
+  "I work as a journalist and want to publish my reports here",
+  "To build a career in journalism",
+] as const;
+const OTHER_REASON = "other";
+
 export function AboutStep({ values, errors, onChange }: StepProps) {
   const uid = useId();
+  const preset = (REPORT_REASONS as readonly string[]).includes(values.about.trim());
+  // "Other": written by hand — also an older pass whose text isn't one of the choices.
+  const [ownWords, setOwnWords] = useState(() => values.about.trim() !== "" && !preset);
+  const otherRef = useRef<HTMLTextAreaElement>(null);
   const links = values.links.length > 0 ? values.links : [""];
   const setLink = (index: number, value: string) => onChange({ links: links.map((link, i) => (i === index ? value : link)) });
 
   return (
     // Side by side on wide screens (owner 2026-10-07).
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
-      <Field
-        label="Why I report"
-        required
-        error={errors.about}
-        hint="A line or two for your Press Pass file: what you cover, where, and why it matters."
-      >
-        <Textarea
-          value={values.about}
-          maxLength={LIMITS.aboutMax}
-          rows={4}
-          autoGrow
-          maxRows={8}
-          placeholder="I cover civic issues across Mysuru — roads, water, ward budgets — because residents deserve to know where the money goes."
-          onChange={(event) => onChange({ about: event.target.value })}
-        />
-      </Field>
+      <div className="flex flex-col gap-3">
+        <Field label="Why I report" required error={ownWords ? undefined : errors.about} hint="Pick the reason closest to yours, or choose Other to write your own.">
+          <PickBox
+            value={ownWords ? OTHER_REASON : preset ? values.about.trim() : ""}
+            placeholder="Choose a reason"
+            invalid={!ownWords && Boolean(errors.about)}
+            options={[...REPORT_REASONS.map((reason) => ({ value: reason, label: reason })), { value: OTHER_REASON, label: "Other — write my own" }]}
+            onChange={(choice) => {
+              if (choice === OTHER_REASON) {
+                setOwnWords(true);
+                onChange({ about: "" });
+                requestAnimationFrame(() => otherRef.current?.focus());
+              } else {
+                setOwnWords(false);
+                onChange({ about: choice });
+              }
+            }}
+          />
+        </Field>
+        {ownWords && (
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
+            <Field label="In your own words" required error={errors.about} hint="A line or two: what you cover, where, and why it matters.">
+              <Textarea
+                ref={otherRef}
+                value={values.about}
+                maxLength={LIMITS.aboutMax}
+                rows={3}
+                autoGrow
+                maxRows={8}
+                placeholder="I cover civic issues across Mysuru — roads, water, ward budgets — because residents deserve to know where the money goes."
+                onChange={(event) => onChange({ about: event.target.value })}
+              />
+            </Field>
+          </motion.div>
+        )}
+      </div>
 
       <fieldset aria-describedby={`${uid}-links-hint`}>
         <legend className={LEGEND}>Portfolio &amp; social links</legend>

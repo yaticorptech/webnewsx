@@ -31,6 +31,8 @@ export const qk = {
   trending: (limit: number) => ["trending", limit] as const,
   /** The Market page's live quotes (GET /api/market). */
   market: ["market"] as const,
+  /** Karnataka APMC farm prices (GET /api/market/mandi). */
+  mandi: ["market", "mandi"] as const,
   /** One quote's chart over a range (GET /api/market/history). */
   marketHistory: (id: string, range: string) => ["market", "history", id, range] as const,
   /** Notices from the Editor Desk (warnings, hidden stories) for the signed-in reporter. */
@@ -103,6 +105,7 @@ export const qk = {
   pressPassOptions: ["press-pass", "options"] as const,
   /** The viewer's own pass. After apply/update also invalidate `qk.viewer` / call `router.refresh()`. */
   pressPass: ["press-pass", "mine"] as const,
+  apiKeys: ["api-keys"] as const,
 
   /** Prefix for every Newsroom query (invalidate after a Spotlight request). */
   newsroomAll: ["newsroom"] as const,

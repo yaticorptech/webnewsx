@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { notFound } from "../lib/errors.js";
+import { notFound, validationError } from "../lib/errors.js";
 import { RATE_LIMITS } from "../lib/rate-limit.js";
 import { readJson } from "../lib/validate.js";
 import { mustViewer, requireOnboarded, requireUser } from "../middleware/guards.js";
@@ -7,6 +7,8 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import {
   applyForPressPass,
   findPressPass,
+  mobileOwner,
+  mobileTakenMessage,
   PRESS_PASS_OPTIONS,
   publicPressPass,
   removePressDomain,
@@ -17,7 +19,7 @@ import {
 } from "../queries/press-pass.js";
 import { moveSiteToVerifiedDomain, takeSiteOffline } from "../queries/sites.js";
 import { getViewerUser } from "../queries/users.js";
-import { pressDomainSchema, pressPassApplySchema, pressPassUpdateSchema } from "../shared/contracts.js";
+import { normalizeMobile, pressDomainSchema, pressPassApplySchema, pressPassUpdateSchema } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 import type { RouteDeps } from "./deps.js";
 
@@ -43,6 +45,15 @@ export function pressPassRoutes({ limiter }: RouteDeps) {
     const viewer = mustViewer(c);
     const pass = await findPressPass(viewer.id);
     return c.json({ pressPass: pass ? toPressPass(pass, viewer) : null });
+  });
+
+  // GET /api/press-pass/mobile-check?mobile=+91… — while the form is filled in (owner 2026-11-05: show it right at the
+  // field): { taken, message } where message names the account that already has the number.
+  app.get("/mobile-check", requireUser, rateLimit(limiter, "press-pass-mobile", RATE_LIMITS.pressPassMobileCheck, "user"), async (c) => {
+    const mobile = normalizeMobile(c.req.query("mobile") ?? "");
+    if (!mobile) throw validationError({ mobile: "Enter a valid mobile number with its country code" });
+    const owner = await mobileOwner(mobile, mustViewer(c).id);
+    return c.json(owner ? { taken: true, message: mobileTakenMessage(owner) } : { taken: false, message: null });
   });
 
   // POST /api/press-pass — readers apply (3 steps in the UI); the pass is issued instantly as Trainee.

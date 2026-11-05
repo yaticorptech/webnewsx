@@ -7,6 +7,7 @@ import { useViewer } from "@/components/providers/viewer-provider";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { api, errorMessage, isApiError } from "@/lib/api";
+import { countryByIso } from "@/lib/countries";
 import type { PressPass, PressPassApplyResponse, PressPassOptions, ReporterLevel } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 import { previewPassNumber, regionLabel } from "./press-format";
@@ -17,6 +18,7 @@ import {
   errorsFromApi,
   firstStepWithError,
   initialValues,
+  dateOfBirthProblem,
   mobileProblem,
   toApplyInput,
   toUpdateInput,
@@ -115,6 +117,36 @@ export function PressPassForm({ mode, holder, options, pass, onIssued, onSaved, 
     setErrorFlash((n) => n + 1);
   };
 
+  /** The PIN code's place, shown under the box ("Mangaluru, Dakshina Kannada, Karnataka") — for the PIN it was looked up for. */
+  const [pinPlace, setPinPlace] = useState<{ pin: string; label: string } | null>(null);
+  /** The PIN in the box right now (an answer for an older PIN is ignored). */
+  const pinRef = useRef(values.pincode);
+
+  /**
+   * Checks the PIN is a real Indian PIN code (owner 2026-11-05) and fills state, district and town from it — unless
+   * the PIN changed again meanwhile. All three stay editable.
+   */
+  const fillFromPincode = async (pin: string) => {
+    const result = await api.pincode(pin).catch(() => null);
+    if (!result || pinRef.current !== pin) return; // offline (the server checks again on submit) or already changed
+    if (!result.valid) {
+      setPinPlace(null);
+      setErrors((current) => ({ ...current, pincode: "This PIN code doesn't exist. Check the 6 digits." }));
+      return;
+    }
+    const place = result.place;
+    if (!place) return;
+    const stateName = options.regions.find((r) => r.code === place.state)?.name ?? place.state;
+    setPinPlace({ pin, label: [place.city, place.district, stateName].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(", ") });
+    setValues((current) =>
+      current.pincode === pin ? { ...current, state: place.state, district: place.district, city: place.city || current.city } : current,
+    );
+    setErrors((current) => {
+      const { state: _s, district: _d, city: _c, pincode: _p, ...rest } = current;
+      return rest;
+    });
+  };
+
   const change = (patch: Partial<PressPassValues>) => {
     const next = { ...values, ...patch };
     setValues(next);
@@ -125,15 +157,60 @@ export function PressPassForm({ mode, holder, options, pass, onIssued, onSaved, 
       nextErrors = Object.fromEntries(Object.keys(errors).filter((key) => key in fresh).map((key) => [key, fresh[key as keyof PressErrors]]));
     }
     // Except the mobile number, checked as it's typed (owner 2026-09-29).
-    if (patch.mobile !== undefined || patch.mobileCountry !== undefined)
-      nextErrors = withMobileError(nextErrors, mobileProblem(next.mobile, { country: next.mobileCountry }));
+    // A full PIN code fills the state, district and town (owner 2026-11-05) — all still editable.
+    if (patch.pincode !== undefined) pinRef.current = patch.pincode;
+    if (patch.pincode !== undefined && /^[1-9][0-9]{5}$/.test(patch.pincode) && patch.pincode !== values.pincode) {
+      void fillFromPincode(patch.pincode);
+    }
+    // And the date of birth: under 18 says so at once (owner 2026-11-05).
+    if (patch.dateOfBirth !== undefined) {
+      const problem = dateOfBirthProblem(next.dateOfBirth);
+      if (problem) nextErrors = { ...nextErrors, dateOfBirth: problem };
+      else if ("dateOfBirth" in nextErrors) {
+        const { dateOfBirth: _dob, ...rest } = nextErrors;
+        nextErrors = rest;
+      }
+    }
+    if (patch.mobile !== undefined || patch.mobileCountry !== undefined) {
+      const stillTaken = taken !== null && taken.number === fullNumber(next);
+      nextErrors = withMobileError(nextErrors, stillTaken ? taken.message : mobileProblem(next.mobile, { country: next.mobileCountry }));
+    }
     if (nextErrors !== errors) setErrors(nextErrors);
   };
 
-  /** Leaving the mobile field with too few digits says so there and then (an empty one waits for Next). */
+  /**
+   * One account per mobile number (owner 2026-11-05: "if it exists show error there only — account already exists
+   * with name …"): the server's answer for the number as last checked. Null = free or not checked yet.
+   */
+  const [taken, setTaken] = useState<{ number: string; message: string } | null>(null);
+  const fullNumber = (v: PressPassValues) => `+${countryByIso(v.mobileCountry).dial}${v.mobile.replace(/\D/g, "")}`;
+
+  /** Asks the server whether `v`'s number is someone else's; shows the answer at the field. Returns its message, or null. */
+  const checkTaken = async (v: PressPassValues): Promise<string | null> => {
+    if (mobileProblem(v.mobile, { complete: true, country: v.mobileCountry })) return null;
+    const number = fullNumber(v);
+    if (taken?.number === number) return taken.message;
+    try {
+      const result = await api.pressPassMobileCheck(number);
+      if (!result.taken || !result.message) {
+        setTaken(null);
+        return null;
+      }
+      const message = result.message;
+      setTaken({ number, message });
+      setErrors((current) => withMobileError(current, message));
+      return message;
+    } catch {
+      // Offline or rate-limited: the server checks again when the pass is submitted.
+      return null;
+    }
+  };
+
+  /** Leaving the mobile field with too few digits says so there and then (an empty one waits for Next); a complete one is checked. */
   const checkMobile = () => {
     const problem = mobileProblem(values.mobile, { complete: true, country: values.mobileCountry });
     if (problem) setErrors((current) => withMobileError(current, problem));
+    else void checkTaken(values);
   };
 
   const goTo = (index: number) => {
@@ -142,10 +219,21 @@ export function PressPassForm({ mode, holder, options, pass, onIssued, onSaved, 
     setStep(index);
   };
 
-  const next = () => {
+  const next = async () => {
     const problems = errorsForStep(validate(values, rules), step);
     if (Object.keys(problems).length > 0) {
       showErrors(problems);
+      return;
+    }
+    // The mobile number's step doesn't move on while the number is another account's.
+    // A PIN code the directory doesn't know stops here too (owner 2026-11-05).
+    if (step === 0 && errors.pincode) {
+      showErrors({ pincode: errors.pincode });
+      return;
+    }
+    const takenMessage = step === 0 ? await checkTaken(values) : null;
+    if (takenMessage) {
+      showErrors({ mobile: takenMessage });
       return;
     }
     setErrors({});
@@ -155,7 +243,7 @@ export function PressPassForm({ mode, holder, options, pass, onIssued, onSaved, 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!last) {
-      next();
+      void next();
       return;
     }
     const problems = validate(values, rules);
@@ -233,7 +321,7 @@ export function PressPassForm({ mode, holder, options, pass, onIssued, onSaved, 
           {step === 0 && (
             <div className="flex flex-col gap-10">
               <DetailSection {...DETAIL_SECTIONS[0]}>
-                <PersonalStep values={values} errors={errors} onChange={change} options={options} />
+                <PersonalStep values={values} errors={errors} onChange={change} options={options} pinPlace={pinPlace?.pin === values.pincode ? pinPlace.label : null} />
               </DetailSection>
               <DetailSection {...DETAIL_SECTIONS[1]}>
                 <VerifyStep values={values} errors={errors} onChange={change} onMobileBlur={checkMobile} options={options} />

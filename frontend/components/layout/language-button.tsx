@@ -1,13 +1,15 @@
 "use client";
 
 import { Check, ChevronDown, Globe, Search } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { parseLanguages } from "@/components/feed/feed-views";
 import { useViewer } from "@/components/providers/viewer-provider";
+import { saveNewsLanguages, savedNewsLanguages } from "@/lib/news-languages";
 import { NEWS_LANGUAGES, PRESS_LANGUAGE_LABELS, type PressLanguage } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
+
+const noSubscribe = () => () => {};
 
 /** The languages of a /language/<codes> page, else null. */
 function pageLanguages(pathname: string): PressLanguage[] | null {
@@ -29,7 +31,10 @@ export function LanguageButton({ className, variant = "icon" }: { className?: st
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const current = pageLanguages(pathname);
+  // The saved pick (owner 2026-11-05) shows on Home at "/" itself; read after mount (cookie, client only).
+  const savedRaw = useSyncExternalStore(noSubscribe, () => savedNewsLanguages().join(","), () => "");
+  const saved = NEWS_LANGUAGES.filter((code) => savedRaw.split(",").includes(code));
+  const current = pageLanguages(pathname) ?? (pathname === "/" && saved.length > 0 ? saved : null);
 
   useEffect(() => {
     if (!open) return;
@@ -90,7 +95,7 @@ export function LanguageButton({ className, variant = "icon" }: { className?: st
             variant === "text" ? "lg:left-0" : "lg:right-0",
           )}
         >
-          <LanguagePanel initial={current ?? viewer?.languages ?? []} onPick={() => setOpen(false)} />
+          <LanguagePanel initial={current ?? (saved.length > 0 ? saved : (viewer?.languages ?? []))} hasSaved={saved.length > 0} onPick={() => setOpen(false)} />
         </div>
       )}
     </div>
@@ -98,10 +103,21 @@ export function LanguageButton({ className, variant = "icon" }: { className?: st
 }
 
 /**
- * Every language of India, with a search box: tick one or several, then "Show news" opens their news first
- * (/language/hi,ta). The languages ticked on opening are listed first.
+ * Every language of India, with a search box: tick one or several, then "Show news" saves the pick and Home ("/", no
+ * language in the address) shows only those languages — after a refresh or reopening the app too — until changed
+ * (owner 2026-11-05).
+ * The languages ticked on opening are listed first.
  */
-function LanguagePanel({ initial, onPick }: { initial: PressLanguage[]; onPick: () => void }) {
+function LanguagePanel({ initial, hasSaved, onPick }: { initial: PressLanguage[]; hasSaved: boolean; onPick: () => void }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  // Save (or clear) the pick and show Home at "/" — the address never carries the languages (owner 2026-11-05).
+  const apply = (codes: PressLanguage[]) => {
+    saveNewsLanguages(codes);
+    onPick();
+    if (pathname === "/") router.refresh();
+    else router.push("/");
+  };
   const [picked, setPicked] = useState<PressLanguage[]>(initial);
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
@@ -166,13 +182,21 @@ function LanguagePanel({ initial, onPick }: { initial: PressLanguage[]; onPick: 
           Clear
         </button>
         {picked.length > 0 ? (
-          <Link
-            href={`/language/${picked.join(",")}`}
-            onClick={onPick}
+          <button
+            type="button"
+            onClick={() => apply(picked)}
             className="ml-auto flex h-10 items-center rounded-full bg-brand px-5 text-sm font-bold text-brand-contrast transition-colors hover:bg-brand-hover"
           >
             Show news{picked.length > 1 ? ` · ${picked.length} languages` : ` · ${PRESS_LANGUAGE_LABELS[picked[0]!]}`}
-          </Link>
+          </button>
+        ) : hasSaved ? (
+          <button
+            type="button"
+            onClick={() => apply([])}
+            className="ml-auto flex h-10 items-center rounded-full bg-brand px-5 text-sm font-bold text-brand-contrast transition-colors hover:bg-brand-hover"
+          >
+            Show all languages
+          </button>
         ) : (
           <span className="ml-auto text-xs text-muted">Pick one or more languages</span>
         )}

@@ -1585,8 +1585,68 @@ export const siteAd = pgTable(
   (t) => [index("site_ad_site_idx").on(t.siteId, t.position)],
 );
 
+/**
+ * Publishing API keys (owner 2026-11-04: "same like Meta"): a reporter makes a key in Settings and their own website /
+ * CMS posts stories to WebNewsX with it (routes/publish-api.ts). Only the SHA-256 of the key is kept.
+ */
+export const apiKey = pgTable(
+  "api_key",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** The key's first characters (`wnx_live_ab12…`), shown in Settings so the owner can tell keys apart. */
+    prefix: text("prefix").notNull(),
+    hash: text("hash").notNull().unique(),
+    lastUsedAt: tsMs("last_used_at"),
+    revokedAt: tsMs("revoked_at"),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("api_key_user_idx").on(t.userId)],
+);
+
+/** A story posted through the API: the sender's own id for it (`externalId`), so sending it again updates it. */
+export const apiPost = pgTable(
+  "api_post",
+  {
+    articleId: uuid("article_id")
+      .primaryKey()
+      .references(() => article.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    keyId: uuid("key_id").references(() => apiKey.id, { onDelete: "set null" }),
+    externalId: text("external_id"),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("api_post_external_idx").on(t.userId, t.externalId), index("api_post_user_idx").on(t.userId, t.createdAt)],
+);
+
 export type PublisherSiteRecord = typeof publisherSite.$inferSelect;
 export type SiteAdRecord = typeof siteAd.$inferSelect;
+
+/**
+ * Farm prices history (owner 2026-11-05): every Karnataka AGMARKNET report the Market page fetched (routes/mandi.ts),
+ * so a market that didn't report today (e.g. Mangaluru) still shows its latest price, with its date, for a week.
+ * ₹ per quintal; `commodity` is AGMARKNET's own name.
+ */
+export const mandiPrice = pgTable(
+  "mandi_price",
+  {
+    date: date("date").notNull(),
+    market: text("market").notNull(),
+    commodity: text("commodity").notNull(),
+    variety: text("variety").notNull().default(""),
+    district: text("district").notNull().default(""),
+    minPrice: integer("min_price").notNull(),
+    maxPrice: integer("max_price").notNull(),
+    modalPrice: integer("modal_price").notNull(),
+    updatedAt: timestamp("updated_at", { precision: 3, withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.date, t.market, t.commodity, t.variety] }), index("mandi_price_date_idx").on(t.date)],
+);
 
 export type UserRecord = typeof user.$inferSelect;
 export type ArticleRecord = typeof article.$inferSelect;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Feed } from "@/components/feed/feed";
 import { COMPANY } from "@/lib/company";
 import { SITE_DESCRIPTION, SITE_NAME, TAGLINE } from "@/lib/config";
@@ -6,7 +7,9 @@ import { absoluteUrl } from "@/lib/utils";
 import { NewsFeed } from "@/components/feed/news-feed";
 import { FollowingSignedOut } from "@/components/feed/feed-empty";
 import { FeedHeader } from "@/components/feed/feed-header";
-import { parseHomeTab } from "@/components/feed/feed-views";
+import { parseHomeTab, type FeedView } from "@/components/feed/feed-views";
+import { NEWS_LANGUAGES_COOKIE, readNewsLanguages } from "@/lib/news-languages";
+import { NEWS_LANGUAGES } from "@/lib/shared/contracts";
 import { getFeedLayout } from "@/lib/feed-layout-server";
 import { getFeedPage, getTopPublishers } from "@/lib/server-api";
 import { newShuffleSeed, visitorShuffleSeed } from "@/lib/shuffle";
@@ -52,9 +55,13 @@ function siteJsonLd() {
  * for infinite scroll and realtime.
  */
 export default async function HomePage({ searchParams }: PageProps<"/">) {
-  const view = parseHomeTab((await searchParams).tab);
-  const tab = view.kind === "tab" ? view.tab : "foryou";
-  const [viewer, layout] = await Promise.all([getSiteViewer(), getFeedLayout()]);
+  const homeView = parseHomeTab((await searchParams).tab);
+  const tab = homeView.kind === "tab" ? homeView.tab : "foryou";
+  const [viewer, layout, jar] = await Promise.all([getSiteViewer(), getFeedLayout(), cookies()]);
+  // The reader's saved Languages pick (owner 2026-11-05): Home shows only those languages, at "/" itself.
+  const saved = readNewsLanguages(jar.get(NEWS_LANGUAGES_COOKIE)?.value);
+  const languages = tab !== "following" ? NEWS_LANGUAGES.filter((code) => saved.includes(code)) : [];
+  const view: FeedView = languages.length > 0 ? { kind: "language", languages } : homeView;
 
   if (tab === "following" && !viewer) {
     return (
@@ -69,7 +76,10 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     // A fresh mix on every visit (owner 2026-10-05); Following stays newest first. Logged out: the day's mix of
     // recent and older stories, the same all day (owner 2026-10-22; lib/shuffle.ts), so the open cards aren't simply
     // the newest and a refresh can't swap the blurred stories past the free ones into view (owner 2026-10-08).
-    getFeedPage({ tab, shuffle: tab === "following" ? null : viewer ? newShuffleSeed() : visitorShuffleSeed() }),
+    getFeedPage({
+      ...(languages.length > 0 ? { languages } : { tab }),
+      shuffle: tab === "following" ? null : viewer ? newShuffleSeed() : visitorShuffleSeed(),
+    }),
     tab === "following" ? getTopPublishers(SUGGESTED_PUBLISHERS) : Promise.resolve([]),
   ]);
 
@@ -79,9 +89,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd()).replace(/</g, "\\u003c") }} />
       <FeedHeader view={view} />
       {layout === "reel" ? (
-        <Feed key={`reel:${tab}`} view={view} initialPage={initialPage} suggestions={suggestions} />
+        <Feed key={`reel:${tab}:${languages.join(",")}`} view={view} initialPage={initialPage} suggestions={suggestions} />
       ) : (
-        <NewsFeed key={tab} view={view} initialPage={initialPage} suggestions={suggestions} />
+        <NewsFeed key={`${tab}:${languages.join(",")}`} view={view} initialPage={initialPage} suggestions={suggestions} />
       )}
     </section>
   );

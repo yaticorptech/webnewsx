@@ -18,7 +18,7 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * they can't ride on a victim's cookies. Better Auth does its own origin checks.
  */
 /** A publisher site's admin (owner 2026-10-29) calls from its own domain with a Bearer token — no cookies, so no CSRF. */
-const SITE_ADMIN_PATH = /^\/api\/sites\/d\/[^/]+\/admin(\/|$)/;
+const SITE_ADMIN_PATH = /^\/api\/sites\/d\/[^/]+\/admin(\/|$)|^\/api\/v1(\/|$)/;
 
 export const originGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
   if (UNSAFE_METHODS.has(c.req.method) && !SITE_ADMIN_PATH.test(c.req.path)) {

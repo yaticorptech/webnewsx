@@ -269,7 +269,8 @@ describe("POST /api/onboarding", () => {
     expect(res.status).toBe(400);
     const { error } = await json<ApiErrorBody>(res);
     expect(error.code).toBe("validation_error");
-    expect(Object.keys(error.fields ?? {}).sort()).toEqual(["acceptTerms", "bio", "image", "name", "username"]);
+    // Bio is optional (owner 2026-11-05).
+    expect(Object.keys(error.fields ?? {}).sort()).toEqual(["acceptTerms", "image", "name", "username"]);
     expect(error.fields?.username).toBe("Only letters, dots and underscores allowed");
   });
 

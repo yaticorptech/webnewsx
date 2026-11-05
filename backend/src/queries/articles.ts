@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, inArray, isNotNull, isNull, ne, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, ne, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { db, type Executor } from "../db/client.js";
 import { article, articleFlag, articleLike, articleSave, follow, membershipPayment, pressPass, spotlightOrder, user, type ArticleRecord } from "../db/schema.js";
 import { decodeCursor, paginate } from "../lib/cursor.js";
@@ -336,12 +336,11 @@ async function storiesBefore(conditions: SQL[], cursor: NonNullable<ReturnType<t
  * (so they appear exactly once); Following: plain chronological list of followed authors.
  */
 /*
- * A fresh mix on every visit (owner 2026-10-05: "every refresh shows different articles"): Home's Latest and the
- * category pages can be read in a shuffled order — the stories of the last SHUFFLE_RECENT_DAYS first, then older ones,
- * each group in an order fixed by a seed the page picks (so one visit's pages follow on without repeats). Offset
- * pages over that order; the cursor is `s.<seed>.<offset>`.
+ * Latest first, with a fresh mix of the newest day on every refresh (owner 2026-11-05: "latest articles first; when
+ * refresh change in that article only — today's only shuffle; if today's not there, yesterday's"): the stories of the
+ * newest day that has any (India's date — today, else yesterday, …) come first in an order fixed by the page's seed,
+ * then every older story newest first. One visit's pages follow on without repeats (offset pages, `s.<seed>.<offset>`).
  */
-const SHUFFLE_RECENT_DAYS = 14;
 const SEED = /^[a-z0-9]{6,32}$/i;
 /**
  * `preferred`: the reader's languages (owner 2026-10-05) — their stories come first, then everyone else's. `then`: more
@@ -358,27 +357,31 @@ export function readShuffle(cursor: string | undefined, seed: string | undefined
   return !cursor && seed && SEED.test(seed) ? { seed, offset: 0 } : null;
 }
 
+/** India's calendar day of a story. */
+const indiaDay = sql`((${article.publishedAt} at time zone 'Asia/Kolkata')::date)`;
+
 /**
- * Preferred languages first, all of them, newest first — not shuffled, not taking turns (owner 2026-10-05: "show all
- * the Kannada and Hindi news, no mixing like 2 Kannada 1 Hindi, no shuffle"); then the `then` languages the same way;
- * then everything else in the fresh mix.
+ * The newest day's stories shuffled by `seed`, then the rest newest first (see above) — within each language tier when
+ * there are tiers: the reader's / picked languages first (owner 2026-10-05, no taking turns between them), then the
+ * `then` languages, then everything else.
  */
 const shuffledOrder = (seed: string, preferred: PressLanguage[] = [], then: PressLanguage[] = []) => {
-  const older = sql`(${article.publishedAt} < now() - make_interval(days => ${SHUFFLE_RECENT_DAYS}))`;
-  const mix = sql`md5(${article.id}::text || ${seed})`;
   const tiers = [preferred, then].filter((tier) => tier.length > 0);
-  if (tiers.length === 0) return [older, mix];
-  const tier = sql`case ${sql.join(
-    tiers.map((languages, index) => sql`when ${inArray(article.language, languages)} then ${index}`),
-    sql` `,
-  )} else ${tiers.length} end`;
-  const listed = sql`${tier} < ${tiers.length}`;
+  const tier =
+    tiers.length === 0
+      ? null
+      : sql`case ${sql.join(
+          tiers.map((languages, index) => sql`when ${inArray(article.language, languages)} then ${index}`),
+          sql` `,
+        )} else ${tiers.length} end`;
+  const newestDay = tier ? sql`max(${indiaDay}) over (partition by ${tier})` : sql`max(${indiaDay}) over ()`;
+  const top = sql`(${indiaDay} = ${newestDay})`;
   return [
-    tier,
-    sql`case when ${listed} then ${article.publishedAt} end desc nulls last`,
-    sql`case when ${listed} then ${article.id} end desc nulls last`,
-    older,
-    mix,
+    ...(tier ? [tier] : []),
+    sql`case when ${top} then 0 else 1 end`,
+    sql`case when ${top} then md5(${article.id}::text || ${seed}) end`,
+    desc(article.publishedAt),
+    desc(article.id),
   ];
 };
 
@@ -393,21 +396,10 @@ async function shuffledPage(conditions: SQL[], viewerId: string | null, shuffle:
 }
 
 /**
- * A logged-out visitor's Home (owner 2026-10-22: "old and latest articles mixed on top, then sign in to read more"):
- * the newest stories (the last VISITOR_RECENT_DAYS, newest first) take turns with older ones in an order fixed by the
- * day's seed — latest, older, latest, older… — so the few cards a visitor can read are half today's news and half the
- * archive, and the blurred ones after them the same; when one side runs out the other carries on. Offset pages over
- * that order, `s.<seed>.<offset>` cursors like the other shuffled feeds. Editor's Picks lead page 1, Spotlights are
+ * A logged-out visitor's Home: the same order as everyone's (owner 2026-11-05: latest first, the newest day shuffled
+ * on every refresh — replaces the 2026-10-22 latest/older interleave). Editor's Picks lead page 1, Spotlights are
  * woven in as usual.
  */
-const VISITOR_RECENT_DAYS = 1;
-const visitorMixOrder = (seed: string) => {
-  const recent = sql`(${article.publishedAt} >= now() - make_interval(days => ${VISITOR_RECENT_DAYS}))`;
-  return sql`case when ${recent}
-    then (row_number() over (partition by ${recent} order by ${article.publishedAt} desc, ${article.id} desc) - 1) * 2
-    else (row_number() over (partition by ${recent} order by md5(${article.id}::text || ${seed})) - 1) * 2 + 1 end`;
-};
-
 export async function listVisitorMix(opts: { shuffle: Shuffle; limit: number }): Promise<Page<ArticleCard>> {
   const { seed, offset } = opts.shuffle;
   const spotlit = await listSpotlit(null, seed);
@@ -415,7 +407,7 @@ export async function listVisitorMix(opts: { shuffle: Shuffle; limit: number }):
   const limit = Math.max(opts.limit - picks.length, 1);
   const rows = await selectCards(null)
     .where(and(visibleWhere(), isNull(article.pinnedAt), notSpotlit()))
-    .orderBy(visitorMixOrder(seed))
+    .orderBy(...shuffledOrder(seed))
     .limit(limit + 1)
     .offset(offset);
   const items = rows.slice(0, limit).map((row) => toCard(row, null));

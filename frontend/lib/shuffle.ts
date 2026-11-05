@@ -9,14 +9,12 @@ export function newShuffleSeed(): string {
 }
 
 /**
- * A logged-out visitor's mix (owner 2026-10-22: "old and latest articles mixed on top, then sign in to read more"):
- * the same shuffled order — recent stories first, in a mixed order — but with one seed for the whole day (India's
- * date), so a refresh shows the same stories open and the same ones blurred (owner 2026-10-08: a refresh must never
- * swap a locked story into view), and the server's first page and the browser's next pages agree.
+ * A logged-out visitor's seed: a fresh one per visit too (owner 2026-11-05: the newest day's stories change order on
+ * every refresh — replaces the one-seed-per-day mix). The seed still rides in the next pages' cursors, so the server's
+ * first page and the browser's next pages agree.
  */
 export function visitorShuffleSeed(): string {
-  const india = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
-  return `day${india.toISOString().slice(0, 10).replace(/-/g, "")}`;
+  return newShuffleSeed();
 }
 
 /** The seed a shuffled page belongs to (from its cursor), or its stories' order when it's the last page. */

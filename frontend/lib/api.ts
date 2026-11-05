@@ -4,7 +4,7 @@
  * Types come from the generated contract copy (lib/shared/contracts.ts).
  */
 import { directApiOrigin } from "@/lib/config";
-import type { MarketHistory, MarketRange, MarketResponse } from "@/lib/shared/contracts";
+import type { MandiResponse, MarketHistory, MarketRange, MarketResponse } from "@/lib/shared/contracts";
 import type { AdminGroupApplication, AdminGroupDetail, GroupApplication, GroupApplicationInput, GroupDetailResponse, MyGroupsResponse } from "@/lib/shared/contracts";
 import type {
   AdminPlatformFee,
@@ -413,6 +413,13 @@ export type ArticlePageData = { article: ArticleDetail; moreFromAuthor: ArticleC
 
 /* ─────────────────────────── Endpoints (docs/SPEC.md §5.2) ─────────────────────────── */
 
+export type ApiKeyRow = { id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null };
+export type ApiKeysResponse = {
+  keys: ApiKeyRow[];
+  posts: { id: string; title: string | null; status: string; slug: string | null; keyName: string | null; createdAt: string }[];
+  endpoint: string;
+};
+
 export const api = {
   /** GET /api/me — `{ viewer }` (null when logged out). */
   me: (signal?: AbortSignal) => request<{ viewer: ViewerUser | null }>("/api/me", { signal }),
@@ -451,6 +458,9 @@ export const api = {
   /** City / town / village suggestions for the City boxes: names starting with `q` (owner 2026-10-05). */
   places: (params: { q: string; state?: string; district?: string }, signal?: AbortSignal) =>
     request<{ items: PlaceSuggestion[] }>(`/api/places${query(params)}`, { signal }),
+  /** GET /api/places/pincode/:pin — is it a real Indian PIN code, and its state (region code), district and town. */
+  pincode: (pin: string, signal?: AbortSignal) =>
+    request<{ valid: boolean; place: { state: string; district: string; city: string } | null }>(`/api/places/pincode/${encodeURIComponent(pin)}`, { signal }),
 
   /** Press meets (owner 2026-10-01): booking, invitations, stories, payments, the built-in room and recordings. */
   pressMeets: {
@@ -562,6 +572,8 @@ export const api = {
 
   /** GET /api/market — the Market page's live quotes (indices, gold and silver, crude, the rupee, Bitcoin). */
   market: (signal?: AbortSignal) => request<MarketResponse>("/api/market", { signal }),
+  /** GET /api/market/mandi — Karnataka APMC farm prices (arecanut, coconut, copra, pepper…), ₹ per quintal. */
+  mandi: (signal?: AbortSignal) => request<MandiResponse>("/api/market/mandi", { signal }),
   /** GET /api/market/history?id=&range= — one quote's chart over a week or a month (today's points ride with the quote). */
   marketHistory: (id: string, range: MarketRange, signal?: AbortSignal) =>
     request<MarketHistory>(`/api/market/history${query({ id, range })}`, { signal }),
@@ -692,6 +704,9 @@ export const api = {
   pressPassOptions: (signal?: AbortSignal) => request<PressPassOptions>("/api/press-pass/options", { signal }),
   /** GET /api/press-pass — the viewer's pass (active or revoked) or null. */
   pressPass: (signal?: AbortSignal) => request<PressPassResponse>("/api/press-pass", { signal }),
+  /** GET /api/press-pass/mobile-check — is this number already another account's? `message` names that account. */
+  pressPassMobileCheck: (mobile: string, signal?: AbortSignal) =>
+    request<{ taken: boolean; message: string | null }>(`/api/press-pass/mobile-check${query({ mobile })}`, { signal }),
   /**
    * POST /api/press-pass — readers apply; the pass is issued instantly as Trainee and the account becomes a Reporter.
    * 409 `already_reporter` / `already_editor_desk`, 403 `press_pass_revoked`, 400 with `fields` (pledgeSignature must match the display name; `mobile` already on another pass).
@@ -761,6 +776,13 @@ export const api = {
   /* ─────────────── Messages, groups and communities (owner 2026-09-30) ─────────────── */
 
   /** "Generate with AI" in the composer (owner 2026-10-14): the reporter's own Gemini key. */
+  /** Settings → Publishing API (owner 2026-11-04): keys a reporter's own website posts stories with. */
+  apiKeys: {
+    list: (signal?: AbortSignal) => request<ApiKeysResponse>("/api/api-keys", { signal }),
+    create: (name: string) => request<ApiKeyRow & { key: string }>("/api/api-keys", { method: "POST", body: { name } }),
+    remove: (id: string) => request<void>(`/api/api-keys/${enc(id)}`, { method: "DELETE" }),
+  },
+
   ai: {
     status: (signal?: AbortSignal) => request<AiStatus>("/api/ai/status", { signal }),
     saveKey: (key: string) => request<AiStatus>("/api/ai/key", { method: "PUT", body: { key } }),
