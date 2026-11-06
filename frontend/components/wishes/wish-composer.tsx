@@ -1,9 +1,10 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Cake, Camera, ImagePlus, Mail, Save, Upload, X } from "lucide-react";
+import { CalendarClock, Cake, Camera, ImagePlus, Mail, Save, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { ScheduleDialog, formatScheduled } from "@/components/scheduled/schedule-dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { api, errorMessage, isApiError, uploadImage } from "@/lib/api";
@@ -122,7 +123,10 @@ export function WishComposer({
     event.target.value = "";
   };
 
-  const post = async () => {
+  /** Schedule (owner 2026-11-06): the time picker, opened once the wish is complete. */
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  /** The form's own checks; true when it can be posted. */
+  const check = () => {
     const next: Record<string, string> = {};
     // A name or a photo (owner 2026-10-31: "only an image is fine too").
     if (!title.trim() && !photo)
@@ -130,8 +134,12 @@ export function WishComposer({
     if (kind === "invitation" && !eventAt) next.eventAt = "Choose the date and time";
     if (template === "custom" && !photo) next.photo = "Upload your design";
     setErrors(next);
-    if (Object.keys(next).length) return;
-    setPosting(true);
+    return Object.keys(next).length === 0;
+  };
+
+  const post = async (scheduledAt: string | null = null) => {
+    if (!check()) return;
+    if (!scheduledAt) setPosting(true);
     try {
       await api.wishes.create({
         kind,
@@ -141,12 +149,21 @@ export function WishComposer({
         photo,
         eventAt: kind === "invitation" ? new Date(eventAt).toISOString() : null,
         venue: kind === "invitation" ? venue.trim() || null : null,
+        scheduledAt,
       });
       void queryClient.invalidateQueries({ queryKey: qk.wishes });
+      void queryClient.invalidateQueries({ queryKey: qk.scheduled });
       try {
         localStorage.removeItem(draftKey);
       } catch {
         // Nothing to clear.
+      }
+      if (scheduledAt) {
+        setScheduleOpen(false);
+        toast.success("Scheduled", { id: "wish-posted", description: `It shows in the Home feed ${formatScheduled(scheduledAt)}.`, duration: 6000 });
+        // A fresh + page with the Scheduled list open.
+        window.location.replace(new URL(invitations ? "/publish?type=wish&scheduled=1" : "/publish?scheduled=1", window.location.href).href);
+        return;
       }
       toast.success(kind === "birthday" ? "Birthday wish posted" : "Invitation posted", {
         id: "wish-posted",
@@ -154,6 +171,7 @@ export function WishComposer({
       });
       router.push("/");
     } catch (error) {
+      if (scheduledAt) setScheduleOpen(false);
       if (isApiError(error) && error.fields) setErrors(Object.fromEntries(Object.entries(error.fields).map(([k, v]) => [k, String(v)])));
       else toast.error("Couldn't post it", { id: "wish-posted", description: errorMessage(error) });
     } finally {
@@ -353,9 +371,18 @@ export function WishComposer({
             <Button size="lg" fullWidth loading={posting} disabled={uploading} onClick={() => void post()}>
               {kind === "birthday" ? "Post birthday wish" : "Post invitation"}
             </Button>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5">
+              <Button
+                size="lg"
+                variant="outline"
+                leftIcon={<CalendarClock aria-hidden />}
+                disabled={uploading || posting}
+                onClick={() => check() && setScheduleOpen(true)}
+              >
+                Schedule
+              </Button>
               <Button size="lg" variant="outline" leftIcon={<Save aria-hidden />} onClick={saveDraft}>
-                Save draft
+                <span className="max-sm:sr-only">Save </span>draft
               </Button>
               <Button size="lg" variant="ghost" href="/">
                 Cancel
@@ -364,6 +391,12 @@ export function WishComposer({
           </div>
         </aside>
       </div>
+      <ScheduleDialog
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        what={kind === "birthday" ? "birthday wish" : "invitation"}
+        onConfirm={(at) => post(at)}
+      />
     </div>
   );
 }

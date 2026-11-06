@@ -93,6 +93,7 @@ import type {
   DemoAction,
   DemoEngagementStatus,
   GifSearchResponse,
+  ScheduledItem,
   Wish,
   WishComment,
   WishInput,
@@ -611,6 +612,15 @@ export const api = {
   likeComment: (id: string, commentId: string, liked: boolean) =>
     request<CommentLikeResult>(`/api/articles/${enc(id)}/comments/${enc(commentId)}/like`, { method: liked ? "POST" : "DELETE" }),
   /** POST /api/articles/:id/comments — onboarded accounts (`parentId` = reply). 400 `fields.body`. */
+  /** The viewer's posts waiting for their time (owner 2026-11-06): stories and birthday wishes / invitations. */
+  scheduled: {
+    list: (signal?: AbortSignal) => request<{ items: ScheduledItem[] }>("/api/scheduled", { signal }),
+    publishNow: (type: ScheduledItem["type"], id: string) =>
+      request<{ ok: true }>(`/api/scheduled/${enc(type)}/${enc(id)}/now`, { method: "POST" }),
+    /** A story goes back to Drafts; a wish is removed. */
+    cancel: (type: ScheduledItem["type"], id: string) => request<void>(`/api/scheduled/${enc(type)}/${enc(id)}`, { method: "DELETE" }),
+  },
+
   /** Birthday wishes & invitations (owner 2026-10-31). */
   wishes: {
     list: (signal?: AbortSignal) => request<{ items: Wish[] }>("/api/wishes", { signal }),

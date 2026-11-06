@@ -14,6 +14,7 @@ import {
   DEFAULT_POSTER_TEMPLATE,
   DISTRICT_CATEGORY,
   type GroupRole,
+  scheduleError,
   subcategoryError,
   detectLanguage,
   LIMITS,
@@ -160,7 +161,8 @@ type WriteOutcome =
   | ({ kind: "group_review"; row: ArticleRecord } & Replaced)
   | ({ kind: "sent"; row: ArticleRecord; meetId: string; organizerName: string } & Replaced)
   | ({ kind: "in_review"; row: ArticleRecord } & Replaced)
-  | ({ kind: "published"; id: string } & Replaced);
+  | ({ kind: "published"; id: string } & Replaced)
+  | ({ kind: "scheduled"; row: ArticleRecord; at: Date } & Replaced);
 
 /**
  * Creates or updates an article from the composer's full state (every field is replaced by what is sent).
@@ -296,6 +298,10 @@ export async function saveArticle(
     if (!blurb || blurb.length < BLURB.min) errors.blurb = `Write a blurb of at least ${BLURB.min} characters`;
     const districtIssue = districtError(category, input.district);
     if (districtIssue) errors.district = districtIssue;
+    if (input.scheduledAt) {
+      const issue = scheduleError(new Date(input.scheduledAt));
+      if (issue) errors.scheduledAt = issue;
+    }
     if (Object.keys(errors).length > 0) throw validationError(errors, "Your story isn't ready to publish yet");
     if (input.premium) {
       // Members-only stories (owner 2026-10-14) need a price readers can buy a membership at.
@@ -306,9 +312,15 @@ export async function saveArticle(
     }
   }
 
+  // Schedule (owner 2026-11-06): checked like a publish above, then kept as a draft that goes live on its own.
+  const scheduleAt = input.action === "publish" && input.scheduledAt ? new Date(input.scheduledAt) : null;
+
   const write = (tx: Transaction): Promise<WriteOutcome> =>
     (async () => {
       const existing = input.id ? await lockOwned(tx, input.id, authorId) : null;
+      if (scheduleAt && (existing?.status === "published" || existing?.pressMeetId || input.pressMeetId || groupWriter?.role === "writer" || author.needsReview)) {
+        throw new ApiError(400, "cannot_schedule", "Only a new story you publish yourself can be scheduled");
+      }
       checkGroupWriter(groupWriter, existing);
       if (existing?.pressMeetId && existing.status === "published") throw pressMeetLocked();
       if (existing?.status === "published" && input.action === "draft") throw alreadyPublished();
@@ -339,7 +351,12 @@ export async function saveArticle(
           ...(existing?.status === "in_review" ? { submittedAt: null } : {}),
           ...(groupWriter?.role === "writer" ? { groupSubmittedAt: null } : {}),
         };
-        return { kind: "draft", row: await upsertDraft(tx, authorId, id, { ...fields, ...withdraw, ...postedBy }), ...replaced };
+        // Saving as a draft takes it off the schedule.
+        return { kind: "draft", row: await upsertDraft(tx, authorId, id, { ...fields, ...withdraw, ...postedBy, scheduledAt: null }), ...replaced };
+      }
+      if (scheduleAt) {
+        const row = await upsertDraft(tx, authorId, id, { ...fields, ...postedBy, title: title as string, groupSubmittedAt: null, scheduledAt: scheduleAt });
+        return { kind: "scheduled", row, at: scheduleAt, ...replaced };
       }
       // A group Writer's "publish" goes to the group's editors: it stays a draft until one of them publishes it.
       if (groupWriter?.role === "writer") {
@@ -348,7 +365,7 @@ export async function saveArticle(
       if (existing?.status === "published") {
         return { kind: "published", id: await updatePublishedInTx(tx, existing.id, { ...fields, title: title as string }), ...replaced };
       }
-      const live = { ...fields, ...postedBy, title: title as string, groupSubmittedAt: null };
+      const live = { ...fields, ...postedBy, title: title as string, groupSubmittedAt: null, scheduledAt: null };
       if (author.needsReview) {
         return { kind: "in_review", row: await submitForReview(tx, authorId, id, live), ...replaced };
       }
@@ -367,6 +384,9 @@ export async function saveArticle(
   if (!outcome) throw new ApiError(500, "internal_error", "Could not generate a unique link for this story");
   await deleteMediaIfUnused(...outcome.replacedKeys);
 
+  if (outcome.kind === "scheduled") {
+    return { status: "scheduled", article: { ...toDraftDetail(outcome.row), status: "draft", slug: null }, scheduledAt: outcome.at.toISOString() };
+  }
   if (outcome.kind === "draft") return { status: "draft", article: { ...toDraftDetail(outcome.row), status: "draft", slug: null } };
   if (outcome.kind === "group_review") {
     return { status: "group_review", article: { ...toDraftDetail(outcome.row), status: "draft", slug: null }, message: GROUP_REVIEW_MESSAGE };

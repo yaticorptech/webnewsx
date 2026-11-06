@@ -8,6 +8,7 @@ import { realtime } from "./lib/realtime.js";
 import { storage } from "./lib/storage.js";
 import { startPressMeetWorker } from "./lib/press-meet-worker.js";
 import { startPushWorker } from "./lib/push-worker.js";
+import { startScheduledPublisher } from "./lib/scheduled-publish-worker.js";
 import { startMembershipWorker } from "./lib/membership-worker.js";
 import { startUploadSweeper } from "./lib/upload-sweep.js";
 import { startDemoEngagementTicker } from "./lib/demo-engagement-ticker.js";
@@ -51,6 +52,8 @@ const stopMembershipWorker = background ? startMembershipWorker() : noop;
 const stopMandiCollector = background ? startMandiCollector() : noop;
 // Stories sent to the import with a later `publishAt` (owner 2026-11-02).
 const stopImportQueue = background ? startImportQueue() : noop;
+// Drafts with a publish time go live on their own (owner 2026-11-06).
+const stopScheduledPublisher = background ? startScheduledPublisher() : noop;
 // Demo counts only (never on the public site) — like the Desk demo controls, it also runs on staging.
 const stopDemoTicker = startDemoEngagementTicker();
 
@@ -81,6 +84,7 @@ async function shutdown(signal: string): Promise<void> {
   stopMembershipWorker();
   stopMandiCollector();
   stopImportQueue();
+  stopScheduledPublisher();
   stopDemoTicker();
   server.close();
   await realtime.stop();

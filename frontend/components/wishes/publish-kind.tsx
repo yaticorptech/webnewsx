@@ -1,10 +1,12 @@
 import { Cake, Newspaper } from "lucide-react";
 import Link from "next/link";
+import { ScheduledButton } from "@/components/scheduled/scheduled-list";
 import { cn } from "@/lib/utils";
 
 /**
  * The top of the + page for Press Pass holders (owner 2026-10-31): Article (the story composer) or Birthday wish /
- * invitation (the wish composer with all its designs). A link per choice, so each has its own address.
+ * invitation (the wish composer with all its designs). A link per choice, so each has its own address. Beside it, the
+ * small Scheduled button (owner 2026-11-06).
  */
 export function PublishKind({ value, className }: { value: "article" | "wish"; className?: string }) {
   const options = [
@@ -12,7 +14,8 @@ export function PublishKind({ value, className }: { value: "article" | "wish"; c
     { key: "wish", href: "/publish?type=wish", label: "Birthday wish / invitation", short: "Birthday", Icon: Cake },
   ] as const;
   return (
-    <nav aria-label="What are you posting?" className={cn("inline-flex w-full rounded-full bg-surface-2 p-1 sm:w-auto sm:self-start", className)}>
+    <div className={cn("flex items-center gap-2 sm:gap-3", className)}>
+      <nav aria-label="What are you posting?" className="inline-flex min-w-0 flex-1 rounded-full bg-surface-2 p-1 sm:flex-none">
       {options.map(({ key, href, label, short, Icon }) => {
         const on = value === key;
         return (
@@ -32,6 +35,8 @@ export function PublishKind({ value, className }: { value: "article" | "wish"; c
           </Link>
         );
       })}
-    </nav>
+      </nav>
+      <ScheduledButton />
+    </div>
   );
 }

@@ -2,12 +2,13 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Editor } from "@tiptap/react";
-import { ArrowLeft, ArrowRight, Check, CircleDot, Crown, Eye, FilePen, Link2, Lock, Save, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, Check, CircleDot, Crown, Eye, FilePen, Link2, Lock, Save, Send, Trash2 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { draftsPath } from "@/lib/hooks/use-native-app";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BackButton } from "@/components/layout/back-button";
+import { ScheduleDialog, formatScheduled } from "@/components/scheduled/schedule-dialog";
 import { UserHandle } from "@/components/brand/user-handle";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { Avatar } from "@/components/ui/avatar";
@@ -219,6 +220,9 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
   const [published, setPublished] = useState<{ title: string; slug: string; path: string } | null>(null);
   /** Sent to the Review Desk (Trainee "publish"): the success moment, then the profile's Desk. */
   const [submitted, setSubmitted] = useState<{ title: string; message: string; reviewer?: string } | null>(null);
+  /** Schedule (owner 2026-11-06): the time picker, and "scheduled" once saved (the page then shows the Scheduled list). */
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduledDone, setScheduledDone] = useState(false);
   /** Review Desk state of this story: saving as a draft withdraws an in-review story (returned notes stay). */
   const [reviewState, setReviewState] = useState<ArticleReview | null>(draft?.review ?? null);
   /** Written for a press meet (owner 2026-10-07): sent to its organizer, who verifies it before it goes live. */
@@ -610,6 +614,44 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
     }
   };
 
+  /** Only a new story the author publishes themselves can wait for a time (not Trainees, press meet or group writers). */
+  const canSchedule = !live && !needsPressPass && !toOrganizer && !toGroupEditors && !toReviewDesk;
+
+  const openSchedule = () => {
+    if (busy || uploading) return;
+    const problems = validateForPublish(fields, textLength, extras);
+    if (Object.keys(problems).length > 0) {
+      showErrors(problems);
+      toast.error("Your story isn't ready to schedule yet", { id: "composer-invalid", description: "Fix the highlighted fields and try again." });
+      return;
+    }
+    setScheduleOpen(true);
+  };
+
+  const schedule = async (scheduledAt: string) => {
+    setBusy("publish");
+    try {
+      const response = await api.saveArticle({ ...toInput("publish"), scheduledAt });
+      if (response.status !== "scheduled") throw new Error("The story was saved but not scheduled.");
+      clearAutosave(autosaveKey(author.id, null), autosaveKey(author.id, response.article.id));
+      setRevs((r) => ({ ...r, saved: r.rev }));
+      invalidateLists(response.article.id);
+      void queryClient.invalidateQueries({ queryKey: qk.scheduled });
+      setScheduleOpen(false);
+      toast.success("Scheduled", { id: "composer-saved", description: `It goes live ${formatScheduled(response.scheduledAt)}.`, duration: 6000 });
+      setScheduledDone(true);
+    } catch (error) {
+      setScheduleOpen(false);
+      handleSaveError(error, "Couldn't schedule your story");
+    } finally {
+      setBusy(null);
+    }
+  };
+  // Once scheduled (and the leave guard is off), a fresh + page with the Scheduled list open.
+  useEffect(() => {
+    if (scheduledDone) window.location.replace(new URL("/publish?scheduled=1", window.location.href).href);
+  }, [scheduledDone]);
+
   // "Your story is live" appears when the front page actually replaces the composer (this unmount),
   // so a slow navigation can't let it expire unseen behind the overlay.
   const arrivalToast = useRef<string | null>(null);
@@ -730,7 +772,8 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const guard = useUnsavedGuard(dirty && !published && !submitted);
+  // The preview asks before leaving even when nothing is unsaved (owner 2026-11-06: "show leave anyway / schedule / draft").
+  const guard = useUnsavedGuard((dirty || (step === "preview" && !live)) && !published && !submitted && !scheduledDone);
   useEffect(() => {
     if (guard.pendingHref || linkOpen || deleteOpen) dismissComposerToasts();
   }, [guard.pendingHref, linkOpen, deleteOpen]);
@@ -1304,9 +1347,21 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
                   <span className="hidden sm:inline">Save draft</span>
                 </Button>
               )}
+              {canSchedule && (
+                <Button
+                  variant="outline"
+                  onClick={openSchedule}
+                  disabled={actionsDisabled}
+                  leftIcon={<CalendarClock aria-hidden />}
+                  className="px-3.5 sm:px-5"
+                  aria-label="Schedule for later"
+                >
+                  <span className="max-sm:sr-only">Schedule</span>
+                </Button>
+              )}
               <Button
                 onClick={() => void publish()}
-                loading={busy === "publish"}
+                loading={busy === "publish" && !scheduleOpen}
                 disabled={actionsDisabled && busy !== "publish"}
                 leftIcon={<Send aria-hidden />}
                 data-tour="composer-publish"
@@ -1400,7 +1455,18 @@ export function Composer({ author, draft, review: trainee = false, pressMeetId =
             if (await saveDraft()) guard.leave();
             else guard.cancel();
           }}
+          saved={!dirty && Boolean(draftId)}
+          onSchedule={
+            canSchedule
+              ? () => {
+                  guard.cancel();
+                  openSchedule();
+                }
+              : undefined
+          }
         />
+
+        <ScheduleDialog open={scheduleOpen} onOpenChange={setScheduleOpen} what="story" onConfirm={schedule} />
 
         {published && <PublishSuccess title={published.title} onDone={finishPublish} />}
         {submitted && <PublishSuccess variant="review" title={submitted.title} reviewer={submitted.reviewer} onDone={finishSubmit} />}

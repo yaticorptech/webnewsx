@@ -741,7 +741,9 @@ export type SaveArticleResponse =
   /** A press meet story went to its organizer (it stays a draft until they verify it); `message` explains it. */
   | { status: "sent"; article: DraftDetail & { status: "draft"; slug: null }; pressMeetId: string; message: string }
   /** A group Writer's story went to the group's Editors (it stays a draft until one publishes it); `message` explains it. */
-  | { status: "group_review"; article: DraftDetail & { status: "draft"; slug: null }; message: string };
+  | { status: "group_review"; article: DraftDetail & { status: "draft"; slug: null }; message: string }
+  /** Scheduled (owner 2026-11-06): a draft that goes live on its own at `scheduledAt`. */
+  | { status: "scheduled"; article: DraftDetail & { status: "draft"; slug: null }; scheduledAt: string };
 
 export type UserRow = {
   id: string;
@@ -804,6 +806,8 @@ export const wishSchema = z
     photo: z.object({ url: z.string().max(500), key: z.string().max(200) }).nullable().optional(),
     eventAt: z.string().datetime({ offset: true }).nullable().optional(),
     venue: z.string().trim().max(WISH_LIMITS.venueMax).nullable().optional(),
+    /** Schedule (owner 2026-11-06): shows in the feed from this time on (SCHEDULE_LIMITS). */
+    scheduledAt: z.string().datetime({ offset: true }).nullable().optional(),
   })
   .refine((w) => (WISH_TEMPLATES[w.kind] as readonly string[]).includes(w.template), { message: "Pick a design", path: ["template"] })
   .refine((w) => w.kind !== "invitation" || Boolean(w.eventAt), { message: "Choose the date and time", path: ["eventAt"] })
@@ -837,12 +841,36 @@ export type Wish = {
   eventAt: string | null;
   venue: string | null;
   createdAt: string;
+  /** Still waiting to show in the feed (owner 2026-11-06); null once it is up. */
+  scheduledAt: string | null;
   author: AuthorSummary;
   /** The viewer posted it, or is the Editor Desk: may delete it. */
   canDelete: boolean;
   /** Quick wishes: how many, and the latest few. */
   commentCount: number;
   comments: WishComment[];
+};
+
+/* ─────────────── Scheduled posts (owner 2026-11-06) ─────────────── */
+
+/** How soon / how far ahead a story or wish can be scheduled. */
+export const SCHEDULE_LIMITS = { minAheadMinutes: 5, maxAheadDays: 30 } as const;
+
+/** Why a schedule time is refused, or null when it is fine. */
+export function scheduleError(at: Date, now = Date.now()): string | null {
+  if (Number.isNaN(at.getTime())) return "Pick a date and time";
+  if (at.getTime() < now + (SCHEDULE_LIMITS.minAheadMinutes - 1) * 60_000) return `Pick a time at least ${SCHEDULE_LIMITS.minAheadMinutes} minutes from now`;
+  if (at.getTime() > now + SCHEDULE_LIMITS.maxAheadDays * 86_400_000) return `Pick a time within ${SCHEDULE_LIMITS.maxAheadDays} days`;
+  return null;
+}
+
+/** One waiting post in the Scheduled list (`GET /api/scheduled`). */
+export type ScheduledItem = {
+  type: "article" | WishKind;
+  id: string;
+  title: string;
+  imageUrl: string | null;
+  scheduledAt: string;
 };
 
 /* ─────────────── Demo engagement (owner 2026-11-02; local / staging only) ─────────────── */
@@ -1215,6 +1243,11 @@ export const saveArticleSchema = z.object({
   blurb: z.string().trim().max(BLURB.hardMax, `Keep the blurb under ${BLURB.hardMax} characters`).nullable().optional(),
   /** Members-only (owner 2026-10-14): publishing it needs the author's membership price (Settings). */
   premium: z.boolean().optional().default(false),
+  /**
+   * Schedule (owner 2026-11-06): with `action: "publish"`, the story is checked like a publish and kept as a draft
+   * that goes live on its own at this time (SCHEDULE_LIMITS). Saving it as a draft again takes it off the schedule.
+   */
+  scheduledAt: z.string().datetime({ offset: true }).nullable().optional(),
   action: z.enum(["draft", "publish"]),
 });
 export type SaveArticleInput = z.input<typeof saveArticleSchema>;

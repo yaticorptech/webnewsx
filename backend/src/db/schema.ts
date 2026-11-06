@@ -314,6 +314,8 @@ export const article = pgTable(
     postedById: text("posted_by_id").references((): AnyPgColumn => user.id, { onDelete: "set null" }),
     /** A group Writer sent this draft to the group's Editors (cleared when it goes live or is saved as a draft again). */
     groupSubmittedAt: tsMs("group_submitted_at"),
+    /** Scheduled publishing (owner 2026-11-06): a draft goes live on its own at this time (lib/scheduled-publish-worker.ts). */
+    scheduledAt: tsMs("scheduled_at"),
   },
   (t) => [
     index("article_feed_idx").on(t.status, t.publishedAt.desc(), t.id.desc()),
@@ -325,6 +327,7 @@ export const article = pgTable(
     index("article_review_idx").on(t.status, t.submittedAt),
     index("article_pinned_idx").on(t.pinOrder).where(sql`${t.pinnedAt} is not null`),
     index("article_press_meet_idx").on(t.pressMeetId).where(sql`${t.pressMeetId} is not null`),
+    index("article_scheduled_idx").on(t.scheduledAt).where(sql`${t.scheduledAt} is not null and ${t.status} = 'draft'`),
     check("article_status_valid", sql`${t.status} in ('draft', 'in_review', 'published')`),
     check("article_category_valid", sql.raw(`category in (${CATEGORY_VALUES.map((c) => `'${c}'`).join(", ")})`)),
     check("article_template_valid", sql.raw(`template in (${POSTER_TEMPLATE_VALUES.map((v) => `'${v}'`).join(", ")})`)),
@@ -681,6 +684,8 @@ export const wish = pgTable(
     createdAt: tsMs("created_at").notNull().defaultNow(),
     /** Not used: wishes don't expire (owner 2026-10-31). */
     expiresAt: tsMs("expires_at").notNull(),
+     /** Scheduled (owner 2026-11-06): hidden from the feed until this time (lib/scheduled-publish-worker.ts). */
+    scheduledAt: tsMs("scheduled_at"),
   },
   (t) => [index("wish_expires_idx").on(t.expiresAt), index("wish_author_idx").on(t.authorId, t.createdAt.desc())],
 );

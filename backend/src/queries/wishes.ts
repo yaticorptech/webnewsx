@@ -3,7 +3,7 @@ import { db } from "../db/client.js";
 import { user, wish, wishComment } from "../db/schema.js";
 import { ApiError, validationError } from "../lib/errors.js";
 import { KEY_PATTERN, storage } from "../lib/storage.js";
-import { WISH_LIMITS, WISH_QUICK_COMMENTS, canPublish, type Role, type Wish, type WishComment, type WishInput, type WishKind, type WishTemplate } from "../shared/contracts.js";
+import { WISH_LIMITS, WISH_QUICK_COMMENTS, canPublish, scheduleError, type Role, type Wish, type WishComment, type WishInput, type WishKind, type WishTemplate } from "../shared/contracts.js";
 import { isUuid } from "./shared.js";
 
 const DAY = 86_400_000;
@@ -48,6 +48,7 @@ function toWish(row: Row, viewer: { id: string; role: Role } | null, comments?: 
     eventAt: row.eventAt?.toISOString() ?? null,
     venue: row.venue,
     createdAt: row.createdAt.toISOString(),
+    scheduledAt: row.scheduledAt?.toISOString() ?? null,
     author: { id: row.authorId, username: row.username ?? "", name: row.name, image: row.image },
     canDelete: viewer !== null && (viewer.id === row.authorId || viewer.role === "admin"),
     commentCount: comments?.count ?? 0,
@@ -68,6 +69,7 @@ const columns = {
   venue: wish.venue,
   createdAt: wish.createdAt,
   expiresAt: wish.expiresAt,
+  scheduledAt: wish.scheduledAt,
   username: user.username,
   name: user.name,
   image: user.image,
@@ -80,7 +82,8 @@ export async function activeWishes(viewer: { id: string; role: Role } | null, li
     .from(wish)
     .innerJoin(user, eq(user.id, wish.authorId))
     // `authorUsername`: one person's wishes, for their profile's Wishes tab (owner 2026-11-02).
-    .where(and(isNull(user.suspendedAt), authorUsername ? eq(user.username, authorUsername) : undefined))
+    // Scheduled ones stay out until their time (owner 2026-11-06).
+    .where(and(isNull(user.suspendedAt), isNull(wish.scheduledAt), authorUsername ? eq(user.username, authorUsername) : undefined))
     .orderBy(desc(wish.createdAt))
     .limit(limit);
   const comments = await commentsFor(rows.map((row) => row.id));
@@ -104,6 +107,11 @@ export async function createWish(author: { id: string; role: Role }, input: Wish
     photo = { url: storage.urlFor(key), key };
   }
   const now = Date.now();
+  const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : null;
+  if (scheduledAt) {
+    const issue = scheduleError(scheduledAt, now);
+    if (issue) throw validationError({ scheduledAt: issue });
+  }
   let eventAt: Date | null = null;
   let expiresAt = new Date(now + WISH_LIMITS.birthdayDays * DAY);
   if (input.kind === "invitation") {
@@ -125,6 +133,7 @@ export async function createWish(author: { id: string; role: Role }, input: Wish
       eventAt,
       venue: input.kind === "invitation" ? input.venue || null : null,
       expiresAt,
+      scheduledAt,
     })
     .returning({ id: wish.id });
   const [full] = await db.select(columns).from(wish).innerJoin(user, eq(user.id, wish.authorId)).where(eq(wish.id, row!.id)).limit(1);

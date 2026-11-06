@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ComposerRoot } from "@/components/composer/composer-root";
+import { ScheduledButton } from "@/components/scheduled/scheduled-list";
 import { PublishKind } from "@/components/wishes/publish-kind";
 import { WishComposer } from "@/components/wishes/wish-composer";
 import { canPublish } from "@/lib/shared/contracts";
@@ -34,7 +35,7 @@ export default async function PublishPage({ searchParams }: PageProps<"/publish"
   if (needsPressPass) {
     return (
       <>
-        <WishComposer author={author} invitations={false} />
+        <WishComposer author={author} invitations={false} kindSwitch={<ScheduledButton className="self-end" />} />
         <p className="mx-auto mt-8 w-full max-w-5xl text-sm text-muted">
           Want to publish news stories?{" "}
           <Link href="/press-pass" className="font-semibold text-brand hover:underline">

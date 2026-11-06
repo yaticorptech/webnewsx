@@ -19,6 +19,7 @@ export const qk = {
   feedAll: ["feed"] as const,
   /** Comments under one story (newest first, cursor pages). */
   wishes: ["wishes"] as const,
+  scheduled: ["scheduled"] as const,
   comments: (articleId: string) => ["comments", articleId] as const,
   /** Replies to one top-level comment. */
   replies: (commentId: string) => ["comment-replies", commentId] as const,
