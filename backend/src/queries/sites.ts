@@ -36,6 +36,16 @@ import { listMemberGroups } from "./groups.js";
 import { dnsHost, pointingRecords } from "./press-pass.js";
 import { descNullsLast, isUuid } from "./shared.js";
 import type { z } from "zod";
+import { storage } from "../lib/storage.js";
+
+/**
+ * The logo's storage key, worked out from its URL when the form didn't send one (owner 2026-11-06: webnews.in's logo
+ * vanished — a later save sent the URL without its key, so the upload sweep saw the file as unused and deleted it).
+ */
+function logoKeyFor(logoUrl: string | null | undefined, logoKey: string | null | undefined): string | null {
+  if (!logoUrl) return null;
+  return storage.keyFromUrl(logoUrl) ?? logoKey ?? null;
+}
 import { shownCount } from "../lib/demo-engagement.js";
 
 /*
@@ -326,7 +336,7 @@ export async function saveMySite(person: Person, input: SetupData): Promise<void
     title: input.title,
     tagline: input.tagline ?? null,
     logoUrl: input.logoUrl ?? null,
-    logoKey: input.logoUrl ? (input.logoKey ?? null) : null,
+    logoKey: logoKeyFor(input.logoUrl, input.logoKey),
     city: input.city ?? null,
     contactEmail: input.contactEmail ?? null,
     contactPhone: input.contactPhone ?? null,
@@ -542,7 +552,7 @@ export async function updateSiteSettings(site: PublisherSiteRecord, input: z.out
       title: input.title,
       tagline: input.tagline ?? null,
       logoUrl: input.logoUrl ?? null,
-      logoKey: input.logoUrl ? (input.logoKey ?? null) : null,
+      logoKey: logoKeyFor(input.logoUrl, input.logoKey),
       city: input.city ?? null,
       contactEmail: input.contactEmail ?? null,
       contactPhone: input.contactPhone ?? null,

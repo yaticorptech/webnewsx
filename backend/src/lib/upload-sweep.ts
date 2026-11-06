@@ -17,9 +17,11 @@ export type SweepResult = { scanned: number; deleted: number };
 /** Keys (of `keys`) still referenced by a user's avatar or any article's cover, video or article image / video. */
 async function referencedKeys(keys: string[], driver: StorageDriver): Promise<Set<string>> {
   const urls = new Map(keys.map((key) => [driver.urlFor(key), key]));
-  const [avatars, chatPhotos, covers, videos, articleImages, articleVideos, frames, storyFrames, siteLogos, siteAds, wishPhotos] = await Promise.all([
+  const [avatars, chatPhotos, siteLogoUrls, covers, videos, articleImages, articleVideos, frames, storyFrames, siteLogos, siteAds, wishPhotos] = await Promise.all([
     db.select({ image: user.image }).from(user).where(inArray(user.image, [...urls.keys()])),
     db.select({ image: conversation.image }).from(conversation).where(inArray(conversation.image, [...urls.keys()])),
+    // Site logos by URL too, so a logo saved without its key is never swept (owner 2026-11-06).
+    db.select({ image: publisherSite.logoUrl }).from(publisherSite).where(inArray(publisherSite.logoUrl, [...urls.keys()])),
     db.select({ key: article.coverKey }).from(article).where(inArray(article.coverKey, keys)),
     db.select({ key: article.videoKey }).from(article).where(inArray(article.videoKey, keys)),
     db.select({ key: article.articleImageKey }).from(article).where(inArray(article.articleImageKey, keys)),
@@ -34,7 +36,7 @@ async function referencedKeys(keys: string[], driver: StorageDriver): Promise<Se
     db.select({ key: wish.photoKey }).from(wish).where(inArray(wish.photoKey, keys)),
   ]);
   const used = new Set<string>();
-  for (const { image } of [...avatars, ...chatPhotos]) {
+  for (const { image } of [...avatars, ...chatPhotos, ...siteLogoUrls]) {
     const key = image ? urls.get(image) : undefined;
     if (key) used.add(key);
   }
