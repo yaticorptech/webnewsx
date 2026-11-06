@@ -139,10 +139,11 @@ function BookCard({ preview, label }: { preview: boolean; label: string }) {
 
 type PositionAd = NonNullable<SiteAdsByPosition[SiteAdPosition]>[number];
 
-function AdCreative({ ad }: { ad: PositionAd }) {
+/** `onDone`: a video ad has played to its end (or failed) — the rotation moves on (owner 2026-11-06: "play full"). */
+function AdCreative({ ad, onDone }: { ad: PositionAd; onDone?: () => void }) {
   const body = ad.creativeUrl ? (
     ad.video ? (
-      <video src={ad.creativeUrl} autoPlay muted loop playsInline className="size-full bg-black object-contain" />
+      <video src={ad.creativeUrl} autoPlay muted playsInline onEnded={onDone} onError={onDone} className="size-full bg-black object-cover" />
     ) : (
       <img src={ad.creativeUrl} alt={ad.title} className="size-full bg-white object-contain" />
     )
@@ -165,7 +166,8 @@ function AdCreative({ ad }: { ad: PositionAd }) {
 
 /**
  * A position's cards: its booked ads one after another, then the "Advertise here" card (owner 2026-10-31: "show ads
- * then flip and this card"), each flipping in after SITE_AD_ROTATE_MS. With no ads only the card shows.
+ * then flip and this card"). Images and the card stay SITE_AD_ROTATE_MS; a video ad plays through once, start to end,
+ * before the next card flips in (owner 2026-11-06). With no ads only the card shows.
  */
 function AdRotation({ position, ads, preview, className }: { position: SiteAdPosition; ads: SiteAdsByPosition; preview: boolean; className?: string }) {
   const list = ads[position] ?? [];
@@ -173,18 +175,21 @@ function AdRotation({ position, ads, preview, className }: { position: SiteAdPos
   const slides = list.length + 1;
   const [index, setIndex] = useState(0);
 
-  useEffect(() => {
-    if (slides < 2) return;
-    const timer = window.setInterval(() => setIndex((i) => (i + 1) % slides), SITE_AD_ROTATE_MS);
-    return () => window.clearInterval(timer);
-  }, [slides]);
-
   const at = index % slides;
   const ad = at < list.length ? list[at] : undefined;
+  const playsThrough = Boolean(ad?.video && ad.creativeUrl);
+  const next = () => setIndex((i) => (i + 1) % slides);
+
+  useEffect(() => {
+    if (slides < 2 || playsThrough) return; // a video moves on from its own `ended`
+    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % slides), SITE_AD_ROTATE_MS);
+    return () => window.clearTimeout(timer);
+  }, [slides, at, playsThrough]);
+
   return (
     <div className={`overflow-hidden rounded-lg ${className ?? ""}`} style={{ aspectRatio: spec.ratio }}>
       <div key={`${at}-${slides}`} className={`size-full rounded-[inherit] ${slides > 1 ? "pub-adflip" : ""}`}>
-        {ad ? <AdCreative ad={ad} /> : <BookCard preview={preview} label={`Ad space · ${spec.recW}×${spec.recH}`} />}
+        {ad ? <AdCreative ad={ad} onDone={slides > 1 ? next : undefined} /> : <BookCard preview={preview} label={`Ad space · ${spec.recW}×${spec.recH}`} />}
       </div>
     </div>
   );
