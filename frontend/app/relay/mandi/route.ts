@@ -1,11 +1,10 @@
 /**
  * Farm prices relay (owner 2026-11-07: "i need live arecanut price coconut price"). data.gov.in doesn't answer the API
  * server (Railway, Europe), so the backend (routes/mandi.ts) asks for AGMARKNET's daily Karnataka mandi prices here
- * instead: this runs in Mumbai (bom1) and passes the one dataset through. It holds no key — the caller sends its own —
+ * instead: this runs in Mumbai (bom1 — set in vercel.json; data.gov.in also refuses Vercel's US region) and passes the one dataset through. It holds no key — the caller sends its own —
  * and it only ever fetches that dataset for Karnataka, so it can't be used to reach anything else.
  */
 export const runtime = "nodejs";
-export const preferredRegion = "bom1";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 

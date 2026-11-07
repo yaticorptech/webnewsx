@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app/relay/mandi/route.ts": {
+      "regions": ["bom1"]
+    }
+  }
+}
