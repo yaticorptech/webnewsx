@@ -268,6 +268,11 @@ const storySchema = z.object({
   sourceUrl: z.string().trim().url().max(LIMITS.linkMax).optional(),
   /** true → saved as a draft in your Newsroom instead of going live. */
   draft: z.boolean().optional(),
+  /**
+   * Goes live by itself at this time (ISO 8601, 5 min – 30 days ahead), like the composer's Schedule (owner
+   * 2026-11-07: a day's stories queued in the morning and posted through the day). Kept as a draft until then.
+   */
+  scheduledAt: z.string().datetime({ offset: true }).optional(),
 });
 
 const esc = (t: string) =>
@@ -464,6 +469,7 @@ export function publishApiRoutes({ limiter }: RouteDeps) {
           blurb: input.blurb || blurbFrom(htmlToText(bodyHtml)),
           premium: false,
           action: input.draft ? "draft" : "publish",
+          scheduledAt: input.draft ? undefined : input.scheduledAt,
         },
       );
     } catch (error) {
@@ -488,7 +494,7 @@ export function publishApiRoutes({ limiter }: RouteDeps) {
           : "published"
         : result.status === "in_review"
           ? "submitted"
-          : "draft_saved";
+          : "draft_saved"; // a scheduled story is a draft until its time (as in the composer)
     await logContent(c, action, {
       id: a.id,
       title: a.title ?? null,
@@ -500,6 +506,7 @@ export function publishApiRoutes({ limiter }: RouteDeps) {
         externalId: input.externalId ?? null,
         status: result.status,
         url: storyUrl(a.slug ?? null),
+        ...("scheduledAt" in result ? { scheduledAt: result.scheduledAt } : {}),
         ...("message" in result ? { message: result.message } : {}),
       },
       existing ? 200 : 201,
