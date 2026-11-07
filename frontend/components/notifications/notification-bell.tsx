@@ -457,7 +457,7 @@ export function notificationParts(item: AppNotification, username: string, onNav
         <CalendarClock aria-hidden className="size-4.5" />
       </span>
     );
-    text = <>Your scheduled story is live</>;
+    text = <>Your scheduled post has been published</>;
   } else if (item.type === "story_returned") {
     // Opens the returned draft in the composer, where the Desk's note sits on top (owner 2026-10-01).
     href = item.story?.id ? `/publish/${item.story.id}` : null;

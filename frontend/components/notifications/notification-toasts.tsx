@@ -101,7 +101,7 @@ function copyOf(item: AppNotification, username: string): { title: string; descr
     case "press_meet_received":
       return { title: "Payment confirmed", description: `${who} confirmed receiving${fee ? ` ${fee}` : " the payment"}.`, href: meetHref, cta: "Open" };
     case "story_scheduled_live":
-      return { title: "Your scheduled story is live", description: item.story?.title, href: item.story?.slug ? `/a/${item.story.slug}` : null, cta: "View" };
+      return { title: "Your scheduled post has been published", description: item.story?.title, href: item.story?.slug ? `/a/${item.story.slug}` : null, cta: "View" };
     case "story_returned":
       return { title: "The Editor Desk returned your story", description: item.note ?? item.story?.title, href: item.story?.id ? `/publish/${item.story.id}` : `/${username}?tab=drafts`, cta: "Open" };
     case "story_hidden":

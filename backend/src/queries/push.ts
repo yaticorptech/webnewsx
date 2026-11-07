@@ -203,7 +203,7 @@ function toMessage(row: QueuedRow): PushMessage | null {
     case "new_story":
       return { title: `${who} posted a new article`, body: story, url: storyUrl, tag, imageUrl: httpsOnly(row.cover_url) };
     case "story_scheduled_live":
-      return { title: "Your scheduled story is live", body: story, url: storyUrl, tag, imageUrl: httpsOnly(row.cover_url) };
+      return { title: "Your scheduled post has been published", body: story, url: storyUrl, tag, imageUrl: httpsOnly(row.cover_url) };
     case "new_follower":
       return {
         title: `${who} started following you`,
