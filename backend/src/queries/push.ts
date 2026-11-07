@@ -202,6 +202,13 @@ function toMessage(row: QueuedRow): PushMessage | null {
   switch (row.type) {
     case "new_story":
       return { title: `${who} posted a new article`, body: story, url: storyUrl, tag, imageUrl: httpsOnly(row.cover_url) };
+    case "birthday_wish":
+      return {
+        title: `Happy Birthday${row.note ? `, ${row.note}` : ""}! 🎂`,
+        body: "Wishing you a wonderful year ahead — from all of us at WebNEWS.",
+        url: "/",
+        tag,
+      };
     case "story_scheduled_live":
       return { title: "Your scheduled post has been published", body: story, url: storyUrl, tag, imageUrl: httpsOnly(row.cover_url) };
     case "new_follower":

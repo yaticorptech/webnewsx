@@ -32,6 +32,7 @@ const POPUP_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "press_meet_joined",
   "story_returned",
   "story_scheduled_live",
+  "birthday_wish",
   "story_hidden",
   "story_warned",
   "community_invite",
@@ -100,6 +101,8 @@ function copyOf(item: AppNotification, username: string): { title: string; descr
       return { title: "Your fee was released", description: `${who} has released your fee${fee ? ` of ${fee}` : ""}. Please confirm once you receive it.`, href: meetHref, cta: "Open" };
     case "press_meet_received":
       return { title: "Payment confirmed", description: `${who} confirmed receiving${fee ? ` ${fee}` : " the payment"}.`, href: meetHref, cta: "Open" };
+    case "birthday_wish":
+      return { title: `Happy Birthday${item.note ? `, ${item.note}` : ""}! 🎂`, description: "Wishing you a wonderful year ahead — from all of us at WebNEWS.", href: null, cta: "Thank you" };
     case "story_scheduled_live":
       return { title: "Your scheduled post has been published", description: item.story?.title, href: item.story?.slug ? `/a/${item.story.slug}` : null, cta: "View" };
     case "story_returned":

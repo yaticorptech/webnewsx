@@ -6,6 +6,7 @@ import {
   Bell,
   CalendarClock,
   CalendarX2,
+  Cake,
   Crown,
   EyeOff,
   FileText,
@@ -447,6 +448,20 @@ export function notificationParts(item: AppNotification, username: string, onNav
     text = (
       <>
         <strong className="font-bold text-ink">{item.actor?.name ?? "A publisher you follow"}</strong> posted a new article
+      </>
+    );
+  } else if (item.type === "birthday_wish") {
+    // From WebNEWS on their birthday (owner 2026-11-07).
+    href = null;
+    icon = (
+      <span className="flex size-10 items-center justify-center rounded-full bg-tint text-brand">
+        <Cake aria-hidden className="size-4.5" />
+      </span>
+    );
+    text = (
+      <>
+        <strong className="font-bold text-ink">Happy Birthday{item.note ? `, ${item.note}` : ""}! 🎂</strong> Wishing you a wonderful year
+        ahead — from all of us at WebNEWS.
       </>
     );
   } else if (item.type === "story_scheduled_live") {

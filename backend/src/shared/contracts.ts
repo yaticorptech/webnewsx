@@ -1777,6 +1777,8 @@ export const NOTIFICATION_TYPES = [
   "outlet_invite",
   // Scheduled stories (owner 2026-11-07): the author hears when their story went live on its own; actor = the author.
   "story_scheduled_live",
+  // Birthday wishes (owner 2026-11-07): from WebNEWS on a Press Pass holder's birthday; `note` = their first name.
+  "birthday_wish",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
