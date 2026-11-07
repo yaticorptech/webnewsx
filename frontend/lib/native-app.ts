@@ -42,7 +42,17 @@ export type PushNotificationsPlugin = {
   checkPermissions(): Promise<{ receive: PushPermission }>;
   requestPermissions(): Promise<{ receive: PushPermission }>;
   register(): Promise<void>;
-  createChannel(channel: { id: string; name: string; description?: string; importance?: 1 | 2 | 3 | 4 | 5; visibility?: -1 | 0 | 1 }): Promise<void>;
+  createChannel(channel: {
+    id: string;
+    name: string;
+    description?: string;
+    importance?: 1 | 2 | 3 | 4 | 5;
+    visibility?: -1 | 0 | 1;
+    /** No `sound` = the phone's default notification sound (a value names a file in res/raw). */
+    vibration?: boolean;
+    lights?: boolean;
+    lightColor?: string;
+  }): Promise<void>;
   addListener(event: "registration", fn: (token: { value: string }) => void): Promise<PluginListener>;
   addListener(event: "registrationError", fn: (error: { error: string }) => void): Promise<PluginListener>;
   /** A push that arrived while the app is open (Android shows nothing itself then). */

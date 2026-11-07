@@ -13,7 +13,7 @@ import { nativePush, type PushPermission, type PushNotificationsPlugin } from ".
  */
 
 /** The Android channel the backend sends to (lib/push.ts ANDROID_CHANNEL_ID). */
-const CHANNEL_ID = "webnews";
+const CHANNEL_ID = "webnews_alerts";
 
 let started = false;
 let push: { plugin: PushNotificationsPlugin; platform: "android" | "ios" } | null = null;
@@ -63,7 +63,7 @@ async function start(): Promise<void> {
   if (!push) return;
   const { plugin } = push;
   await plugin
-    .createChannel({ id: CHANNEL_ID, name: "WebNewsX", description: "Followers, stories, likes, comments, messages and press meets", importance: 4, visibility: 1 })
+    .createChannel({ id: CHANNEL_ID, name: "WebNewsX alerts", description: "Followers, stories, likes, comments, messages and press meets", importance: 4, visibility: 1, vibration: true, lights: true, lightColor: "#E30613" })
     .catch(() => {});
   await plugin.addListener("registration", ({ value }) => {
     token = value;

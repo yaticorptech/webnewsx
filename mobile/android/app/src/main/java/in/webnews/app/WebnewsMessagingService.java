@@ -1,6 +1,7 @@
 package in.webnews.app;
 
 import android.app.ActivityManager;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -12,6 +13,9 @@ import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Shader;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,7 +38,14 @@ import java.util.Map;
  * While the app is open on screen nothing is drawn: the site shows its own popup.
  */
 public class WebnewsMessagingService extends MessagingService {
-    private static final String CHANNEL_ID = "webnews";
+    /**
+     * "webnews_alerts" (owner 2026-11-07: "notification sound also"): a fresh channel with the sound and vibration set
+     * explicitly. A channel's sound can't be changed once created, so phones that had the old "webnews" channel
+     * silenced (several Android skins mute new apps) start clean; the old channel is removed.
+     */
+    private static final String CHANNEL_ID = "webnews_alerts";
+    private static final String OLD_CHANNEL_ID = "webnews";
+    private static final long[] VIBRATION = {0, 250, 150, 250};
     private static final String GROUP = "in.webnews.app.NOTIFICATIONS";
     private static final int BRAND = 0xFFE30613;
 
@@ -73,6 +84,11 @@ public class WebnewsMessagingService extends MessagingService {
             .setWhen(System.currentTimeMillis())
             .setShowWhen(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            // Sound + vibration (also on Android 7 and older, which have no channels); in a stack the newest one rings.
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setVibrate(VIBRATION)
+            .setDefaults(NotificationCompat.DEFAULT_LIGHTS)
+            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
             .setCategory("message".equals(style) ? NotificationCompat.CATEGORY_MESSAGE : NotificationCompat.CATEGORY_SOCIAL)
             .setGroup(GROUP)
             .setContentIntent(openIntent(context, url, messageId, id));
@@ -112,6 +128,9 @@ public class WebnewsMessagingService extends MessagingService {
                 .setColor(BRAND)
                 .setGroup(GROUP)
                 .setGroupSummary(true)
+                // The summary never rings: only the push itself does (it would otherwise swallow the sound).
+                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+                .setSilent(true)
                 .setAutoCancel(true)
                 .build()
         );
@@ -129,9 +148,22 @@ public class WebnewsMessagingService extends MessagingService {
     private static void ensureChannel(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager manager = context.getSystemService(NotificationManager.class);
-        if (manager == null || manager.getNotificationChannel(CHANNEL_ID) != null) return;
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "WebNewsX", NotificationManager.IMPORTANCE_HIGH);
+        if (manager == null) return;
+        if (manager.getNotificationChannel(OLD_CHANNEL_ID) != null) manager.deleteNotificationChannel(OLD_CHANNEL_ID);
+        if (manager.getNotificationChannel(CHANNEL_ID) != null) return;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "WebNewsX alerts", NotificationManager.IMPORTANCE_HIGH);
         channel.setDescription("Followers, stories, likes, comments, messages and press meets");
+        Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        channel.setSound(sound, new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build());
+        channel.enableVibration(true);
+        channel.setVibrationPattern(VIBRATION);
+        channel.enableLights(true);
+        channel.setLightColor(BRAND);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        channel.setShowBadge(true);
         manager.createNotificationChannel(channel);
     }
 

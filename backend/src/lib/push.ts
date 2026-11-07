@@ -31,7 +31,7 @@ export type PushMessage = {
 };
 
 /** The app's Android notification channel (created by the site on the phone, lib/native-push.ts). */
-export const ANDROID_CHANNEL_ID = "webnews";
+export const ANDROID_CHANNEL_ID = "webnews_alerts";
 
 let app: App | null = null;
 
