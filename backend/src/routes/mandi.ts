@@ -132,19 +132,40 @@ const marketName = (s: string | undefined) => {
 };
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-/** Every Karnataka record of the day (paged: the API returns at most PAGE rows a call). */
+/**
+ * Where to ask: data.gov.in itself, then the site's Mumbai relay (frontend app/relay/mandi). data.gov.in doesn't answer
+ * the live API server (Railway, Europe) — owner 2026-11-07: the Market page showed no arecanut / coconut prices.
+ */
+const SOURCES = [
+  (params: URLSearchParams) => `${RESOURCE}?${params}`,
+  (params: URLSearchParams) => `${env.FRONTEND_URL.replace(/\/+$/, "")}/relay/mandi?${params}`,
+];
+
+/** One page of records, or null when this source can't be reached. */
+async function fetchPage(source: (p: URLSearchParams) => string, key: string, page: number): Promise<{ records: Row[]; total: number } | null> {
+  const params = new URLSearchParams({ "api-key": key, format: "json", limit: String(PAGE), offset: String(page * PAGE), "filters[state.keyword]": STATE });
+  const res = await fetch(source(params), { signal: AbortSignal.timeout(20_000) }).catch(() => null);
+  if (!res?.ok) return null;
+  const data = (await res.json().catch(() => null)) as { records?: Row[]; total?: number } | null;
+  return data?.records ? { records: data.records, total: data.total ?? 0 } : null;
+}
+
+/** Every Karnataka record of the day (paged: the API returns at most PAGE rows a call), from the first source that answers. */
 async function fetchAll(key: string): Promise<Row[]> {
-  const rows: Row[] = [];
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const params = new URLSearchParams({ "api-key": key, format: "json", limit: String(PAGE), offset: String(page * PAGE), "filters[state.keyword]": STATE });
-    const res = await fetch(`${RESOURCE}?${params}`, { signal: AbortSignal.timeout(20_000) }).catch(() => null);
-    if (!res?.ok) break;
-    const data = (await res.json().catch(() => null)) as { records?: Row[]; total?: number } | null;
-    const batch = data?.records ?? [];
-    rows.push(...batch);
-    if (batch.length < PAGE || rows.length >= (data?.total ?? 0)) break;
+  for (const [i, source] of SOURCES.entries()) {
+    const rows: Row[] = [];
+    let reached = false;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const data = await fetchPage(source, key, page);
+      if (!data) break;
+      reached = true;
+      rows.push(...data.records);
+      if (data.records.length < PAGE || rows.length >= data.total) break;
+    }
+    if (reached) return rows;
+    console.warn(`[mandi] ${i === 0 ? "data.gov.in" : "the Mumbai relay"} did not answer${i === 0 ? "; trying the relay" : ""}`);
   }
-  return rows;
+  return [];
 }
 
 type Report = { commodity: string; price: MandiPrice };
