@@ -9,6 +9,7 @@ import { draftsPath } from "@/lib/hooks/use-native-app";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BackButton } from "@/components/layout/back-button";
 import { ScheduleDialog, formatScheduled } from "@/components/scheduled/schedule-dialog";
+import { ScheduledButton } from "@/components/scheduled/scheduled-list";
 import { UserHandle } from "@/components/brand/user-handle";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { Avatar } from "@/components/ui/avatar";
@@ -1540,6 +1541,8 @@ function ComposerHeader({
               Drafts
             </Button>
           )}
+          {/* Beside Drafts (owner 2026-11-07): the stories waiting to go live, with their count. */}
+          {draftsHref && <ScheduledButton compact />}
           {onDelete && (
             <Button
               variant="ghost"

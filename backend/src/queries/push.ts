@@ -90,7 +90,7 @@ export async function drainPushQueue(): Promise<number> {
       select c.id, c.user_id, c.type, c.note, c.article_id, c.article_title, c.reason, c.reports, c.amount,
         c.conversation_id, c.press_meet_id,
         recipient.username as recipient_username, actor.name as actor_name, actor.username as actor_username, actor.image as actor_image,
-        a.slug, a.cover_url, conv.name as conv_name, conv.kind as conv_kind, (cm.status = 'request') as conv_request,
+        a.slug, case when a.article_image_url like 'https://%' then a.article_image_url else a.cover_url end as cover_url, conv.name as conv_name, conv.kind as conv_kind, (cm.status = 'request') as conv_request,
         pm.title as meet_title, pm.starts_at as meet_starts_at, pm.platform as meet_platform,
         case
           when c.type = 'story_liked' then
@@ -147,6 +147,7 @@ export function phonePushFor(row: QueuedRow): PushMessage | null {
 /** One action button per kind of notification (owner 2026-10-16, Instagram-style pushes). */
 const ACTIONS: Partial<Record<NotificationType, string>> = {
   new_story: "Read now",
+  story_scheduled_live: "View story",
   story_liked: "View",
   story_commented: "Reply",
   new_follower: "View profile",
@@ -165,7 +166,7 @@ const ACTIONS: Partial<Record<NotificationType, string>> = {
  * (expands like a post), chats stacked as a conversation, and one action button. Drawn by the app on Android.
  */
 function instagramStyle(message: PushMessage, row: QueuedRow): PushMessage {
-  const storyPush = row.type === "new_story" || row.type === "story_liked" || row.type === "story_commented";
+  const storyPush = row.type === "new_story" || row.type === "story_scheduled_live" || row.type === "story_liked" || row.type === "story_commented";
   const chat = row.type === "message";
   const press = row.type.startsWith("press_meet_");
   const actionLabel = ACTIONS[row.type] ?? (press ? "Open" : null);
@@ -201,6 +202,8 @@ function toMessage(row: QueuedRow): PushMessage | null {
   switch (row.type) {
     case "new_story":
       return { title: `${who} posted a new article`, body: story, url: storyUrl, tag, imageUrl: httpsOnly(row.cover_url) };
+    case "story_scheduled_live":
+      return { title: "Your scheduled story is live", body: story, url: storyUrl, tag, imageUrl: httpsOnly(row.cover_url) };
     case "new_follower":
       return {
         title: `${who} started following you`,

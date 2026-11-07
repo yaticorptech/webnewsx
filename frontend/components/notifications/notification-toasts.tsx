@@ -31,6 +31,7 @@ const POPUP_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "press_meet_public_live",
   "press_meet_joined",
   "story_returned",
+  "story_scheduled_live",
   "story_hidden",
   "story_warned",
   "community_invite",
@@ -99,6 +100,8 @@ function copyOf(item: AppNotification, username: string): { title: string; descr
       return { title: "Your fee was released", description: `${who} has released your fee${fee ? ` of ${fee}` : ""}. Please confirm once you receive it.`, href: meetHref, cta: "Open" };
     case "press_meet_received":
       return { title: "Payment confirmed", description: `${who} confirmed receiving${fee ? ` ${fee}` : " the payment"}.`, href: meetHref, cta: "Open" };
+    case "story_scheduled_live":
+      return { title: "Your scheduled story is live", description: item.story?.title, href: item.story?.slug ? `/a/${item.story.slug}` : null, cta: "View" };
     case "story_returned":
       return { title: "The Editor Desk returned your story", description: item.note ?? item.story?.title, href: item.story?.id ? `/publish/${item.story.id}` : `/${username}?tab=drafts`, cta: "Open" };
     case "story_hidden":

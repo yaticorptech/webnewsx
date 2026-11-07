@@ -449,6 +449,15 @@ export function notificationParts(item: AppNotification, username: string, onNav
         <strong className="font-bold text-ink">{item.actor?.name ?? "A publisher you follow"}</strong> posted a new article
       </>
     );
+  } else if (item.type === "story_scheduled_live") {
+    // Their scheduled story went live on its own (owner 2026-11-07).
+    href = item.story?.slug ? `/a/${item.story.slug}` : null;
+    icon = (
+      <span className="flex size-10 items-center justify-center rounded-full bg-tint text-brand">
+        <CalendarClock aria-hidden className="size-4.5" />
+      </span>
+    );
+    text = <>Your scheduled story is live</>;
   } else if (item.type === "story_returned") {
     // Opens the returned draft in the composer, where the Desk's note sits on top (owner 2026-10-01).
     href = item.story?.id ? `/publish/${item.story.id}` : null;

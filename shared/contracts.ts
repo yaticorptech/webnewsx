@@ -36,7 +36,7 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   // Newsy — the 9:16 feed, first called Reels (owner 2026-09-30).
   "newsy", "reel", "reels",
   // Publisher websites (owner 2026-10-29).
-  "pub", "site-setup",
+  "pub", "site-setup", "relay",
   // Birthday wishes & invitations (owner 2026-10-31).
   "wish", "wishes",
 ]);
@@ -1774,6 +1774,8 @@ export const NOTIFICATION_TYPES = [
   "membership_ended",
   // Group accounts (owner 2026-10-23): invited to post for an outlet; the actor is the group, `note` the role.
   "outlet_invite",
+  // Scheduled stories (owner 2026-11-07): the author hears when their story went live on its own; actor = the author.
+  "story_scheduled_live",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

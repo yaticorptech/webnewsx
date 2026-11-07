@@ -23,7 +23,7 @@ const TYPE = {
  * The small "Scheduled" button on the + page (owner 2026-11-06: "show scheduled articles list also in post article page
  * small button") with the count waiting; it opens the list. `?scheduled=1` opens it straight away (after scheduling).
  */
-export function ScheduledButton({ className }: { className?: string }) {
+export function ScheduledButton({ className, compact = false }: { className?: string; /** Icon + count only on narrow phones (the composer header). */ compact?: boolean }) {
   const [open, setOpen] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("scheduled") === "1");
   const { data } = useQuery({ queryKey: qk.scheduled, queryFn: ({ signal }) => api.scheduled.list(signal), staleTime: 30_000 });
   const count = data?.items.length ?? 0;
@@ -46,7 +46,7 @@ export function ScheduledButton({ className }: { className?: string }) {
         )}
       >
         <CalendarClock aria-hidden className="size-4 text-brand" />
-        Scheduled
+        <span className={cn(compact && "max-[399px]:sr-only")}>Scheduled</span>
         {count > 0 && (
           <span className="grid min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[0.6875rem] leading-5 text-brand-contrast">{count}</span>
         )}

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 /**
  * The top of the + page for Press Pass holders (owner 2026-10-31): Article (the story composer) or Birthday wish /
  * invitation (the wish composer with all its designs). A link per choice, so each has its own address. Beside it, the
- * small Scheduled button (owner 2026-11-06).
+ * small Scheduled button (owner 2026-11-06) — on the wish page only: the article composer has it beside Drafts (2026-11-07).
  */
 export function PublishKind({ value, className }: { value: "article" | "wish"; className?: string }) {
   const options = [
@@ -36,7 +36,7 @@ export function PublishKind({ value, className }: { value: "article" | "wish"; c
         );
       })}
       </nav>
-      <ScheduledButton />
+      {value === "wish" && <ScheduledButton />}
     </div>
   );
 }

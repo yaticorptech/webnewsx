@@ -11,7 +11,7 @@ const BATCH = 20;
 /**
  * Scheduled publishing (owner 2026-11-06: "schedule it and auto upload"): every 30 s, drafts whose `scheduled_at` has
  * come go live exactly like the composer's Publish — slug + short code, publish time = now, followers' bell + phone
- * push, Instagram / Facebook auto-post, live feeds refreshed; scheduled birthday wishes / invitations join the feed. Each story is locked (`skip locked`) in its own
+ * push (and the author's own "your story is live" push), Instagram / Facebook auto-post, live feeds refreshed; scheduled birthday wishes / invitations join the feed. Each story is locked (`skip locked`) in its own
  * transaction, so several API instances never publish one twice. Returns how many went live.
  */
 export async function publishDueStories(): Promise<number> {
@@ -58,6 +58,11 @@ async function publishOne(id: string): Promise<boolean> {
           where id = ${row.id}
         `);
         await notifyFollowers(tx, row.id);
+        // The author hears too (owner 2026-11-07): "your story is live", with its photo, in the bell and on the phone.
+        await tx.execute(sql`
+          insert into notification (user_id, type, actor_id, article_id, article_title)
+          values (${row.author_id}, 'story_scheduled_live', ${row.author_id}, ${row.id}, ${row.title})
+        `);
         await enqueueSocialPosts(tx, row.id, row.author_id);
         await publishEvent(tx, { t: "article.published", id: row.id });
         return true;
