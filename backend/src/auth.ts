@@ -4,7 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "./db/client.js";
-import { authSchema, user as userTable } from "./db/schema.js";
+import { authSchema, loginEvent, user as userTable } from "./db/schema.js";
 import { env } from "./env.js";
 import { claimUnverifiedAccount, promoteListedAdmin } from "./lib/admin-emails.js";
 import { isGoogleAvatarUrl, largeGoogleAvatarUrl, rehostGoogleAvatar } from "./lib/avatar.js";
@@ -50,6 +50,18 @@ async function fillMissingAvatar(email: string, picture: string): Promise<void> 
     await db.update(userTable).set({ image, updatedAt: new Date() }).where(and(eq(userTable.id, record.id), isNull(userTable.image)));
   } catch (error) {
     console.warn("[auth] couldn't copy the Google photo:", error instanceof Error ? error.message : error);
+  }
+}
+
+/** Sign-in log (owner 2026-11-11): every new session, with its IP and device, for Desk → Visitors. Never blocks a sign-in. */
+export async function recordSignIn(
+  session: { userId: string; ipAddress?: string | null; userAgent?: string | null },
+  ctx: { path?: string } | null | undefined,
+): Promise<void> {
+  try {
+    await db.insert(loginEvent).values({ userId: session.userId, method: ctx?.path ?? null, ip: session.ipAddress ?? null, userAgent: session.userAgent ?? null });
+  } catch (error) {
+    console.warn("[auth] sign-in log failed:", error instanceof Error ? error.message : error);
   }
 }
 
@@ -261,7 +273,7 @@ export const auth = betterAuth({
         before: async (data) => ({ data: { ...data, role: "reader" } }),
       },
     },
-    session: { create: { before: beforeSessionCreate } },
+    session: { create: { before: beforeSessionCreate, after: recordSignIn } },
   },
   hooks: { before: beforeAuthRequest },
   // Logged in until you log out (owner 2026-10-01): a session lasts a year and every day of use extends it, so an account

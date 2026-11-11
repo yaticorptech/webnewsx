@@ -152,5 +152,7 @@ export const qk = {
   adminPlatformFee: ["admin", "press-meet-platform-fee"] as const,
   adminPressMeets: ["admin", "press-meets"] as const,
   adminActivity: (q = "") => ["admin", "activity", q] as const,
+  adminVisitors: (days: number, who: string, q = "") => ["admin", "visitors", days, who, q] as const,
+  adminLogins: (q = "") => ["admin", "logins", q] as const,
   adminAudit: (filters: Omit<AdminAuditQuery, "cursor"> = {}) => ["admin", "audit", filters] as const,
 } as const;

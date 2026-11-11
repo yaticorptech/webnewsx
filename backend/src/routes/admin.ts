@@ -1,5 +1,6 @@
 import { adminMembershipRules, setMembershipRules } from "../queries/memberships.js";
 import { getBehaviourOverview, getLiveVisitors, getPersonBehaviour } from "../queries/behaviour.js";
+import { getLogins, getVisitors } from "../queries/visitors.js";
 import { Hono } from "hono";
 import { z } from "zod";
 import { notFound } from "../lib/errors.js";
@@ -74,6 +75,8 @@ import {
   membershipRulesSchema,
   groupDecisionSchema,
   demoActionSchema,
+  VISITOR_WHO_VALUES,
+  type VisitorWho,
 } from "../shared/contracts.js";
 import type { AppEnv } from "../types.js";
 
@@ -300,6 +303,16 @@ export function adminRoutes() {
     const { rules } = await readJson(c, membershipRulesSchema);
     return c.json(await setMembershipRules(mustViewer(c).id, rules));
   });
+
+  // GET /api/admin/visitors?days=1|7|30&who=all|guests|signed-in&q=&cursor= — Desk → Visitors (owner 2026-11-11).
+  app.get("/visitors", async (c) => {
+    const days = [1, 7, 30].includes(Number(c.req.query("days"))) ? Number(c.req.query("days")) : 1;
+    const whoParam = c.req.query("who");
+    const who = (VISITOR_WHO_VALUES as readonly string[]).includes(whoParam ?? "") ? (whoParam as VisitorWho) : "all";
+    return c.json(await getVisitors(days, who, (c.req.query("q") ?? "").slice(0, 100), c.req.query("cursor")));
+  });
+  // GET /api/admin/logins?q=&cursor= — every sign-in with its IP address and device.
+  app.get("/logins", async (c) => c.json(await getLogins((c.req.query("q") ?? "").slice(0, 100), c.req.query("cursor"))));
 
   // GET /api/admin/live — who's on WebNewsX right now (owner 2026-10-16).
   app.get("/live", async (c) => c.json(await getLiveVisitors()));

@@ -3718,6 +3718,41 @@ export type LiveVisitors = {
   people: (AuthorSummary & { path: string; at: string })[];
 };
 
+/*
+ * Desk → Visitors (owner 2026-11-11): everyone who opened the site — guests (no sign-in) and signed-in people — with the
+ * IP address and device they came from, plus every sign-in with its IP. A browser never reveals a device's MAC address,
+ * so a guest is one browser / app install (its `wn_vid` viewer key), not one physical device. Days are India time.
+ */
+export type VisitorWho = "all" | "guests" | "signed-in";
+export const VISITOR_WHO_VALUES = ["all", "guests", "signed-in"] as const satisfies readonly VisitorWho[];
+export type VisitorRow = {
+  /** Short form of the viewer key — the same guest keeps it across visits. */
+  visitorId: string;
+  /** Null for a guest. */
+  person: AuthorSummary | null;
+  ip: string | null;
+  /** "Chrome on Android", "WebNewsX app on Android"… */
+  device: string;
+  platform: "web" | "app";
+  pages: number;
+  /** The last page they opened. */
+  lastPath: string;
+  firstAt: string;
+  lastAt: string;
+};
+/** `GET /api/admin/visitors?days=1|7|30&who=&q=&cursor=` */
+export type VisitorsReport = {
+  days: number;
+  totals: { visitors: number; guests: number; signedIn: number; app: number; web: number; pageViews: number };
+  /** Per India-time day, oldest first. */
+  daily: { day: string; guests: number; signedIn: number }[];
+  items: VisitorRow[];
+  nextCursor: string | null;
+};
+export type LoginRow = { id: string; person: AuthorSummary; ip: string | null; device: string; at: string };
+/** `GET /api/admin/logins?q=&cursor=` — every sign-in (a new session), newest first. */
+export type LoginsPage = { items: LoginRow[]; nextCursor: string | null };
+
 /* ─────────────────────────── Group accounts (owner 2026-10-23) ─────────────────────────── */
 
 /*

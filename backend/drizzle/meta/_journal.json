@@ -610,6 +610,13 @@
       "when": 1793944630826,
       "tag": "0086_scheduled_publish",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1794376069048,
+      "tag": "0087_login_event",
+      "breakpoints": true
     }
   ]
 }

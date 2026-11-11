@@ -56,6 +56,8 @@ export const metadata: Metadata = {
   title: { default: DEFAULT_TITLE, template: `%s · ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
+  // Google Search Console ownership check for webnewsx.com (owner 2026-11-11).
+  verification: { google: "tWx1yYsM1cmeZ_6CHWYiCboUwzo1hfIzJFzsZ0f8dgI" },
   openGraph: {
     siteName: SITE_NAME,
     type: "website",

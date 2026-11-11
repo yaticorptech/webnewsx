@@ -151,7 +151,7 @@ function NavGroup({
   const sections = DESK_SECTIONS.filter((section) => section.group === group);
   const here = current?.group === group;
   const waiting = kpis ? sections.reduce((sum, section) => sum + (section.pending ? section.pending(kpis) : 0), 0) : 0;
-  const [open, setOpen] = useState(here || group === "Overview");
+  const [open, setOpen] = useState(here || group === "Today");
   const shown = !expanded || open;
   return (
     <div className={cn(expanded && "border-b border-border py-1.5 last:border-b-0")}>

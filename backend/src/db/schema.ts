@@ -741,6 +741,26 @@ export const contentLog = pgTable(
 );
 
 /**
+ * Sign-in log (owner 2026-11-11): one row per sign-in with the IP address and device (Desk → Visitors). Kept apart from
+ * `session`, whose row is deleted on sign-out. Written by the session create hook (auth.ts).
+ */
+export const loginEvent = pgTable(
+  "login_event",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** The sign-in route: "/sign-in/email", "/callback/google", "/phone-number/…"… */
+    method: text("method"),
+    ip: text("ip"),
+    userAgent: text("user_agent"),
+    createdAt: tsMs("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("login_event_created_idx").on(t.createdAt.desc(), t.id.desc()), index("login_event_user_idx").on(t.userId, t.createdAt.desc())],
+);
+
+/**
  * Spotlight impressions (owner 2026-10-16): one row per order and reader — `shows` = visits whose feed showed it (the
  * view tracker sends each card once per visit). Drives the per-reader cap and the reporter's results.
  */

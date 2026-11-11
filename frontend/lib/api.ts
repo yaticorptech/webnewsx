@@ -90,6 +90,9 @@ import type {
   Category,
   CommentInput,
   ContentLogEntry,
+  LoginsPage,
+  VisitorWho,
+  VisitorsReport,
   DemoAction,
   DemoEngagementStatus,
   GifSearchResponse,
@@ -1053,6 +1056,12 @@ export const api = {
     /** Reporter activity, newest first (owner 2026-10-31); `q` = a username or story title. */
     activity: (params: { cursor?: string | null; q?: string } = {}, signal?: AbortSignal) =>
       request<Page<ContentLogEntry>>(`/api/admin/activity${query({ cursor: params.cursor, q: params.q || undefined })}`, { signal }),
+    /** Desk → Visitors (owner 2026-11-11): guests + signed-in people with IP and device; totals ride on every page. */
+    visitors: (params: { days: number; who: VisitorWho; q?: string; cursor?: string | null }, signal?: AbortSignal) =>
+      request<VisitorsReport>(`/api/admin/visitors${query({ days: String(params.days), who: params.who, q: params.q || undefined, cursor: params.cursor })}`, { signal }),
+    /** Every sign-in with its IP address and device, newest first. */
+    logins: (params: { q?: string; cursor?: string | null } = {}, signal?: AbortSignal) =>
+      request<LoginsPage>(`/api/admin/logins${query({ q: params.q || undefined, cursor: params.cursor })}`, { signal }),
     /** Audit log, newest first. `action` filters by prefix ("story." / "user.role"), `target` by target id. */
     audit: (params: AdminAuditQuery = {}, signal?: AbortSignal) =>
       request<Page<AuditEntry>>(`/api/admin/audit${query(params)}`, { signal }),
