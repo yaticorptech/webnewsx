@@ -1102,6 +1102,8 @@ export const socialConnection = pgTable(
     /** Facebook: every Page the person manages, `{ id, name, tokenEnc }` (switching Page needs no new login). */
     pages: jsonb("pages").$type<Array<{ id: string; name: string; tokenEnc: string }>>().notNull().default(sql`'[]'::jsonb`),
     autoPost: boolean("auto_post").notNull().default(true),
+    /** Instagram: "story" (9:16 poster, 24 h) or "feed" (cover 4:5 on the grid with a caption; webnews.in, owner 2026-11-12). */
+    postFormat: text("post_format", { enum: ["story", "feed"] }).notNull().default("story"),
     /** Set when Meta rejected the token (permission removed / expired): the person has to connect again. */
     needsReconnectAt: ts("needs_reconnect_at"),
     connectedAt: ts("connected_at").notNull().defaultNow(),

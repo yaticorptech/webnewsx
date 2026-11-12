@@ -140,17 +140,88 @@ export async function refreshInstagramToken(token: string): Promise<{ token: str
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Publishes a 9:16 JPEG as an Instagram Story. Returns the media id. */
-export async function postInstagramStory(accountId: string, token: string, imageUrl: string): Promise<string> {
-  const container = await call<{ id: string }>(igGraph(`/${accountId}/media`), {
-    form: { image_url: imageUrl, media_type: "STORIES", access_token: token },
-  });
+/**
+ * Instagram Login tokens ("IG…") talk to graph.instagram.com; a token added by hand from Facebook (a Page or user token,
+ * "EAA…", owner 2026-11-12) talks to graph.facebook.com with the Instagram account's id. Same calls on both.
+ */
+export const isInstagramLoginToken = (token: string) => token.startsWith("IG");
+const igHost = (token: string, path: string) => (isInstagramLoginToken(token) ? igGraph(path) : graph(path));
+
+async function publishInstagramMedia(accountId: string, token: string, form: Record<string, string>): Promise<string> {
+  const container = await call<{ id: string }>(igHost(token, `/${accountId}/media`), { form: { ...form, access_token: token } });
   // Instagram fetches and processes the image first (seconds for a photo).
   for (let i = 0; i < 10; i++) {
-    const { status_code } = await call<{ status_code?: string }>(igGraph(`/${container.id}?${q({ fields: "status_code", access_token: token })}`));
+    const { status_code } = await call<{ status_code?: string }>(igHost(token, `/${container.id}?${q({ fields: "status_code", access_token: token })}`));
     if (status_code === "FINISHED" || status_code === undefined) break;
     if (status_code === "ERROR" || status_code === "EXPIRED") throw new MetaError("Instagram couldn't process the image", false);
     await sleep(3_000);
   }
-  const published = await call<{ id: string }>(igGraph(`/${accountId}/media_publish`), { form: { creation_id: container.id, access_token: token } });
+  const published = await call<{ id: string }>(igHost(token, `/${accountId}/media_publish`), { form: { creation_id: container.id, access_token: token } });
   return published.id;
+}
+
+/** The 9:16 poster as a 24-hour Instagram Story. */
+export function postInstagramStory(accountId: string, token: string, imageUrl: string): Promise<string> {
+  return publishInstagramMedia(accountId, token, { image_url: imageUrl, media_type: "STORIES" });
+}
+
+/** A permanent post on the profile grid (image 4:5 – 1.91:1) with a caption. */
+export function postInstagramFeed(accountId: string, token: string, imageUrl: string, caption: string): Promise<string> {
+  return publishInstagramMedia(accountId, token, { image_url: imageUrl, caption });
+}
+
+/**
+ * A hand-added token (owner 2026-11-12): finds the Instagram account it posts to. `id` may be the Instagram account's
+ * id or the Facebook Page linked to it. A Facebook user token is swapped for the Page's own (non-expiring) token.
+ */
+export async function instagramAccountFromToken(token: string, id?: string): Promise<{ id: string; username: string; token: string; expiresAt: Date | null }> {
+  if (isInstagramLoginToken(token)) {
+    let expiresAt: Date | null = null;
+    let longToken = token;
+    try {
+      const long = await call<{ access_token: string; expires_in: number }>(
+        `https://graph.instagram.com/access_token?${q({ grant_type: "ig_exchange_token", client_secret: env.INSTAGRAM_APP_SECRET ?? "", access_token: token })}`,
+      );
+      longToken = long.access_token;
+      expiresAt = new Date(Date.now() + long.expires_in * 1000);
+    } catch {
+      // Already long-lived (dashboard tokens are): refreshed later by the worker.
+      expiresAt = new Date(Date.now() + 50 * 24 * 3600_000);
+    }
+    const me = await call<{ user_id?: string; id?: string; username: string }>(igGraph(`/me?${q({ fields: "user_id,username", access_token: longToken })}`));
+    return { id: String(me.user_id ?? me.id), username: me.username, token: longToken, expiresAt };
+  }
+  if (!id) throw new MetaError("Give the Facebook Page id (or the Instagram account id) with a Facebook token", false);
+  let current = token;
+  // Graph API Explorer tokens last an hour: swapped for a 60-day one (works when the token came from this server's app).
+  try {
+    const long = await call<{ access_token: string }>(
+      graph(`/oauth/access_token?${q({ grant_type: "fb_exchange_token", client_id: env.META_APP_ID ?? "", client_secret: env.META_APP_SECRET ?? "", fb_exchange_token: current })}`),
+    );
+    current = long.access_token;
+  } catch {
+    // Already long-lived, or a Page token.
+  }
+  // The Page linked to this Instagram account: its token never expires (from a long-lived user token).
+  try {
+    const pages = await call<{ data: Array<{ access_token?: string; instagram_business_account?: { id: string } }> }>(
+      graph(`/me/accounts?${q({ fields: "access_token,instagram_business_account", limit: "100", access_token: current })}`),
+    );
+    const linked = pages.data.find((p) => p.instagram_business_account?.id === id && p.access_token);
+    if (linked?.access_token) current = linked.access_token;
+  } catch {
+    // A Page token already (no /me/accounts).
+  }
+  // A Page id was given: use the Page's token and its Instagram account.
+  try {
+    const page = await call<{ access_token?: string; instagram_business_account?: { id: string } }>(
+      graph(`/${id}?${q({ fields: "access_token,instagram_business_account", access_token: current })}`),
+    );
+    if (page.access_token) current = page.access_token;
+    if (page.instagram_business_account) id = page.instagram_business_account.id;
+  } catch {
+    // Not a Page: `id` is the Instagram account itself.
+  }
+  const ig = await call<{ id: string; username: string }>(graph(`/${id}?${q({ fields: "id,username", access_token: current })}`));
+  return { id: ig.id, username: ig.username, token: current, expiresAt: null };
 }

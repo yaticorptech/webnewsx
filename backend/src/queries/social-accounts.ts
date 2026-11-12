@@ -6,7 +6,7 @@ import { db, type Executor } from "../db/client.js";
 import { article, socialConnection, socialPost } from "../db/schema.js";
 import { env } from "../env.js";
 import { ApiError, forbidden, notFound } from "../lib/errors.js";
-import { MetaError, postFacebookPhoto, postInstagramStory, refreshInstagramToken } from "../lib/meta.js";
+import { isInstagramLoginToken, MetaError, postFacebookPhoto, postInstagramFeed, postInstagramStory, refreshInstagramToken } from "../lib/meta.js";
 import { decryptToken, encryptToken } from "../lib/social-crypto.js";
 import { storage } from "../lib/storage.js";
 import type { SocialConnection, SocialProvider, SocialStatus, UpdateSocialInput } from "../shared/contracts.js";
@@ -91,8 +91,13 @@ export async function saveFacebookConnection(userId: string, pages: Array<{ id: 
     .onConflictDoUpdate({ target: [socialConnection.userId, socialConnection.provider], set: values });
 }
 
-export async function saveInstagramConnection(userId: string, account: { id: string; username: string; token: string; expiresAt: Date }): Promise<void> {
+export async function saveInstagramConnection(
+  userId: string,
+  account: { id: string; username: string; token: string; expiresAt: Date | null },
+  postFormat?: "story" | "feed",
+): Promise<void> {
   const values = {
+    ...(postFormat ? { postFormat } : {}),
     accountId: account.id,
     accountName: account.username,
     tokenEnc: encryptToken(account.token),
@@ -161,6 +166,54 @@ async function storeSocialImage(userId: string, articleId: string, input: Buffer
     .jpeg({ quality: 88, mozjpeg: true })
     .toBuffer();
   const key = socialImageKey(userId, articleId);
+  await storage.put(key, jpeg, "image/jpeg");
+  return key;
+}
+
+const FEED_SIZE = { width: 1080, height: 1350 } as const;
+const feedImageKey = (userId: string, articleId: string) => `covers/${userId}/social-feed-${articleId}.jpg`;
+
+let watermarkSvg: Buffer | null | undefined;
+/** The WebNewsX logo for dark backgrounds (data/brand/logo-white.png = frontend/public/brand/logo-dark.png, 2026-10-30 logo). */
+async function watermarkLogo(): Promise<Buffer | null> {
+  if (watermarkSvg === undefined) watermarkSvg = await readFile(join(process.cwd(), "data", "brand", "logo-white.png")).catch(() => null);
+  return watermarkSvg;
+}
+
+/**
+ * Instagram feed image (owner 2026-11-12): the story's cover on a 4:5 frame (the feed allows 4:5 – 1.91:1, not the 9:16
+ * poster) with a small WebNewsX watermark bottom-right on a soft dark pill so it reads on any photo.
+ */
+async function storeFeedImage(userId: string, articleId: string, input: Buffer): Promise<string> {
+  const { width, height } = FEED_SIZE;
+  const layers: Array<{ input: Buffer; left: number; top: number }> = [];
+  const logo = await watermarkLogo();
+  if (logo) {
+    const logoWidth = 270;
+    const mark = await sharp(logo).resize({ width: logoWidth }).png().toBuffer();
+    const { height: logoHeight = 50 } = await sharp(mark).metadata();
+    const padX = 20;
+    const padY = 12;
+    const pillW = logoWidth + padX * 2;
+    const pillH = logoHeight + padY * 2;
+    const left = width - pillW - 32;
+    const top = height - pillH - 32;
+    const pill = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${pillW}" height="${pillH}"><rect width="${pillW}" height="${pillH}" rx="16" fill="#000" fill-opacity="0.72"/></svg>`,
+    );
+    layers.push({ input: pill, left, top }, { input: mark, left: left + padX, top: top + padY });
+  }
+  // The whole cover stays visible (a 16:9 cover cropped to 4:5 loses half its picture): centred at full width over a
+  // blurred, darkened copy of itself.
+  const photo = sharp(input, { failOn: "error" }).rotate().flatten({ background: "#ffffff" });
+  const source = await photo.toBuffer();
+  const backdrop = await sharp(source).resize(width, height, { fit: "cover" }).blur(40).modulate({ brightness: 0.55 }).toBuffer();
+  const front = await sharp(source).resize({ width, height, fit: "inside" }).toBuffer();
+  const jpeg = await sharp(backdrop)
+    .composite([{ input: front, gravity: "center" }])
+    .toBuffer()
+    .then((framed) => sharp(framed).composite(layers).jpeg({ quality: 88, mozjpeg: true }).toBuffer());
+  const key = feedImageKey(userId, articleId);
   await storage.put(key, jpeg, "image/jpeg");
   return key;
 }
@@ -266,7 +319,18 @@ async function sendOne(postId: string): Promise<void> {
 
   if (!connection) return void (await fail("Account disconnected", false));
   if (story.status !== "published" || story.hiddenAt) return void (await fail("The story isn't public any more", false));
-  const imageUrl = post.imageKey ? publicImageUrl(post.imageKey) : null;
+  const feed = post.provider === "instagram" && connection.postFormat === "feed";
+  let imageKey = post.imageKey;
+  if (feed) {
+    // The cover (else the poster) as a 4:5 watermarked feed image.
+    try {
+      const source = story.coverKey ?? post.imageKey;
+      imageKey = source ? await storeFeedImage(post.userId, post.articleId, await readStored(source)) : null;
+    } catch (error) {
+      return void (await fail(`The feed image couldn't be made: ${error instanceof Error ? error.message : "unknown"}`, true));
+    }
+  }
+  const imageUrl = imageKey ? publicImageUrl(imageKey) : null;
   if (!imageUrl) {
     return void (await fail("Auto-posting starts once WebNewsX is online at its https address (Meta can't fetch images from this computer)", false));
   }
@@ -274,7 +338,9 @@ async function sendOne(postId: string): Promise<void> {
     const token = decryptToken(connection.tokenEnc);
     const remoteId =
       post.provider === "instagram"
-        ? await postInstagramStory(connection.accountId, token, imageUrl)
+        ? feed
+          ? await postInstagramFeed(connection.accountId, token, imageUrl, captionFor(story))
+          : await postInstagramStory(connection.accountId, token, imageUrl)
         : await postFacebookPhoto(connection.accountId, token, imageUrl, captionFor(story));
     await db.update(socialPost).set({ status: "posted", remoteId, error: null, postedAt: new Date(), attempts: post.attempts + 1 }).where(eq(socialPost.id, post.id));
   } catch (error) {
@@ -318,6 +384,8 @@ async function refreshInstagramTokens(): Promise<void> {
     )
     .limit(20);
   for (const row of due) {
+    // Hand-added Facebook (Page) tokens don't expire and can't be refreshed this way.
+    if (!isInstagramLoginToken(decryptToken(row.tokenEnc))) continue;
     try {
       const fresh = await refreshInstagramToken(decryptToken(row.tokenEnc));
       await db
