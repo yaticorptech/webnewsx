@@ -24,6 +24,7 @@ import { storyStatus, toPosterFrame } from "./articles.js";
 import { createNotice } from "./notices.js";
 import { notifyFollowers, notifyReturned } from "./notifications.js";
 import { setPassLevel } from "./press-pass.js";
+import { detachSocialPosts } from "./social-accounts.js";
 import { isUuid } from "./shared.js";
 import { plusDemo } from "../lib/demo-engagement.js";
 
@@ -433,6 +434,8 @@ export async function deleteLockedStory(
   current: ArticleRecord,
   opts: { actorId: string | null; reason: string | null; auto?: AuditEntry["meta"] },
 ): Promise<Array<string | null>> {
+  // Its Instagram / Facebook posts are deleted there too (owner 2026-11-14).
+  await detachSocialPosts(tx, current.id, current.title);
   await tx.delete(article).where(eq(article.id, current.id));
   if (current.pinnedAt) await compactPins(tx);
   await writeAudit(tx, {

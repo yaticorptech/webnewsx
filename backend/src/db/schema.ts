@@ -1124,13 +1124,20 @@ export const socialPost = pgTable(
   "social_post",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    articleId: uuid("article_id")
-      .notNull()
-      .references(() => article.id, { onDelete: "cascade" }),
+    /** null = the story was deleted; the post stays until it is removed on Meta too (owner 2026-11-14). */
+    articleId: uuid("article_id").references(() => article.id, { onDelete: "set null" }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     provider: text("provider", { enum: SOCIAL_PROVIDER_VALUES }).notNull(),
+    /** The story's title, kept when the story is deleted. */
+    storyTitle: text("story_title"),
+    /** The post's public address on Instagram / Facebook. */
+    permalink: text("permalink"),
+    /** Deleted on Meta after the story was deleted (or before a repost). */
+    removedAt: ts("removed_at"),
+    /** Meta refused the delete: the person removes it in the app (the permalink is shown). */
+    removeError: text("remove_error"),
     status: text("status", { enum: ["waiting", "pending", "posted", "failed"] })
       .notNull()
       .default("waiting"),

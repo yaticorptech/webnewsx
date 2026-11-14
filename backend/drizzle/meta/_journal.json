@@ -624,6 +624,13 @@
       "when": 1794462469048,
       "tag": "0088_social_post_format",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1794548869048,
+      "tag": "0089_social_post_removal",
+      "breakpoints": true
     }
   ]
 }

@@ -1,15 +1,25 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
-import sharp from "sharp";
+import sharp, { type OverlayOptions } from "sharp";
 import { db, type Executor } from "../db/client.js";
 import { article, socialConnection, socialPost } from "../db/schema.js";
 import { env } from "../env.js";
 import { ApiError, forbidden, notFound } from "../lib/errors.js";
-import { isInstagramLoginToken, MetaError, postFacebookPhoto, postInstagramFeed, postInstagramStory, refreshInstagramToken } from "../lib/meta.js";
+import {
+  deleteMetaPost,
+  isInstagramLoginToken,
+  MetaError,
+  postFacebookPhoto,
+  postInstagramFeed,
+  postInstagramStory,
+  postPermalink,
+  refreshInstagramToken,
+} from "../lib/meta.js";
 import { decryptToken, encryptToken } from "../lib/social-crypto.js";
+import { candidateModels, GEMINI, keyId, storedKey, workingModel } from "../routes/ai.js";
 import { storage } from "../lib/storage.js";
-import type { SocialConnection, SocialProvider, SocialStatus, UpdateSocialInput } from "../shared/contracts.js";
+import { CATEGORY_LABELS, CATEGORY_LABELS_KN, SOCIAL_PROVIDER_VALUES, type Category, type SocialConnection, type SocialPostItem, type SocialProvider, type SocialStatus, type UpdateSocialInput } from "../shared/contracts.js";
 import type { Viewer } from "../types.js";
 import { isUuid } from "./shared.js";
 
@@ -22,6 +32,8 @@ import { isUuid } from "./shared.js";
 
 const WAIT_FOR_POSTER_MS = 2 * 60_000;
 const MAX_ATTEMPTS = 3;
+/** Posts listed per account in Connected accounts. */
+const RECENT_POSTS = 8;
 const POSTER_SIZE = { width: 1080, height: 1920 } as const;
 
 export const isVerifiedReporter = (viewer: Pick<Viewer, "reporterLevel" | "onboarded">) => viewer.onboarded && viewer.reporterLevel === "verified";
@@ -30,20 +42,43 @@ export const isVerifiedReporter = (viewer: Pick<Viewer, "reporterLevel" | "onboa
 
 export async function getSocialStatus(viewer: Viewer): Promise<SocialStatus> {
   const rows = await db.select().from(socialConnection).where(eq(socialConnection.userId, viewer.id));
-  const latest = await db
-    .selectDistinctOn([socialPost.provider], {
+  const recent = await db
+    .select({
+      id: socialPost.id,
       provider: socialPost.provider,
+      articleId: socialPost.articleId,
       status: socialPost.status,
       error: socialPost.error,
       createdAt: socialPost.createdAt,
       postedAt: socialPost.postedAt,
+      permalink: socialPost.permalink,
+      removedAt: socialPost.removedAt,
+      removeError: socialPost.removeError,
+      storyTitle: socialPost.storyTitle,
       title: article.title,
     })
     .from(socialPost)
-    .innerJoin(article, eq(article.id, socialPost.articleId))
+    .leftJoin(article, eq(article.id, socialPost.articleId))
     .where(eq(socialPost.userId, viewer.id))
-    .orderBy(socialPost.provider, desc(socialPost.createdAt));
-  const lastOf = new Map(latest.map((row) => [row.provider, row]));
+    .orderBy(desc(socialPost.createdAt))
+    .limit(40);
+  const postsOf = (provider: SocialProvider): SocialPostItem[] =>
+    recent
+      .filter((row) => row.provider === provider)
+      .slice(0, RECENT_POSTS)
+      .map((row) => ({
+        id: row.id,
+        articleId: row.articleId,
+        status: row.status,
+        storyTitle: row.title ?? row.storyTitle ?? "Untitled story",
+        error: row.error,
+        at: (row.postedAt ?? row.createdAt).toISOString(),
+        permalink: row.permalink,
+        storyDeleted: row.articleId === null,
+        removed: row.removedAt !== null,
+        removeError: row.removeError,
+      }));
+  const lastOf = new Map(SOCIAL_PROVIDER_VALUES.map((provider) => [provider, postsOf(provider)[0]]));
   const connections: SocialConnection[] = rows.map((row) => {
     const last = lastOf.get(row.provider);
     return {
@@ -54,9 +89,8 @@ export async function getSocialStatus(viewer: Viewer): Promise<SocialStatus> {
       connectedAt: row.connectedAt.toISOString(),
       pages: row.pages.map((p) => ({ id: p.id, name: p.name })),
       needsReconnect: row.needsReconnectAt !== null,
-      lastPost: last
-        ? { status: last.status, storyTitle: last.title ?? "Untitled story", error: last.error, at: (last.postedAt ?? last.createdAt).toISOString() }
-        : null,
+      lastPost: last ? { status: last.status, storyTitle: last.storyTitle, error: last.error, at: last.at } : null,
+      recentPosts: postsOf(row.provider),
     };
   });
   return {
@@ -184,97 +218,228 @@ function fontFor(text: string): { file: string; family: string; weight: string; 
 }
 const escapeMarkup = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/** The white headline drawn with Pango (Indic scripts shaped properly). */
-function headlineLayer(text: string, size: number, width: number): Promise<Buffer> {
-  const font = fontFor(text);
-  return sharp({
+const INK = "#16181d";
+const BRAND = "#e30613";
+
+const STOP_WORDS = new Set(
+  (
+    "a an the and or but of in on at to for with as by from into onto over under after before amid against about is are was were be been " +
+    "has have had its it this that these those will would can not no new says said say than then up out off now how why what who " +
+    "ಮತ್ತು ಹಾಗೂ ಈ ಆ ಒಂದು ಮೇಲೂ ಮೇಲೆ ಬಗ್ಗೆ ಎಂದು ಇನ್ನು ಅಥವಾ ಸಹ ಕೂಡ ಮೂಲಕ ಜೊತೆ ನಂತರ ಮುನ್ನ ವೇಳೆ ಇದೆ ಇಲ್ಲ ಇದು ಅದು ಎಂಬ ಕುರಿತು ವಿರುದ್ಧ ಬಳಿ ಹೊಸ " +
+    "और का की के में से पर को है हैं था ने भी यह वह एक तक लिए बाद"
+  ).split(" "),
+);
+const bare = (word: string) => word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, "").toLowerCase();
+
+/** Word indexes of the headline's main point when there's no AI: the subject before a colon (else the first words), plus numbers. */
+function ruleHighlights(words: string[]): Set<number> {
+  const picked = new Set<number>();
+  const colon = words.findIndex((word) => /[:：]$/.test(word));
+  if (colon >= 0 && colon <= 3) {
+    for (let i = 0; i <= colon; i++) picked.add(i);
+  } else {
+    for (let i = 0; i < words.length && picked.size < 2 && !STOP_WORDS.has(bare(words[i]!)); i++) picked.add(i);
+  }
+  words.forEach((word, i) => {
+    if (picked.size < 4 && /\d/.test(word) && !picked.has(i)) picked.add(i);
+  });
+  return picked;
+}
+
+/** The headline's key phrases from the account's own Gemini key (the composer's "Generate with AI" key), as word indexes. */
+export async function aiHighlights(userId: string, words: string[]): Promise<Set<number> | null> {
+  const key = await storedKey(userId);
+  if (!key) return null;
+  const headline = words.join(" ");
+  const system = [
+    "You pick the words to highlight in a news headline on a social media news card.",
+    "Return 1 or 2 short phrases (1-3 words each) copied EXACTLY from the headline that carry its main point: the key person, place, thing, number or action.",
+    "Never pick filler words (and, of, the, ಮತ್ತು, ಹಾಗೂ, और…). Answer with a JSON array of strings only.",
+  ].join(" ");
+  for (const model of await candidateModels(key)) {
+    const res = await fetch(`${GEMINI}/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: headline }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 512, responseMimeType: "application/json" },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    }).catch(() => null);
+    if (!res?.ok) continue;
+    workingModel.set(keyId(key), { model, at: Date.now() });
+    const data = (await res.json().catch(() => null)) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] } | null;
+    const text = (data?.candidates?.[0]?.content?.parts ?? []).filter((part) => !part.thought).map((part) => part.text ?? "").join("");
+    let phrases: unknown;
+    try {
+      phrases = JSON.parse(text.replace(/^```(?:json)?|```$/g, "").trim());
+    } catch {
+      return null;
+    }
+    if (!Array.isArray(phrases)) return null;
+    const picked = new Set<number>();
+    const bareWords = words.map(bare);
+    for (const phrase of phrases.slice(0, 2)) {
+      if (typeof phrase !== "string") continue;
+      const parts = phrase.split(/\s+/).map(bare).filter(Boolean);
+      if (!parts.length || parts.length > 4) continue;
+      const at = bareWords.findIndex((_, i) => parts.every((part, j) => bareWords[i + j] === part));
+      if (at >= 0) parts.forEach((_, j) => picked.add(at + j));
+    }
+    return picked.size ? picked : null;
+  }
+  return null;
+}
+
+/** One line of white text drawn with Pango (Indic scripts shaped properly); `markup` is already escaped. */
+async function textLayer(markup: string, font: ReturnType<typeof fontFor>, size: number, width?: number): Promise<{ image: Buffer; width: number; height: number }> {
+  const image = await sharp({
     text: {
-      text: `<span foreground="white"${font.weight}>${escapeMarkup(text)}</span>`,
+      text: `<span foreground="white"${font.weight}>${markup}</span>`,
       font: `${font.family} ${size}`,
       fontfile: join(FONT_DIR, font.file),
-      width,
+      ...(width ? { width, wrap: "word" as const } : {}),
       dpi: 72,
       rgba: true,
-      wrap: "word",
-      spacing: Math.round(size * (font.indic ? 0.08 : -0.06)),
+      spacing: Math.round(size * (font.indic ? 0.08 : 0.3)),
     },
   })
     .png()
     .toBuffer();
+  const meta = await sharp(image).metadata();
+  return { image, width: meta.width ?? 0, height: meta.height ?? 0 };
 }
-
-/** The headline at the largest size step that fits `maxHeight` (shorter headlines start bigger). */
-async function fittedHeadline(text: string, sizes: number[], width: number, maxHeight: number): Promise<{ image: Buffer; height: number }> {
-  const start = text.length <= 45 ? 0 : text.length <= 80 ? 1 : text.length <= 115 ? 2 : 3;
-  let image = await headlineLayer(text, sizes[start]!, width);
-  let height = (await sharp(image).metadata()).height ?? 0;
-  for (let i = start + 1; i < sizes.length && height > maxHeight; i++) {
-    image = await headlineLayer(text, sizes[i]!, width);
-    height = (await sharp(image).metadata()).height ?? 0;
-  }
-  return { image, height };
-}
-
-const INK = "#16181d";
-const BRAND = "#e30613";
 
 /**
- * "Classic" (the default poster, owner 2026-11-14 "same template only"): the photo on top melting into a red-to-ink
- * panel that carries the big white headline; the panel is as tall as its text, the photo takes the rest.
+ * The headline as lines, wrapped here (not by Pango) so the red word boxes can follow the lines like the owner's
+ * reference: the first words of the 1st line, then the first word of every other line after it.
  */
-async function classicFeedImage(input: Buffer, title: string): Promise<Buffer> {
-  const { width, height } = FEED_SIZE;
-  const padX = 64;
-  const padTop = 34;
-  const padBottom = 70;
-  const sizes = [104, 92, 80, 70, 62, 54];
-  const headline = await fittedHeadline(title, sizes, width - padX * 2, height * 0.42);
-  const panelHeight = padTop + headline.height + padBottom;
-  const photoHeight = height - panelHeight;
-  const melt = 216;
-  const photo = await sharp(input, { failOn: "error" })
-    .rotate()
-    .flatten({ background: INK })
-    .resize(width, photoHeight, { fit: "cover", position: sharp.strategy.attention })
-    .toBuffer();
-  const art = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
-      `<defs>` +
-      `<linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${BRAND}" stop-opacity="0"/>` +
-      `<stop offset="1" stop-color="${BRAND}"/></linearGradient>` +
-      `<linearGradient id="p" x1="0" y1="0" x2="0" y2="1"><stop offset="0.05" stop-color="${BRAND}"/>` +
-      `<stop offset="1" stop-color="${INK}"/></linearGradient>` +
-      `<radialGradient id="s" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 ${photoHeight}) scale(${width * 1.1} ${panelHeight * 0.7})">` +
-      `<stop offset="0" stop-color="#fff" stop-opacity="0.14"/><stop offset="0.65" stop-color="#fff" stop-opacity="0"/></radialGradient>` +
-      `</defs>` +
-      `<rect y="${photoHeight - melt}" width="${width}" height="${melt}" fill="url(#m)"/>` +
-      `<rect y="${photoHeight}" width="${width}" height="${panelHeight}" fill="url(#p)"/>` +
-      `<rect y="${photoHeight}" width="${width}" height="${panelHeight}" fill="url(#s)"/></svg>`,
-  );
-  return sharp({ create: { width, height, channels: 3, background: INK } })
-    .composite([
-      { input: photo, left: 0, top: 0 },
-      { input: art, left: 0, top: 0 },
-      { input: headline.image, left: padX, top: photoHeight + padTop },
-    ])
-    .jpeg({ quality: 90, mozjpeg: true })
-    .toBuffer();
+async function boxedHeadline(title: string, maxWidth: number, maxHeight: number, highlights: (words: string[]) => Set<number>) {
+  const font = fontFor(title);
+  const words = title.split(/\s+/).filter(Boolean);
+  const boxed = highlights(words);
+  const sizes = font.indic ? [58, 52, 47, 43, 39] : [70, 62, 55, 49, 44];
+  for (const [step, size] of sizes.entries()) {
+    const widths = await Promise.all(words.map(async (word) => (await textLayer(escapeMarkup(word), font, size)).width));
+    const space = Math.round(size * 0.3);
+    const boxPad = space * 2; // the spaces inside a red box
+    // Lines of word indexes; a red box adds a space of padding on each side.
+    const lines: number[][] = [];
+    let line: number[] = [];
+    let lineWidth = 0;
+    words.forEach((_, i) => {
+      const opensBox = boxed.has(i) && !(line.length && boxed.has(i - 1));
+      const add = (line.length ? space : 0) + widths[i]! + (opensBox ? boxPad : 0);
+      if (line.length && lineWidth + add > maxWidth) {
+        lines.push(line);
+        line = [];
+        lineWidth = 0;
+      }
+      lineWidth += (line.length ? space : 0) + widths[i]! + (boxed.has(i) && !(line.length && boxed.has(i - 1)) ? boxPad : 0);
+      line.push(i);
+    });
+    if (line.length) lines.push(line);
+    const images = await Promise.all(
+      lines.map(async (indexes) => {
+        // The red boxes are drawn by us (Pango's own background is too short for Kannada's tall letters): measure
+        // where each box starts and ends in the same text.
+        let text = "";
+        const marks: { from: string; to: string }[] = [];
+        indexes.forEach((i, j) => {
+          const inBox = boxed.has(i);
+          const prevInBox = j > 0 && boxed.has(indexes[j - 1]!);
+          const nextInBox = j < indexes.length - 1 && boxed.has(indexes[j + 1]!);
+          if (j > 0) text += " ";
+          if (inBox && !prevInBox) marks.push({ from: text, to: "" });
+          text += inBox && !prevInBox ? `\u00a0${escapeMarkup(words[i]!)}` : escapeMarkup(words[i]!);
+          if (inBox && !nextInBox) {
+            text += "\u00a0";
+            marks[marks.length - 1]!.to = text;
+          }
+        });
+        // Width up to a point, trailing spaces included (Pango drops them, so measure against a closing "|").
+        const bar = (await textLayer("|", font, size)).width;
+        const measure = async (part: string) => (part ? (await textLayer(`${part}|`, font, size)).width - bar : 0);
+        const layer = await textLayer(text, font, size);
+        const boxes = await Promise.all(marks.map(async (mark) => ({ x0: await measure(mark.from), x1: await measure(mark.to) })));
+        return { ...layer, boxes };
+      }),
+    );
+    const gap = Math.round(size * 0.18);
+    const height = images.reduce((sum, image) => sum + image.height, 0) + gap * (images.length - 1);
+    if (height <= maxHeight || step === sizes.length - 1) return { images, gap, height };
+  }
+  throw new Error("unreachable");
 }
 
-/** "Full bleed": the cover fills the picture and a dark fade rises from the bottom under the big white headline. */
-async function fullBleedFeedImage(input: Buffer, title: string): Promise<Buffer> {
+/** The summary under the headline, cut to `maxLines` lines with an ellipsis. */
+async function summaryLayer(text: string, width: number, maxLines: number) {
+  const font = fontFor(text);
+  const size = 29;
+  let words = text.split(/\s+/).filter(Boolean);
+  const sample = escapeMarkup(words.slice(0, 3).join(" "));
+  const one = (await textLayer(sample, font, size, width)).height;
+  const two = (await textLayer(`${sample}\n${sample}`, font, size, width)).height;
+  const maxHeight = two + (two - one) * (maxLines - 1.5); // half a line of slack for tall letters
+  let layer = await textLayer(escapeMarkup(words.join(" ")), font, size, width);
+  while (layer.height > maxHeight && words.length > 4) {
+    words = words.slice(0, -2);
+    layer = await textLayer(`${escapeMarkup(words.join(" ").replace(/[,.:;–-]+$/, ""))}…`, font, size, width);
+  }
+  return layer;
+}
+
+/**
+ * The one Instagram feed template for every post (owner 2026-11-14, their reference image): the cover fills the 4:5
+ * frame, a dark fade rises from the bottom, then the red category tag, the big white headline with red word boxes,
+ * and the story's summary. No logo, no profile line.
+ */
+export async function newsFeedImage(
+  input: Buffer,
+  story: { title: string; summary: string; category: string | null; highlights?: Set<number> | null },
+): Promise<Buffer> {
   const { width, height } = FEED_SIZE;
-  const pad = 64;
-  const sizes = fontFor(title).indic ? [88, 78, 70, 64, 56, 50] : [92, 78, 68, 60, 52, 46];
-  const headline = await fittedHeadline(title, sizes, width - pad * 2, height * 0.45);
-  const headlineTop = height - pad - 8 - headline.height;
-  const fadeTop = Math.max(0, Math.min(height * 0.35, headlineTop - 320));
-  const shade = Buffer.from(
+  const padX = 60;
+  const padBottom = 62;
+  const inner = width - padX * 2;
+  const summary = story.summary ? await summaryLayer(story.summary, inner, 3) : null;
+  const headline = await boxedHeadline(story.title, inner, height * 0.36, (words) => story.highlights ?? ruleHighlights(words));
+  const tag = story.category ? await textLayer(escapeMarkup(story.category), fontFor(story.category), 30) : null;
+  const tagPad = { x: 18, y: 8 };
+
+  let y = height - padBottom;
+  const layers: OverlayOptions[] = [];
+  if (summary) {
+    y -= summary.height;
+    layers.push({ input: summary.image, left: padX, top: y });
+    y -= 40;
+  }
+  y -= headline.height;
+  const headlineTop = y;
+  let lineTop = y;
+  let boxRects = "";
+  for (const line of headline.images) {
+    for (const box of line.boxes) {
+      boxRects += `<rect x="${padX - 4 + box.x0}" y="${lineTop - 2}" width="${box.x1 - box.x0}" height="${line.height + 4}" fill="${BRAND}"/>`;
+    }
+    layers.push({ input: line.image, left: padX - 4, top: lineTop });
+    lineTop += line.height + headline.gap;
+  }
+  let tagRect = "";
+  if (tag) {
+    const tagHeight = tag.height + tagPad.y * 2;
+    y -= 30 + tagHeight;
+    tagRect = `<rect x="${padX}" y="${y}" width="${tag.width + tagPad.x * 2}" height="${tagHeight}" rx="6" fill="${BRAND}"/>`;
+    layers.push({ input: tag.image, left: padX + tagPad.x, top: y + tagPad.y });
+  }
+  const fadeTop = Math.max(0, Math.min(height * 0.42, y - 260));
+  const art = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
       `<defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1">` +
-      `<stop offset="0" stop-color="${INK}" stop-opacity="0"/><stop offset="0.45" stop-color="${INK}" stop-opacity="0.5"/>` +
-      `<stop offset="1" stop-color="${INK}" stop-opacity="0.9"/></linearGradient></defs>` +
-      `<rect y="${fadeTop}" width="${width}" height="${height - fadeTop}" fill="url(#f)"/></svg>`,
+      `<stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="${((headlineTop - fadeTop) / (height - fadeTop)).toFixed(3)}" stop-color="#000" stop-opacity="0.62"/>` +
+      `<stop offset="1" stop-color="#000" stop-opacity="0.9"/></linearGradient></defs>` +
+      `<rect y="${fadeTop}" width="${width}" height="${height - fadeTop}" fill="url(#f)"/>${tagRect}${boxRects}</svg>`,
   );
   const photo = await sharp(input, { failOn: "error" })
     .rotate()
@@ -282,22 +447,23 @@ async function fullBleedFeedImage(input: Buffer, title: string): Promise<Buffer>
     .resize(width, height, { fit: "cover", position: sharp.strategy.attention })
     .toBuffer();
   return sharp(photo)
-    .composite([
-      { input: shade, left: 0, top: 0 },
-      { input: headline.image, left: pad, top: headlineTop },
-    ])
+    .composite([{ input: art, left: 0, top: 0 }, ...layers])
     .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
 }
 
-/**
- * Instagram feed image (owner 2026-11-14, replaces the 2026-11-12 logo watermark): the story's own poster template on
- * the feed's 4:5 frame (the feed can't take 9:16). No WebNewsX logo and no profile line. "full-bleed" has its own
- * layout; every other template uses "classic", the default (nearly every webnews.in story).
- */
-async function storeFeedImage(userId: string, articleId: string, input: Buffer, title: string, template: string | null): Promise<string> {
-  const text = title.trim();
-  const jpeg = template === "full-bleed" ? await fullBleedFeedImage(input, text) : await classicFeedImage(input, text);
+async function storeFeedImage(
+  userId: string,
+  articleId: string,
+  input: Buffer,
+  story: { title: string | null; blurb: string | null; excerpt: string | null; category: Category | null; language: string | null },
+): Promise<string> {
+  const title = (story.title ?? "").trim();
+  const kannada = story.language === "kn" || /[\u0c80-\u0cff]/.test(title);
+  const category = story.category ? (kannada ? CATEGORY_LABELS_KN : CATEGORY_LABELS)[story.category] : null;
+  const summary = (story.blurb || story.excerpt || "").replace(/\s+/g, " ").trim();
+  const highlights = await aiHighlights(userId, title.split(/\s+/).filter(Boolean)).catch(() => null);
+  const jpeg = await newsFeedImage(input, { title, summary, category, highlights });
   const key = feedImageKey(userId, articleId);
   await storage.put(key, jpeg, "image/jpeg");
   return key;
@@ -336,6 +502,95 @@ export async function attachSocialImage(articleId: string, userId: string, image
   return { queued: rows.length };
 }
 
+/* ─────────────── Removal and repost (owner 2026-11-14) ─────────────── */
+
+/**
+ * A story is being deleted (inside its transaction, before the row goes): posts not sent yet are dropped; sent ones
+ * keep the title and outlive the story (article_id → null) until the worker deletes them on Instagram / Facebook.
+ */
+export async function detachSocialPosts(tx: Executor, articleId: string, title: string | null): Promise<void> {
+  await tx.delete(socialPost).where(and(eq(socialPost.articleId, articleId), sql`${socialPost.status} <> 'posted'`));
+  await tx.update(socialPost).set({ storyTitle: title }).where(and(eq(socialPost.articleId, articleId), eq(socialPost.status, "posted")));
+  wakeSocialPoster();
+}
+
+/** Deletes one sent post on Meta. Returns null when done, else why Meta refused. */
+async function removeRemote(post: typeof socialPost.$inferSelect): Promise<string | null> {
+  if (!post.remoteId) return null;
+  const [connection] = await db
+    .select()
+    .from(socialConnection)
+    .where(and(eq(socialConnection.userId, post.userId), eq(socialConnection.provider, post.provider)))
+    .limit(1);
+  if (!connection) return "The account is no longer connected — delete the post in the app.";
+  try {
+    // Facebook posts live on the Page they went to: its own token (the connection's token is the user's).
+    const page = post.provider === "facebook" ? connection.pages.find((p) => post.remoteId?.startsWith(`${p.id}_`)) : undefined;
+    await deleteMetaPost(post.provider, decryptToken(page?.tokenEnc ?? connection.tokenEnc), post.remoteId);
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : "Meta refused the delete";
+  }
+}
+
+/** Sent posts of deleted stories: deleted on Meta too (or marked with why it couldn't be done). */
+async function removeDeletedStoryPosts(): Promise<void> {
+  const due = await db
+    .select()
+    .from(socialPost)
+    .where(and(sql`${socialPost.articleId} is null`, eq(socialPost.status, "posted"), sql`${socialPost.removedAt} is null`, sql`${socialPost.removeError} is null`))
+    .limit(10);
+  for (const post of due) {
+    const refused = await removeRemote(post);
+    await db
+      .update(socialPost)
+      .set(refused ? { removeError: refused } : { removedAt: new Date() })
+      .where(eq(socialPost.id, post.id));
+  }
+}
+
+/**
+ * Repost (owner 2026-11-14): a failed post is sent again; a sent one is deleted on Instagram / Facebook first and then
+ * sent again (with the story's current title and image). Only the story's author, while it is public.
+ */
+export async function repostSocial(viewer: Viewer, postId: string): Promise<SocialStatus> {
+  if (!isUuid(postId)) throw notFound("Post not found");
+  const [row] = await db
+    .select({ post: socialPost, story: article })
+    .from(socialPost)
+    .leftJoin(article, eq(article.id, socialPost.articleId))
+    .where(and(eq(socialPost.id, postId), eq(socialPost.userId, viewer.id)))
+    .limit(1);
+  if (!row) throw notFound("Post not found");
+  const { post, story } = row;
+  if (!story || story.status !== "published" || story.hiddenAt) throw new ApiError(409, "story_not_public", "This story isn't public any more, so it can't be posted again");
+  if (post.status === "pending" || post.status === "waiting") throw new ApiError(409, "already_posting", "This story is being posted right now");
+  if (post.status === "posted" && !post.removedAt) {
+    const refused = await removeRemote(post);
+    if (refused) {
+      throw new ApiError(409, "remove_refused", "Couldn't remove the old post. Delete it in the app first, then tap Repost again.", { reason: refused });
+    }
+  }
+  await db
+    .update(socialPost)
+    .set({
+      // With the poster already made it goes now; without one, the story's cover is used right away.
+      status: post.imageKey ? "pending" : "waiting",
+      createdAt: post.imageKey ? post.createdAt : new Date(Date.now() - WAIT_FOR_POSTER_MS),
+      remoteId: null,
+      permalink: null,
+      postedAt: null,
+      removedAt: null,
+      removeError: null,
+      error: null,
+      attempts: 0,
+      nextAttemptAt: new Date(),
+    })
+    .where(eq(socialPost.id, post.id));
+  wakeSocialPoster();
+  return getSocialStatus(viewer);
+}
+
 /* ─────────────── Worker ─────────────── */
 
 async function readStored(key: string): Promise<Buffer> {
@@ -348,7 +603,7 @@ async function readStored(key: string): Promise<Buffer> {
 /** Posts still waiting for the composer's poster after a while: the story's cover (9:16) is sent instead. */
 async function useCoverForStalePosts(): Promise<void> {
   const stale = await db
-    .select({ articleId: socialPost.articleId, userId: socialPost.userId, coverKey: article.coverKey })
+    .select({ articleId: article.id, userId: socialPost.userId, coverKey: article.coverKey })
     .from(socialPost)
     .innerJoin(article, eq(article.id, socialPost.articleId))
     .where(and(eq(socialPost.status, "waiting"), lte(socialPost.createdAt, new Date(Date.now() - WAIT_FOR_POSTER_MS))))
@@ -411,7 +666,7 @@ async function sendOne(postId: string): Promise<void> {
     try {
       const source = story.coverKey ?? post.imageKey;
       imageKey = source
-        ? await storeFeedImage(post.userId, post.articleId, await readStored(source), story.title ?? "", story.template)
+        ? await storeFeedImage(post.userId, story.id, await readStored(source), story)
         : null;
     } catch (error) {
       return void (await fail(`The feed image couldn't be made: ${error instanceof Error ? error.message : "unknown"}`, true));
@@ -429,7 +684,11 @@ async function sendOne(postId: string): Promise<void> {
           ? await postInstagramFeed(connection.accountId, token, imageUrl, captionFor(story))
           : await postInstagramStory(connection.accountId, token, imageUrl)
         : await postFacebookPhoto(connection.accountId, token, imageUrl, captionFor(story));
-    await db.update(socialPost).set({ status: "posted", remoteId, error: null, postedAt: new Date(), attempts: post.attempts + 1 }).where(eq(socialPost.id, post.id));
+    const permalink = await postPermalink(post.provider, token, remoteId);
+    await db
+      .update(socialPost)
+      .set({ status: "posted", remoteId, permalink, storyTitle: story.title, error: null, postedAt: new Date(), attempts: post.attempts + 1 })
+      .where(eq(socialPost.id, post.id));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Posting failed";
     if (error instanceof MetaError && error.auth) {
@@ -508,6 +767,7 @@ export function startSocialPoster(): () => void {
     try {
       await useCoverForStalePosts();
       await sendDuePosts();
+      await removeDeletedStoryPosts();
       if (Date.now() - lastRefresh > REFRESH_EVERY_MS) {
         lastRefresh = Date.now();
         await refreshInstagramTokens();

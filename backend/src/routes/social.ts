@@ -12,6 +12,7 @@ import {
   disconnectSocial,
   getSocialStatus,
   isVerifiedReporter,
+  repostSocial,
   saveFacebookConnection,
   saveInstagramConnection,
   updateSocialConnection,
@@ -80,6 +81,7 @@ const NONCE_COOKIE = "wn_social";
  *   DELETE /api/social/:provider
  *   GET    /api/social/poster/:articleId    → { wanted } — the composer uploads the poster only when it's needed
  *   POST   /api/social/poster/:articleId    (multipart `file`, JPEG / PNG) → the story's auto-posts go out with it
+ *   POST   /api/social/posts/:postId/repost → SocialStatus — sends it again (a sent one is deleted there first)
  */
 export function socialRoutes() {
   const app = new Hono<AppEnv>();
@@ -97,7 +99,9 @@ export function socialRoutes() {
     return c.json(await attachSocialImage(c.req.param("articleId"), viewer.id, Buffer.from(await file.arrayBuffer())));
   });
 
-  // POST /api/social/:provider/ticket — the phone app's one-time pass (Meta's login can't run inside the app).
+  app.post("/posts/:postId/repost", requireOnboarded, async (c) => c.json(await repostSocial(mustViewer(c), c.req.param("postId"))));
+
+    // POST /api/social/:provider/ticket — the phone app's one-time pass (Meta's login can't run inside the app).
   app.post("/:provider/ticket", requireOnboarded, async (c) => {
     const provider = providerOf(c);
     const viewer = mustViewer(c);

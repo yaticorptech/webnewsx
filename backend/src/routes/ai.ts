@@ -20,10 +20,10 @@ import type { RouteDeps } from "./deps.js";
  * description from its headline and the reporter's notes.
  */
 
-const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
+export const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
 const keyMissing = () => new ApiError(409, "gemini_key_missing", "Add your Gemini API key first");
 
-async function storedKey(userId: string): Promise<string | null> {
+export async function storedKey(userId: string): Promise<string | null> {
   const [row] = await db.select({ enc: user.geminiKeyEnc }).from(user).where(eq(user.id, userId)).limit(1);
   if (!row?.enc) return null;
   try {
@@ -36,9 +36,9 @@ async function storedKey(userId: string): Promise<string | null> {
 type ModelList = { models?: { name?: string; supportedGenerationMethods?: string[] }[]; nextPageToken?: string };
 
 /** Per key (hash): the model that last answered, kept for an hour. */
-const workingModel = new Map<string, { model: string; at: number }>();
+export const workingModel = new Map<string, { model: string; at: number }>();
 const MODEL_TTL_MS = 60 * 60_000;
-const keyId = (key: string) => createHash("sha256").update(key).digest("hex");
+export const keyId = (key: string) => createHash("sha256").update(key).digest("hex");
 
 /** "models/gemini-3.8-flash" → [3, 8]; null for anything that isn't a plain stable flash model. */
 function flashVersion(name: string): number[] | null {
@@ -60,7 +60,7 @@ function compareVersions(a: number[], b: number[]): number {
  * stable "gemini-<version>-flash" models, newest first (owner 2026-10-14: Google retires old models for new keys, and
  * the very newest ones can hang — so a model that doesn't answer in time is skipped for the next).
  */
-async function candidateModels(key: string): Promise<string[]> {
+export async function candidateModels(key: string): Promise<string[]> {
   if (env.GEMINI_MODEL) return [env.GEMINI_MODEL.replace(/^models\//, "")];
   const found: { name: string; version: number[] }[] = [];
   let pageToken: string | undefined;

@@ -25,7 +25,7 @@ export class MetaError extends Error {
 
 type MetaErrorBody = { error?: { message?: string; code?: number; type?: string; error_subcode?: number }; error_message?: string };
 
-async function call<T>(url: string, init: { method?: "GET" | "POST"; form?: Record<string, string> } = {}): Promise<T> {
+async function call<T>(url: string, init: { method?: "GET" | "POST" | "DELETE"; form?: Record<string, string> } = {}): Promise<T> {
   let res: Response;
   try {
     res = await fetch(url, {
@@ -224,4 +224,35 @@ export async function instagramAccountFromToken(token: string, id?: string): Pro
   }
   const ig = await call<{ id: string; username: string }>(graph(`/${id}?${q({ fields: "id,username", access_token: current })}`));
   return { id: ig.id, username: ig.username, token: current, expiresAt: null };
+}
+
+/* ─────────────── Links and removal (owner 2026-11-14) ─────────────── */
+
+const fbOrIg = (provider: "facebook" | "instagram", token: string, path: string) => (provider === "instagram" ? igHost(token, path) : graph(path));
+
+/** The post's public address (null when Meta doesn't say). */
+export async function postPermalink(provider: "facebook" | "instagram", token: string, remoteId: string): Promise<string | null> {
+  const field = provider === "instagram" ? "permalink" : "permalink_url";
+  try {
+    const data = await call<Record<string, string | undefined>>(fbOrIg(provider, token, `/${remoteId}?${q({ fields: field, access_token: token })}`));
+    return data[field] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Deletes a post on the Page / Instagram account. "gone" = it no longer exists (deleted now or earlier, e.g. in the
+ * app). Throws MetaError when Meta refuses (the person deletes it in the app instead).
+ */
+export async function deleteMetaPost(provider: "facebook" | "instagram", token: string, remoteId: string): Promise<"gone"> {
+  // Checked first: Meta answers "does not exist" both for a deleted post and for a delete it doesn't support.
+  try {
+    await call(fbOrIg(provider, token, `/${remoteId}?${q({ fields: "id", access_token: token })}`));
+  } catch (error) {
+    if (error instanceof MetaError && !error.auth && /does not exist|cannot be loaded|Unsupported get request/i.test(error.message)) return "gone";
+    throw error;
+  }
+  await call(fbOrIg(provider, token, `/${remoteId}?${q({ access_token: token })}`), { method: "DELETE" });
+  return "gone";
 }

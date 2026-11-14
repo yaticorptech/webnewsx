@@ -28,7 +28,7 @@ import {
 import { findOwnedArticle, getPublishedDetailById, toDraftDetail } from "./articles.js";
 import { notifyFollowers } from "./notifications.js";
 import { pressMeetLocked, pressMeetStoryDeleted, pressMeetStorySaved } from "./press-meets.js";
-import { enqueueSocialPosts } from "./social-accounts.js";
+import { detachSocialPosts, enqueueSocialPosts } from "./social-accounts.js";
 import { isUuid } from "./shared.js";
 
 export type SaveArticleData = z.output<typeof saveArticleSchema>;
@@ -566,6 +566,8 @@ export async function deleteArticle(authorId: string, id: string, groupWriter?: 
       if (locked.status === "published") throw pressMeetLocked();
       await pressMeetStoryDeleted(tx, existing.id, existing.pressMeetId);
     }
+    // Its Instagram / Facebook posts are deleted there too (owner 2026-11-14).
+    await detachSocialPosts(tx, existing.id, existing.title);
     await tx.delete(article).where(eq(article.id, existing.id));
     if (existing.status === "published") await publishEvent(tx, { t: "article.deleted", id: existing.id });
   });

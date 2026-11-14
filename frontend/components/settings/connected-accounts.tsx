@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleAlert, CircleCheck, Clock } from "lucide-react";
+import { CircleAlert, CircleCheck, Clock, ExternalLink, RotateCcw, Trash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { FacebookIcon, InstagramIcon } from "@/components/feed/share-glyphs";
@@ -12,7 +12,7 @@ import { toast } from "@/components/ui/toast";
 import { api, errorMessage } from "@/lib/api";
 import { isNativeApp, openInPhoneBrowser } from "@/lib/native-app";
 import { qk } from "@/lib/query-keys";
-import { SOCIAL_PROVIDER_LABELS, type SocialConnection, type SocialProvider, type SocialStatus } from "@/lib/shared/contracts";
+import { SOCIAL_PROVIDER_LABELS, type SocialConnection, type SocialPostItem, type SocialProvider, type SocialStatus } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 
 const PROVIDERS: { provider: SocialProvider; Icon: (props: { size?: number }) => ReactNode; what: string; needs: string }[] = [
@@ -71,6 +71,15 @@ export function ConnectedAccounts() {
       toast(`${SOCIAL_PROVIDER_LABELS[provider]} disconnected`);
     },
     onError: (error) => toast.error("Couldn't disconnect", { description: errorMessage(error) }),
+  });
+
+  const repost = useMutation({
+    mutationFn: (postId: string) => api.social.repost(postId),
+    onSuccess: (next) => {
+      setStatus(next);
+      toast.success("Reposting", { description: "It goes out in a minute or two." });
+    },
+    onError: (error) => toast.error("Couldn't repost", { description: errorMessage(error), duration: 10_000 }),
   });
 
   if (status.data && !status.data.eligible) return null;
@@ -162,6 +171,12 @@ export function ConnectedAccounts() {
                   busy={update.isPending}
                   onAutoPost={(autoPost) => update.mutate({ provider, autoPost })}
                   onPage={(pageId) => update.mutate({ provider, pageId })}
+                  reposting={repost.isPending ? repost.variables : null}
+                  onRepost={(post) => {
+                    const name = SOCIAL_PROVIDER_LABELS[provider];
+                    if (post.status === "posted" && !window.confirm(`Repost on ${name}? The current post is deleted there and posted again with the story's latest title and image.`)) return;
+                    repost.mutate(post.id);
+                  }}
                 />
               ) : (
                 <div className="mt-3 text-[0.8125rem] leading-relaxed text-muted">
@@ -185,13 +200,17 @@ function ConnectionDetails({
   busy,
   onAutoPost,
   onPage,
+  reposting,
+  onRepost,
 }: {
   connection: SocialConnection;
   busy: boolean;
   onAutoPost: (on: boolean) => void;
   onPage: (pageId: string) => void;
+  reposting: string | null | undefined;
+  onRepost: (post: SocialPostItem) => void;
 }) {
-  const last = connection.lastPost;
+  const posts = connection.recentPosts;
   return (
     <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3">
       {connection.needsReconnect && (
@@ -234,28 +253,89 @@ function ConnectionDetails({
         />
       </label>
 
-      {last && (
-        <p
-          className={cn(
-            "flex items-start gap-2 text-[0.8125rem] leading-snug",
-            last.status === "failed" ? "text-brand-strong" : last.status === "posted" ? "text-success-strong" : "text-muted",
-          )}
-        >
-          {last.status === "posted" ? (
-            <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
-          ) : last.status === "failed" ? (
-            <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
-          ) : (
-            <Clock aria-hidden className="mt-0.5 size-4 shrink-0" />
-          )}
-          <span className="min-w-0">
-            {last.status === "posted" ? "Posted" : last.status === "failed" ? "Not posted" : "Posting"} &ldquo;{last.storyTitle}&rdquo;
-            {" · "}
-            <TimeAgo date={last.at} variant="short" />
-            {last.status === "failed" && last.error && <span className="mt-0.5 block text-muted">{last.error}</span>}
-          </span>
-        </p>
+      {posts.length > 0 && (
+        <div>
+          <p className="text-[0.75rem] font-bold uppercase tracking-[0.08em] text-muted">Recent posts</p>
+          <ul className="mt-1.5 flex flex-col divide-y divide-border">
+            {posts.map((post) => (
+              <PostRow
+                key={post.id}
+                post={post}
+                provider={connection.provider}
+                reposting={reposting === post.id}
+                onRepost={() => onRepost(post)}
+              />
+            ))}
+          </ul>
+        </div>
       )}
     </div>
+  );
+}
+
+/**
+ * One auto-post (owner 2026-11-14): how it went, View on Instagram / Facebook, and Repost — a failed one is sent
+ * again; a sent one is deleted there first. A deleted story's post shows whether it was removed there too.
+ */
+function PostRow({
+  post,
+  provider,
+  reposting,
+  onRepost,
+}: {
+  post: SocialPostItem;
+  provider: SocialProvider;
+  reposting: boolean;
+  onRepost: () => void;
+}) {
+  const name = SOCIAL_PROVIDER_LABELS[provider];
+  const live = post.status === "posted" && !post.removed;
+  const removalFailed = post.storyDeleted && post.removeError !== null;
+  const tone = removalFailed || post.status === "failed" ? "text-brand-strong" : post.status === "posted" && !post.storyDeleted ? "text-success-strong" : "text-muted";
+  const Icon = post.storyDeleted ? Trash2 : post.status === "posted" ? CircleCheck : post.status === "failed" ? CircleAlert : Clock;
+  const label = post.storyDeleted
+    ? post.removed
+      ? `Story deleted · removed from ${name}`
+      : removalFailed
+        ? `Story deleted · couldn't remove it from ${name}`
+        : `Story deleted · removing from ${name}…`
+    : post.status === "posted"
+      ? "Posted"
+      : post.status === "failed"
+        ? "Not posted"
+        : "Posting…";
+  const canRepost = !post.storyDeleted && (post.status === "posted" || post.status === "failed");
+  return (
+    <li className="flex flex-wrap items-start gap-x-3 gap-y-2 py-2.5">
+      <Icon aria-hidden className={cn("mt-0.5 size-4 shrink-0", tone)} />
+      <div className="min-w-0 flex-1 text-[0.8125rem] leading-snug">
+        <p className="line-clamp-2 font-semibold text-ink">{post.storyTitle}</p>
+        <p className={cn("mt-0.5", tone)}>
+          {label}
+          {" · "}
+          <TimeAgo date={post.at} variant="short" />
+        </p>
+        {post.status === "failed" && post.error && !post.storyDeleted && <p className="mt-0.5 text-muted">{post.error}</p>}
+        {removalFailed && <p className="mt-0.5 text-muted">Open it and delete it in the {name} app.</p>}
+      </div>
+      <div className="ml-7 flex shrink-0 items-center gap-1.5 sm:ml-0">
+        {post.permalink && (live || removalFailed) && (
+          <a
+            href={post.permalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClasses({ variant: "ghost", size: "sm", className: "h-9 px-2.5" })}
+          >
+            <ExternalLink aria-hidden className="size-4" />
+            {removalFailed ? `Open on ${name}` : "View"}
+          </a>
+        )}
+        {canRepost && (
+          <Button variant={post.status === "failed" ? "primary" : "outline"} size="sm" className="h-9" loading={reposting} leftIcon={<RotateCcw className="size-4" />} onClick={onRepost}>
+            Repost
+          </Button>
+        )}
+      </div>
+    </li>
   );
 }

@@ -3093,6 +3093,25 @@ export type SocialConnection = {
   needsReconnect: boolean;
   /** The latest auto-post, to show it worked (or why it didn't). */
   lastPost: { status: SocialPostStatus; storyTitle: string; error: string | null; at: string } | null;
+  /** The latest posts, newest first (owner 2026-11-14: Repost, and deleted stories' posts removed there too). */
+  recentPosts: SocialPostItem[];
+};
+
+/** One auto-post in Connected accounts. */
+export type SocialPostItem = {
+  id: string;
+  /** null once the story was deleted. */
+  articleId: string | null;
+  status: SocialPostStatus;
+  storyTitle: string;
+  error: string | null;
+  at: string;
+  /** The post on Instagram / Facebook. */
+  permalink: string | null;
+  /** The story was deleted on WebNewsX: its post is being removed (`removed`) or Meta refused (`removeError`). */
+  storyDeleted: boolean;
+  removed: boolean;
+  removeError: string | null;
 };
 
 export type SocialStatus = {

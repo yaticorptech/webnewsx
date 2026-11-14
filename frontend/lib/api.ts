@@ -893,6 +893,8 @@ export const api = {
     update: (provider: SocialProvider, input: UpdateSocialInput) =>
       request<SocialStatus>(`/api/social/${enc(provider)}`, { method: "PATCH", body: input }),
     disconnect: (provider: SocialProvider) => request<SocialStatus>(`/api/social/${enc(provider)}`, { method: "DELETE" }),
+    /** Sends an auto-post again (a sent one is deleted on Instagram / Facebook first). */
+    repost: (postId: string) => request<SocialStatus>(`/api/social/posts/${enc(postId)}/repost`, { method: "POST" }),
     /** Is the story waiting for its poster (auto-posts queued)? */
     posterWanted: (articleId: string) => request<{ wanted: boolean }>(`/api/social/poster/${enc(articleId)}`),
     /** The story's 9:16 poster as a JPEG: its auto-posts go out with it. */
