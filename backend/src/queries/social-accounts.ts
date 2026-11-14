@@ -173,46 +173,75 @@ async function storeSocialImage(userId: string, articleId: string, input: Buffer
 const FEED_SIZE = { width: 1080, height: 1350 } as const;
 const feedImageKey = (userId: string, articleId: string) => `covers/${userId}/social-feed-${articleId}.jpg`;
 
-let watermarkSvg: Buffer | null | undefined;
-/** The WebNewsX logo for dark backgrounds (data/brand/logo-white.png = frontend/public/brand/logo-dark.png, 2026-10-30 logo). */
-async function watermarkLogo(): Promise<Buffer | null> {
-  if (watermarkSvg === undefined) watermarkSvg = await readFile(join(process.cwd(), "data", "brand", "logo-white.png")).catch(() => null);
-  return watermarkSvg;
+const FONT_DIR = join(process.cwd(), "data", "fonts");
+// Only the bundled fonts (servers have none, and this Mac's fontconfig has no config): read before the first text render.
+process.env.FONTCONFIG_FILE ??= join(FONT_DIR, "fonts.conf");
+/** The headline's font by script: Kannada and Hindi in Noto Sans Bold, English in Archivo Black — the poster's font. */
+function fontFor(text: string): { file: string; family: string; weight: string; indic: boolean } {
+  if (/[\u0c80-\u0cff]/.test(text)) return { file: "NotoSansKannada.ttf", family: "Noto Sans Kannada", weight: ' weight="bold"', indic: true };
+  if (/[\u0900-\u097f]/.test(text)) return { file: "NotoSansDevanagari.ttf", family: "Noto Sans Devanagari", weight: ' weight="bold"', indic: true };
+  return { file: "ArchivoBlack.ttf", family: "Archivo Black", weight: "", indic: false };
+}
+const escapeMarkup = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** The white headline drawn with Pango (Indic scripts shaped properly). */
+function headlineLayer(text: string, size: number, width: number): Promise<Buffer> {
+  const font = fontFor(text);
+  return sharp({
+    text: {
+      text: `<span foreground="white"${font.weight}>${escapeMarkup(text)}</span>`,
+      font: `${font.family} ${size}`,
+      fontfile: join(FONT_DIR, font.file),
+      width,
+      dpi: 72,
+      rgba: true,
+      wrap: "word",
+      spacing: Math.round(size * (font.indic ? 0.08 : -0.06)),
+    },
+  })
+    .png()
+    .toBuffer();
 }
 
 /**
- * Instagram feed image (owner 2026-11-12): the story's cover on a 4:5 frame (the feed allows 4:5 – 1.91:1, not the 9:16
- * poster) with a small WebNewsX watermark bottom-right on a soft dark pill so it reads on any photo.
+ * Instagram feed image (owner 2026-11-14, replaces the 2026-11-12 logo watermark): the "full-bleed" poster on the
+ * feed's 4:5 frame — the cover fills the picture and a soft dark fade rises from the bottom under the big white
+ * headline. No WebNewsX logo and no profile line (owner's reference: the poster without its byline).
  */
-async function storeFeedImage(userId: string, articleId: string, input: Buffer): Promise<string> {
+async function storeFeedImage(userId: string, articleId: string, input: Buffer, title: string): Promise<string> {
   const { width, height } = FEED_SIZE;
-  const layers: Array<{ input: Buffer; left: number; top: number }> = [];
-  const logo = await watermarkLogo();
-  if (logo) {
-    const logoWidth = 270;
-    const mark = await sharp(logo).resize({ width: logoWidth }).png().toBuffer();
-    const { height: logoHeight = 50 } = await sharp(mark).metadata();
-    const padX = 20;
-    const padY = 12;
-    const pillW = logoWidth + padX * 2;
-    const pillH = logoHeight + padY * 2;
-    const left = width - pillW - 32;
-    const top = height - pillH - 32;
-    const pill = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${pillW}" height="${pillH}"><rect width="${pillW}" height="${pillH}" rx="16" fill="#000" fill-opacity="0.72"/></svg>`,
-    );
-    layers.push({ input: pill, left, top }, { input: mark, left: left + padX, top: top + padY });
+  const pad = 64;
+  const text = title.trim();
+  const indic = fontFor(text).indic;
+  // Shorter headlines get bigger type; a headline that still runs too tall steps down a size.
+  const sizes = indic ? [88, 78, 70, 64, 56, 50] : [92, 78, 68, 60, 52, 46];
+  const start = text.length <= 45 ? 0 : text.length <= 80 ? 1 : text.length <= 115 ? 2 : 3;
+  let headline = await headlineLayer(text, sizes[start]!, width - pad * 2);
+  for (let i = start + 1; i < sizes.length && ((await sharp(headline).metadata()).height ?? 0) > height * 0.45; i++) {
+    headline = await headlineLayer(text, sizes[i]!, width - pad * 2);
   }
-  // The whole cover stays visible (a 16:9 cover cropped to 4:5 loses half its picture): centred at full width over a
-  // blurred, darkened copy of itself.
-  const photo = sharp(input, { failOn: "error" }).rotate().flatten({ background: "#ffffff" });
-  const source = await photo.toBuffer();
-  const backdrop = await sharp(source).resize(width, height, { fit: "cover" }).blur(40).modulate({ brightness: 0.55 }).toBuffer();
-  const front = await sharp(source).resize({ width, height, fit: "inside" }).toBuffer();
-  const jpeg = await sharp(backdrop)
-    .composite([{ input: front, gravity: "center" }])
-    .toBuffer()
-    .then((framed) => sharp(framed).composite(layers).jpeg({ quality: 88, mozjpeg: true }).toBuffer());
+  const headlineHeight = (await sharp(headline).metadata()).height ?? 0;
+  const headlineTop = height - pad - 8 - headlineHeight;
+  const fadeTop = Math.max(0, Math.min(height * 0.35, headlineTop - 320));
+  const shade = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+      `<defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1">` +
+      `<stop offset="0" stop-color="#16181d" stop-opacity="0"/><stop offset="0.45" stop-color="#16181d" stop-opacity="0.5"/>` +
+      `<stop offset="1" stop-color="#16181d" stop-opacity="0.9"/></linearGradient></defs>` +
+      `<rect y="${fadeTop}" width="${width}" height="${height - fadeTop}" fill="url(#f)"/></svg>`,
+  );
+  const photo = await sharp(input, { failOn: "error" })
+    .rotate()
+    .flatten({ background: "#16181d" })
+    .resize(width, height, { fit: "cover", position: sharp.strategy.attention })
+    .toBuffer();
+  const jpeg = await sharp(photo)
+    .composite([
+      { input: shade, left: 0, top: 0 },
+      { input: headline, left: pad, top: headlineTop },
+    ])
+    .jpeg({ quality: 90, mozjpeg: true })
+    .toBuffer();
   const key = feedImageKey(userId, articleId);
   await storage.put(key, jpeg, "image/jpeg");
   return key;
@@ -322,10 +351,12 @@ async function sendOne(postId: string): Promise<void> {
   const feed = post.provider === "instagram" && connection.postFormat === "feed";
   let imageKey = post.imageKey;
   if (feed) {
-    // The cover (else the poster) as a 4:5 watermarked feed image.
+    // The cover (else the poster) on a 4:5 frame with the headline.
     try {
       const source = story.coverKey ?? post.imageKey;
-      imageKey = source ? await storeFeedImage(post.userId, post.articleId, await readStored(source)) : null;
+      imageKey = source
+        ? await storeFeedImage(post.userId, post.articleId, await readStored(source), story.title ?? "")
+        : null;
     } catch (error) {
       return void (await fail(`The feed image couldn't be made: ${error instanceof Error ? error.message : "unknown"}`, true));
     }
