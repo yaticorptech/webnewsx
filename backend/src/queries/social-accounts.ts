@@ -203,45 +203,101 @@ function headlineLayer(text: string, size: number, width: number): Promise<Buffe
     .toBuffer();
 }
 
+/** The headline at the largest size step that fits `maxHeight` (shorter headlines start bigger). */
+async function fittedHeadline(text: string, sizes: number[], width: number, maxHeight: number): Promise<{ image: Buffer; height: number }> {
+  const start = text.length <= 45 ? 0 : text.length <= 80 ? 1 : text.length <= 115 ? 2 : 3;
+  let image = await headlineLayer(text, sizes[start]!, width);
+  let height = (await sharp(image).metadata()).height ?? 0;
+  for (let i = start + 1; i < sizes.length && height > maxHeight; i++) {
+    image = await headlineLayer(text, sizes[i]!, width);
+    height = (await sharp(image).metadata()).height ?? 0;
+  }
+  return { image, height };
+}
+
+const INK = "#16181d";
+const BRAND = "#e30613";
+
 /**
- * Instagram feed image (owner 2026-11-14, replaces the 2026-11-12 logo watermark): the "full-bleed" poster on the
- * feed's 4:5 frame — the cover fills the picture and a soft dark fade rises from the bottom under the big white
- * headline. No WebNewsX logo and no profile line (owner's reference: the poster without its byline).
+ * "Classic" (the default poster, owner 2026-11-14 "same template only"): the photo on top melting into a red-to-ink
+ * panel that carries the big white headline; the panel is as tall as its text, the photo takes the rest.
  */
-async function storeFeedImage(userId: string, articleId: string, input: Buffer, title: string): Promise<string> {
+async function classicFeedImage(input: Buffer, title: string): Promise<Buffer> {
+  const { width, height } = FEED_SIZE;
+  const padX = 64;
+  const padTop = 34;
+  const padBottom = 70;
+  const sizes = [104, 92, 80, 70, 62, 54];
+  const headline = await fittedHeadline(title, sizes, width - padX * 2, height * 0.42);
+  const panelHeight = padTop + headline.height + padBottom;
+  const photoHeight = height - panelHeight;
+  const melt = 216;
+  const photo = await sharp(input, { failOn: "error" })
+    .rotate()
+    .flatten({ background: INK })
+    .resize(width, photoHeight, { fit: "cover", position: sharp.strategy.attention })
+    .toBuffer();
+  const art = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+      `<defs>` +
+      `<linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${BRAND}" stop-opacity="0"/>` +
+      `<stop offset="1" stop-color="${BRAND}"/></linearGradient>` +
+      `<linearGradient id="p" x1="0" y1="0" x2="0" y2="1"><stop offset="0.05" stop-color="${BRAND}"/>` +
+      `<stop offset="1" stop-color="${INK}"/></linearGradient>` +
+      `<radialGradient id="s" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 ${photoHeight}) scale(${width * 1.1} ${panelHeight * 0.7})">` +
+      `<stop offset="0" stop-color="#fff" stop-opacity="0.14"/><stop offset="0.65" stop-color="#fff" stop-opacity="0"/></radialGradient>` +
+      `</defs>` +
+      `<rect y="${photoHeight - melt}" width="${width}" height="${melt}" fill="url(#m)"/>` +
+      `<rect y="${photoHeight}" width="${width}" height="${panelHeight}" fill="url(#p)"/>` +
+      `<rect y="${photoHeight}" width="${width}" height="${panelHeight}" fill="url(#s)"/></svg>`,
+  );
+  return sharp({ create: { width, height, channels: 3, background: INK } })
+    .composite([
+      { input: photo, left: 0, top: 0 },
+      { input: art, left: 0, top: 0 },
+      { input: headline.image, left: padX, top: photoHeight + padTop },
+    ])
+    .jpeg({ quality: 90, mozjpeg: true })
+    .toBuffer();
+}
+
+/** "Full bleed": the cover fills the picture and a dark fade rises from the bottom under the big white headline. */
+async function fullBleedFeedImage(input: Buffer, title: string): Promise<Buffer> {
   const { width, height } = FEED_SIZE;
   const pad = 64;
-  const text = title.trim();
-  const indic = fontFor(text).indic;
-  // Shorter headlines get bigger type; a headline that still runs too tall steps down a size.
-  const sizes = indic ? [88, 78, 70, 64, 56, 50] : [92, 78, 68, 60, 52, 46];
-  const start = text.length <= 45 ? 0 : text.length <= 80 ? 1 : text.length <= 115 ? 2 : 3;
-  let headline = await headlineLayer(text, sizes[start]!, width - pad * 2);
-  for (let i = start + 1; i < sizes.length && ((await sharp(headline).metadata()).height ?? 0) > height * 0.45; i++) {
-    headline = await headlineLayer(text, sizes[i]!, width - pad * 2);
-  }
-  const headlineHeight = (await sharp(headline).metadata()).height ?? 0;
-  const headlineTop = height - pad - 8 - headlineHeight;
+  const sizes = fontFor(title).indic ? [88, 78, 70, 64, 56, 50] : [92, 78, 68, 60, 52, 46];
+  const headline = await fittedHeadline(title, sizes, width - pad * 2, height * 0.45);
+  const headlineTop = height - pad - 8 - headline.height;
   const fadeTop = Math.max(0, Math.min(height * 0.35, headlineTop - 320));
   const shade = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
       `<defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1">` +
-      `<stop offset="0" stop-color="#16181d" stop-opacity="0"/><stop offset="0.45" stop-color="#16181d" stop-opacity="0.5"/>` +
-      `<stop offset="1" stop-color="#16181d" stop-opacity="0.9"/></linearGradient></defs>` +
+      `<stop offset="0" stop-color="${INK}" stop-opacity="0"/><stop offset="0.45" stop-color="${INK}" stop-opacity="0.5"/>` +
+      `<stop offset="1" stop-color="${INK}" stop-opacity="0.9"/></linearGradient></defs>` +
       `<rect y="${fadeTop}" width="${width}" height="${height - fadeTop}" fill="url(#f)"/></svg>`,
   );
   const photo = await sharp(input, { failOn: "error" })
     .rotate()
-    .flatten({ background: "#16181d" })
+    .flatten({ background: INK })
     .resize(width, height, { fit: "cover", position: sharp.strategy.attention })
     .toBuffer();
-  const jpeg = await sharp(photo)
+  return sharp(photo)
     .composite([
       { input: shade, left: 0, top: 0 },
-      { input: headline, left: pad, top: headlineTop },
+      { input: headline.image, left: pad, top: headlineTop },
     ])
     .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
+}
+
+/**
+ * Instagram feed image (owner 2026-11-14, replaces the 2026-11-12 logo watermark): the story's own poster template on
+ * the feed's 4:5 frame (the feed can't take 9:16). No WebNewsX logo and no profile line. "full-bleed" has its own
+ * layout; every other template uses "classic", the default (nearly every webnews.in story).
+ */
+async function storeFeedImage(userId: string, articleId: string, input: Buffer, title: string, template: string | null): Promise<string> {
+  const text = title.trim();
+  const jpeg = template === "full-bleed" ? await fullBleedFeedImage(input, text) : await classicFeedImage(input, text);
   const key = feedImageKey(userId, articleId);
   await storage.put(key, jpeg, "image/jpeg");
   return key;
@@ -355,7 +411,7 @@ async function sendOne(postId: string): Promise<void> {
     try {
       const source = story.coverKey ?? post.imageKey;
       imageKey = source
-        ? await storeFeedImage(post.userId, post.articleId, await readStored(source), story.title ?? "")
+        ? await storeFeedImage(post.userId, post.articleId, await readStored(source), story.title ?? "", story.template)
         : null;
     } catch (error) {
       return void (await fail(`The feed image couldn't be made: ${error instanceof Error ? error.message : "unknown"}`, true));
