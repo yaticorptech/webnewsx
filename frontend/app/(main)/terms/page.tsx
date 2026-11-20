@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalDocument, type LegalSection } from "@/components/auth/legal/legal-document";
-import { COMPANY } from "@/lib/company";
+import { COMPANY, CONTACT } from "@/lib/company";
 import { TERMS_VERSION } from "@/lib/shared/contracts";
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 const UPDATED = "10 October 2026";
-const Email = () => <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>;
+const Email = () => <a href={CONTACT.href}>{CONTACT.label}</a>;
 
 const SECTIONS: LegalSection[] = [
   {
@@ -583,7 +583,7 @@ export default function TermsPage() {
         <>Never identify victims of sexual offences or children in criminal cases, and label AI-generated or altered media.</>,
         <>Mark sponsored or paid stories clearly. Payments for paid features are shown before you pay.</>,
         <>
-          Report problems or send takedown requests to <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
+          Report problems or send takedown requests to <a href={CONTACT.href}>{CONTACT.label}</a>.
         </>,
         <>Indian law applies; courts at Mumbai have jurisdiction.</>,
       ]}

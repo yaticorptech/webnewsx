@@ -29,8 +29,9 @@ export function MoreMenu({ className }: { className?: string }) {
         { label: "About WebNewsX", href: "/about", icon: <Info aria-hidden /> },
         { label: "Terms & Conditions", href: "/terms", icon: <FileText aria-hidden /> },
         { label: "Privacy Policy", href: "/privacy", icon: <ShieldCheck aria-hidden /> },
-        { type: "separator" },
-        { label: COMPANY.email, href: `mailto:${COMPANY.email}`, icon: <Mail aria-hidden /> },
+        ...(COMPANY.email
+          ? [{ type: "separator" as const }, { label: COMPANY.email, href: `mailto:${COMPANY.email}`, icon: <Mail aria-hidden /> }]
+          : []),
       ]}
     />
   );

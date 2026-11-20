@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type Network = (typeof COMPANY.social)[number]["key"];
 
 /** The networks' own icons in their colours (owner 2026-10-22: "everywhere the real icons only"). */
-const ICONS: Record<Network, (props: { size?: number }) => JSX.Element> = {
+const ICONS: Record<Network | "instagram", (props: { size?: number }) => JSX.Element> = {
   facebook: FacebookIcon,
   instagram: InstagramIcon,
 };

@@ -40,6 +40,8 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "pub", "site-setup", "relay",
   // Birthday wishes & invitations (owner 2026-10-31).
   "wish", "wishes",
+  // The all-stories archive (owner 2026-11-20).
+  "stories",
 ]);
 
 export type UsernameIssue =

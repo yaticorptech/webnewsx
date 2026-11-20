@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { BrandLockup } from "@/components/brand/brand-lockup";
 import { SpeedBarsSvg, SpeedLines } from "@/components/brand/speed-lines";
 import { BackButton } from "@/components/layout/back-button";
-import { COMPANY } from "@/lib/company";
+import { COMPANY, CONTACT } from "@/lib/company";
 import { BrandPanel, type BrandPanelCopy } from "./brand-panel";
 
 export type AuthShellProps = {
@@ -66,7 +66,7 @@ export function AuthShell({ panel, children }: AuthShellProps) {
           <Link href="/privacy" className="hover:text-ink">
             Privacy
           </Link>
-          <a href={`mailto:${COMPANY.email}`} className="hover:text-ink">
+          <a href={CONTACT.href} className="hover:text-ink">
             Help
           </a>
         </footer>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PulseDot } from "@/components/ui/pulse-dot";
 import { toast } from "@/components/ui/toast";
 import { errorMessage } from "@/lib/api";
-import { COMPANY } from "@/lib/company";
+import { CONTACT } from "@/lib/company";
 import type { PressPass } from "@/lib/shared/contracts";
 import { passDate, regionLabel } from "./press-format";
 import { PressPassCard, type PressPassCardData } from "./press-pass-card";
@@ -240,8 +240,8 @@ export function PressPassHolder({ pass, justIssued = false, editorDesk = false, 
               <ShieldAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-brand" />
               <p>
                 Think this is a mistake? Write to{" "}
-                <a href={`mailto:${COMPANY.email}`} className="font-bold text-brand underline underline-offset-4">
-                  {COMPANY.email}
+                <a href={CONTACT.href} className="font-bold text-brand underline underline-offset-4">
+                  {CONTACT.label}
                 </a>{" "}
                 with your pass number <strong className="tabular-nums">{pass.passNumber}</strong> — only the Editor Desk
                 can reinstate it.

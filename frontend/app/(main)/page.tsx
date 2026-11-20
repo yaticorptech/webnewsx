@@ -38,7 +38,7 @@ function siteJsonLd() {
         name: SITE_NAME,
         legalName: COMPANY.legalName,
         url,
-        email: COMPANY.email,
+        email: COMPANY.email || undefined,
         logo: { "@type": "ImageObject", url: absoluteUrl("/icons/icon-512.png"), width: 512, height: 512 },
         sameAs: COMPANY.social.map((network) => network.href),
       },

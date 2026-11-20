@@ -7,6 +7,7 @@ import { tr } from "@/components/publisher/site-i18n";
 import { siteLanguageFor } from "@/components/publisher/site-language";
 import { GridCard, HeadlineRow, relativeTime, storyImage, storyKicker } from "@/components/publisher/site-parts";
 import { getSiteArticle } from "@/lib/server-api";
+import { absoluteUrl } from "@/lib/utils";
 
 type Props = { params: Promise<{ domain: string; slug: string }> };
 
@@ -35,6 +36,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: { absolute: `${article.title} · ${site.title}` },
     description: article.blurb ?? article.excerpt ?? undefined,
+    // The same story lives at /a/<slug>; point search engines there so they index one copy under WebNewsX, not two.
+    alternates: { canonical: absoluteUrl(`/a/${article.slug}`) },
     openGraph: { siteName: site.title, title: article.title, type: "article", images: image ? [image] : undefined },
     twitter: { card: "summary_large_image", title: article.title, images: image ? [image] : undefined },
   };

@@ -44,7 +44,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { api, errorMessage } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
-import { COMPANY } from "@/lib/company";
+import { CONTACT } from "@/lib/company";
 import { isNativeApp } from "@/lib/native-app";
 import { qk } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
@@ -822,8 +822,8 @@ function HelpCenterCard() {
       </div>
       <p className="mt-4 text-sm leading-relaxed text-muted">
         Still need help? Write to us at{" "}
-        <a href={`mailto:${COMPANY.email}`} className="font-semibold text-brand underline underline-offset-2 hover:text-brand-hover">
-          {COMPANY.email}
+        <a href={CONTACT.href} className="font-semibold text-brand underline underline-offset-2 hover:text-brand-hover">
+          {CONTACT.label}
         </a>{" "}
         or read <Link href="/about" className="font-semibold text-brand underline underline-offset-2 hover:text-brand-hover">About WebNewsX</Link>.
       </p>

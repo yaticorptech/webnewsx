@@ -8,7 +8,7 @@ import { publishActionFor, type PublishAction } from "@/components/layout/publis
 import { InfoPagesNav } from "@/components/layout/info-pages-nav";
 import { SocialLinks } from "@/components/layout/social-links";
 import { Button } from "@/components/ui/button";
-import { COMPANY } from "@/lib/company";
+import { COMPANY, CONTACT } from "@/lib/company";
 import { SITE_NAME, TAGLINE } from "@/lib/config";
 import { getSiteViewer } from "@/lib/session";
 
@@ -125,15 +125,19 @@ export default async function AboutPage() {
 
       <Section title="Contact us">
         <div className="card grid gap-8 p-6 sm:grid-cols-[1fr_auto] sm:p-7">
+          {COMPANY.email ? (
           <div className="flex flex-col">
             <h3 className="kicker text-muted">Email</h3>
             <a
-              href={`mailto:${COMPANY.email}`}
+              href={CONTACT.href}
               className="mt-2 w-fit text-[0.9375rem] font-semibold text-brand-strong underline-offset-4 hover:underline"
             >
-              {COMPANY.email}
+              {CONTACT.label}
             </a>
           </div>
+          ) : (
+            <div />
+          )}
           <div className="flex flex-col gap-3 sm:items-end">
             <Button href="/contact" leftIcon={<Send aria-hidden />}>
               Send us a message
@@ -145,10 +149,10 @@ export default async function AboutPage() {
         <p className="text-sm leading-relaxed text-muted">
           Questions about a story, a takedown request or a grievance? Write to{" "}
           <a
-            href={`mailto:${COMPANY.email}`}
+            href={CONTACT.href}
             className="font-semibold text-brand-strong underline-offset-4 hover:underline"
           >
-            {COMPANY.email}
+            {CONTACT.label}
           </a>
           . Read our{" "}
           <Link href="/terms" className="font-semibold text-brand-strong underline-offset-4 hover:underline">

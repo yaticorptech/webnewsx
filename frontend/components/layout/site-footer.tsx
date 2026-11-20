@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { SocialLinks } from "./social-links";
 
@@ -20,8 +21,12 @@ export function SiteFooter({ variant = "full", className }: SiteFooterProps) {
     );
   }
   return (
-    <footer aria-label="Site" className={cn("flex justify-center py-8", className)}>
+    <footer aria-label="Site" className={cn("flex flex-col items-center gap-3 py-8", className)}>
       <SocialLinks />
+      {/* A crawlable path to every story (the feeds load more on scroll, which search engines don't do). */}
+      <Link href="/stories" className="text-xs font-semibold text-muted transition-colors hover:text-brand">
+        All stories
+      </Link>
     </footer>
   );
 }

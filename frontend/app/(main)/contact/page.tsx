@@ -49,11 +49,13 @@ export default async function ContactPage() {
             <Info icon={<Clock3 aria-hidden />} title="Reply time">
               Usually within 2 working days.
             </Info>
+            {COMPANY.email && (
             <Info icon={<Mail aria-hidden />} title="Email">
               <a href={`mailto:${COMPANY.email}`} className="font-semibold text-brand-strong underline-offset-4 hover:underline">
                 {COMPANY.email}
               </a>
             </Info>
+            )}
           </div>
           <div className="card flex flex-col gap-3 p-6">
             <p className="kicker text-muted">Follow {SITE_NAME}</p>

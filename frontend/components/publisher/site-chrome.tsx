@@ -486,10 +486,15 @@ function SiteFooter({ site, homeHref, lang }: { site: SiteChromeProps["site"]; h
             <img src="/brand/logo-light.png" alt={SITE_NAME} className="h-6 w-auto transition group-hover:opacity-80" />
           </a>
           <div>
-            © {new Date().getFullYear()} {site.title} ·{" "}
-            <a href={`mailto:${COMPANY.email}`} className="hover:text-pub">
-              {COMPANY.email}
-            </a>
+            © {new Date().getFullYear()} {site.title}
+            {COMPANY.email && (
+              <>
+                {" "}·{" "}
+                <a href={`mailto:${COMPANY.email}`} className="hover:text-pub">
+                  {COMPANY.email}
+                </a>
+              </>
+            )}
           </div>
         </div>
       </div>

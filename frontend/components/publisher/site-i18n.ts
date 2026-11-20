@@ -1,4 +1,5 @@
 import { COMPANY } from "@/lib/company";
+import { siteUrl } from "@/lib/config";
 import {
   CATEGORY_LABELS,
   CATEGORY_LABELS_KN,
@@ -78,8 +79,10 @@ export const WEATHER_KN: Record<string, string> = {
 };
 
 /** "Advertise here" / "Get in touch" book by mail to the site (its contact, else WebNewsX). */
-export const siteBookHref = (site: { contactEmail: string | null; title: string; domain: string }) =>
-  `mailto:${site.contactEmail || COMPANY.email}?subject=${encodeURIComponent(`Advertise on ${site.title || site.domain}`)}`;
+export const siteBookHref = (site: { contactEmail: string | null; title: string; domain: string }) => {
+  const to = site.contactEmail || COMPANY.email;
+  return to ? `mailto:${to}?subject=${encodeURIComponent(`Advertise on ${site.title || site.domain}`)}` : `${siteUrl}/contact`;
+};
 
 /** A menu section's page: `<home>/category/<category>`. */
 export const siteCategoryHref = (homeHref: string, category: Category) => `${homeHref.replace(/\/+$/, "")}/category/${category}`;
