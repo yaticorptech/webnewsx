@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { publisherSiteMetadata } from "@/lib/publisher-meta";
 import { notFound } from "next/navigation";
 import { AdSlot } from "@/components/publisher/ad-slot";
 import { SiteArticleViews, SiteShare } from "@/components/publisher/site-article-client";
@@ -34,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { article, site } = data;
   const image = storyImage(article);
   return {
+    ...publisherSiteMetadata(site),
     title: { absolute: `${article.title} · ${site.title}` },
     description: article.blurb ?? article.excerpt ?? undefined,
     // The same story lives at /a/<slug>; point search engines there so they index one copy under WebNewsX, not two.

@@ -7,7 +7,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        // The stories' 1200×630 share images live under /api/ (more specific rules win, so this beats the disallow).
+        allow: ["/", "/api/articles/*/og.jpg"],
         disallow: ["/admin", "/api/", "/publish", "/settings", "/newsroom", "/press-pass", "/onboarding", "/login", "/signup", "/dev"],
       },
     ],

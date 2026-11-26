@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { publisherSiteMetadata } from "@/lib/publisher-meta";
 import { notFound } from "next/navigation";
 import { SiteChrome } from "@/components/publisher/site-chrome";
 import { SiteHomeBody } from "@/components/publisher/site-home";
@@ -17,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!home?.category) return { title: "Not found", robots: { index: false } };
   const label = categoryLabel(home.category);
   return {
+    ...publisherSiteMetadata(home.site),
     title: { absolute: `${label} — ${home.site.title}` },
     description: `${home.site.title}: the latest ${label} news.`,
     alternates: { canonical: `https://${home.site.domain}/category/${home.category}` },

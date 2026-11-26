@@ -154,6 +154,8 @@ export function ArticleView({ article, preview = false }: ArticleViewProps) {
       // Taps on this page are filed under the story (lib/track.ts).
       data-article-id={article.id}
       aria-labelledby={titleId}
+      // The page is lang="en"; a Kannada story says so here (search engines, screen readers, hyphenation).
+      lang={article.language ?? undefined}
       data-own-back={live ? "" : undefined}
       className="pb-4"
     >

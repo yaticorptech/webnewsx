@@ -22,6 +22,15 @@ function metaDescription(text: string, max = 160): string {
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max * 0.6)).replace(/[\s.,;:!?\-–—]+$/u, "")}…`;
 }
 
+/**
+ * The 1200×630 JPEG made from the poster (link previews, and Google's 16:9 story image); `v` changes with the cover.
+ * robots.txt lets crawlers fetch it although the rest of /api/ is closed.
+ */
+function shareImagePath(article: ArticleDetail): string {
+  const coverFile = article.coverUrl?.split("/").pop()?.split(".")[0] ?? "";
+  return `/api/articles/${article.id}/og.jpg${coverFile ? `?v=${encodeURIComponent(coverFile)}` : ""}`;
+}
+
 /** "PT12S" (schema.org / ISO 8601 duration). */
 function isoDuration(ms: number): string {
   return `PT${Math.max(1, Math.round(ms / 1000))}S`;
@@ -34,11 +43,18 @@ function isoDuration(ms: number): string {
 function structuredData(article: ArticleDetail) {
   const url = absoluteUrl(`/a/${article.slug}`);
   const authorUrl = absoluteUrl(`/${article.author.username}`);
-  const image = {
+  // Google wants a story image at least 696 px wide (1200 best) in 16:9, 4:3 or 1:1 for Top stories / Discover; the
+  // cover is often a small or tall poster. So: the 1200×630 share image first, then the article photo, then the cover.
+  const imageObject = (src: string, width?: number | null, height?: number | null) => ({
     "@type": "ImageObject",
-    url: absoluteUrl(article.coverUrl),
-    ...(article.coverWidth && article.coverHeight ? { width: article.coverWidth, height: article.coverHeight } : {}),
-  };
+    url: absoluteUrl(src),
+    ...(width && height ? { width, height } : {}),
+  });
+  const images = [
+    imageObject(shareImagePath(article), 1200, 630),
+    ...(article.articleImage?.url ? [imageObject(article.articleImage.url, article.articleImage.width, article.articleImage.height)] : []),
+    imageObject(article.coverUrl, article.coverWidth, article.coverHeight),
+  ];
   const publisher = {
     "@type": "Organization",
     name: SITE_NAME,
@@ -55,12 +71,12 @@ function structuredData(article: ArticleDetail) {
         description: articleSummary(article, 300),
         keywords: articleKeywords(article).join(", "),
         ...(articleSection(article) ? { articleSection: articleSection(article) } : {}),
-        image: [image],
+        image: images,
         thumbnailUrl: absoluteUrl(article.coverUrl),
         datePublished: article.publishedAt,
         dateModified: article.editedAt ?? article.publishedAt,
         inLanguage: articleLanguage(article, hasIndicScript(article.title) ? "kn" : "en").lang,
-        isAccessibleForFree: true,
+        isAccessibleForFree: !article.premium,
         url,
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
         author: { "@type": "Person", name: article.author.name, url: authorUrl },
@@ -102,9 +118,8 @@ export async function generateMetadata({ params }: PageProps<"/a/[slug]">): Prom
   const url = absoluteUrl(`/a/${article.slug}`);
   // The link preview (owner 2026-10-31: WhatsApp showed it blurred): a 1200×630 JPEG made from the poster, not the tall
   // WebP poster itself (WhatsApp shrinks that to a small square). `v` changes with the cover.
-  const coverFile = article.coverUrl?.split("/").pop()?.split(".")[0] ?? "";
   const image = {
-    url: absoluteUrl(`/api/articles/${article.id}/og.jpg${coverFile ? `?v=${encodeURIComponent(coverFile)}` : ""}`),
+    url: absoluteUrl(shareImagePath(article)),
     width: 1200,
     height: 630,
     type: "image/jpeg",

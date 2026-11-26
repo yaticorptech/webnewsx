@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { publisherSiteMetadata } from "@/lib/publisher-meta";
 import { notFound } from "next/navigation";
 import { SiteChrome } from "@/components/publisher/site-chrome";
 import { SiteHomeBody } from "@/components/publisher/site-home";
@@ -16,6 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!home) return { title: "Not found", robots: { index: false } };
   const { site } = home;
   return {
+    ...publisherSiteMetadata(site),
     title: { absolute: site.tagline ? `${site.title} — ${site.tagline}` : site.title },
     description: site.tagline ?? `${site.title}: the latest news.`,
     alternates: { canonical: `https://${site.domain}/` },
