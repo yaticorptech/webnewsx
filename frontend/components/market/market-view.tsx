@@ -14,7 +14,7 @@ import { qk } from "@/lib/query-keys";
 import type { MarketQuote, MarketResponse } from "@/lib/shared/contracts";
 import { cn } from "@/lib/utils";
 import { FarmPrices } from "./farm-prices";
-import { Change, LiveBadge, QuoteDetails, clock, money, number } from "./quote-details";
+import { Change, LiveBadge, QuoteDetails, clock, money, number, shortDate, todayIst } from "./quote-details";
 
 /*
  * /market (owner 2026-10-22: "next to Home, a Market category with live Nifty, Sensex, NSE, gold rate… all live
@@ -52,7 +52,10 @@ export function MarketView({ initial }: { initial: MarketResponse | null }) {
     refetchOnWindowFocus: true,
   });
   const quotes = data?.quotes ?? [];
-  const anyOpen = quotes.some((quote) => quote.group === "indices" && quote.open);
+  const indices = quotes.filter((quote) => quote.group === "indices");
+  const anyOpen = indices.some((quote) => quote.open);
+  const closing = indices.some((quote) => quote.status === "closing");
+  const lastSession = indices[0]?.sessionDate;
   // One open tile at a time (its id), on computers the hovered or clicked one, on phones the tapped one (a sheet).
   const [openId, setOpenId] = useState<string | null>(null);
   const openQuote = quotes.find((quote) => quote.id === openId) ?? null;
@@ -66,7 +69,7 @@ export function MarketView({ initial }: { initial: MarketResponse | null }) {
               <PulseDot size="sm" tone="brand" /> Live · market open
             </>
           ) : (
-            "Markets · last close"
+            `Markets · ${closing ? "closing, final price pending" : lastSession && lastSession !== todayIst() ? `last close · ${shortDate(lastSession)}` : "today's close"}`
           )}
         </p>
         <h1 id="market-heading" className="font-wide text-3xl font-black leading-tight tracking-tight text-ink sm:text-4xl">
@@ -246,7 +249,7 @@ function QuoteTile({ quote, open, phone, onOpen, onClose }: { quote: MarketQuote
             <span className="block truncate font-wide text-[0.9375rem] font-extrabold text-ink">{quote.name}</span>
             <span className="block text-xs font-medium text-muted">{quote.unit}</span>
           </span>
-          <LiveBadge open={quote.open} />
+          <LiveBadge quote={quote} />
         </span>
         <span className="block font-wide text-[1.625rem] font-black leading-none tracking-tight text-ink tabular-nums sm:text-[1.75rem]">
           {money(quote.price, quote.currency)}

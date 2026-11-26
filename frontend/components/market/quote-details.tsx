@@ -42,7 +42,7 @@ export function QuoteDetails({ quote, className }: { quote: MarketQuote; classNa
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-muted">
             {quote.unit}
-            <LiveBadge open={quote.open} />
+            <LiveBadge quote={quote} />
           </p>
           <p className="mt-1 font-wide text-[1.75rem] font-black leading-none tracking-tight text-ink tabular-nums">{format(quote.price)}</p>
           <p className="mt-1.5">
@@ -192,21 +192,44 @@ export function Change({ quote, compact = false }: { quote: MarketQuote; compact
       {sign}
       {number(quote.change, quote.currency)} ({sign}
       {quote.changePercent.toFixed(2)}%)
-      <span className="sr-only"> {up ? "up" : down ? "down" : "unchanged"} today</span>
+      <span className="sr-only">
+        {" "}
+        {up ? "up" : down ? "down" : "unchanged"} {quote.sessionDate === todayIst() ? "today" : `on ${shortDate(quote.sessionDate)}`}
+      </span>
     </span>
   );
 }
 
-export function LiveBadge({ open }: { open: boolean }) {
+/** Today's date in IST, YYYY-MM-DD (the sessions are NSE / BSE days). */
+export const todayIst = () => new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10);
+
+/** "2026-11-20" → "20 Nov". */
+export const shortDate = (day: string) =>
+  new Date(`${day}T12:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+
+/**
+ * Live · Closing (an index past the bell whose final close isn't in yet — SEBI's closing auction from 7 Dec 2026) ·
+ * Closed (today's close) · Last close · 20 Nov (a weekend or holiday: the number is that day's, not today's).
+ */
+export function LiveBadge({ quote }: { quote: MarketQuote }) {
+  const label =
+    quote.status === "open"
+      ? "Live"
+      : quote.status === "closing"
+        ? "Closing · not final"
+        : quote.sessionDate === todayIst()
+          ? "Closed"
+          : `Last close · ${shortDate(quote.sessionDate)}`;
   return (
     <span
+      title={quote.status === "closing" ? "Waiting for the exchange's final closing price" : undefined}
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.6875rem] font-bold",
-        open ? "bg-success-soft text-success-strong" : "bg-surface-2 text-muted",
+        quote.status === "open" ? "bg-success-soft text-success-strong" : quote.status === "closing" ? "bg-tint text-ink-2 ring-1 ring-inset ring-tint-border" : "bg-surface-2 text-muted",
       )}
     >
-      {open && <PulseDot size="xs" tone="success" />}
-      {open ? "Live" : "Closed"}
+      {quote.status === "open" && <PulseDot size="xs" tone="success" />}
+      {label}
     </span>
   );
 }

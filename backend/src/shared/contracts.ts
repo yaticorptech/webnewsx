@@ -40,8 +40,6 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "pub", "site-setup", "relay",
   // Birthday wishes & invitations (owner 2026-10-31).
   "wish", "wishes",
-  // The all-stories archive (owner 2026-11-20).
-  "stories",
 ]);
 
 export type UsernameIssue =
@@ -974,6 +972,13 @@ export type MarketQuote = {
   times: number[];
   /** The exchange is trading right now. */
   open: boolean;
+  /**
+   * "open" trading; "closing" = an index past its 3:30 pm bell whose feed is still moving (closing auction, from SEBI's
+   * 7 Dec 2026 change) — the number isn't called final yet; "closed" = the session's close is settled.
+   */
+  status: "open" | "closing" | "closed";
+  /** The trading day `price` belongs to (YYYY-MM-DD, exchange time): on a weekend, Friday's — "Last close · 20 Nov". */
+  sessionDate: string;
   /** When the source last updated this quote (ISO). */
   updatedAt: string;
 };
