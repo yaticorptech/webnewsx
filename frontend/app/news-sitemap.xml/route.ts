@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 /** Google News only wants stories from the last two days (at most 1,000). */
 const WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
 const MAX = 1000;
+/** Stories listed when none fall in the window. */
+const FALLBACK = 20;
 
 function xml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
@@ -17,7 +19,10 @@ function xml(value: string): string {
 export async function GET(): Promise<Response> {
   const { articles } = await getSitemapData();
   const since = Date.now() - WINDOW_MS;
-  const recent = articles.filter((story) => new Date(story.publishedAt).getTime() >= since).slice(0, MAX);
+  const inWindow = articles.filter((story) => new Date(story.publishedAt).getTime() >= since).slice(0, MAX);
+  // Never an empty <urlset>: Search Console calls that "Missing XML tag" (owner 2026-11-26, read after two quiet days).
+  // With nothing in the window, list the latest few — Google News just skips the older ones.
+  const recent = inWindow.length > 0 ? inWindow : [...articles].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, FALLBACK);
   const entries = recent
     .map(
       (story) => `  <url>
